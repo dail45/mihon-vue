@@ -24,15 +24,21 @@ const navItems = [
   { title: 'More', icon: 'more_horiz', path: '/more' },
 ]
 const activeNav = computed(() => route.path.startsWith('/manga/') ? '/library' : route.path)
+const toolbarTitle = computed(() => route.meta.catalogue ? server.sources.find(s => s.id === route.params.sourceId)?.displayName || 'Source' : route.meta.title)
+function back() {
+  if (route.meta.catalogue) { void router.push('/browse'); return }
+  if (typeof window.history.state?.back === 'string' && window.history.state.back.startsWith('/browse/source/')) { router.back(); return }
+  void router.push('/library')
+}
 function toggleTheme() { preferences.themeMode = dark.value ? 'light' : 'dark' }
 </script>
 <template>
   <v-app>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <v-app-bar v-if="!route.meta.reader" flat height="64" color="surface" class="app-toolbar">
-      <v-btn v-if="route.meta.detail" icon="arrow_back" aria-label="Back to library" @click="router.push('/library')" />
+      <v-btn v-if="route.meta.detail" icon="arrow_back" :aria-label="route.meta.catalogue ? 'Back to sources' : 'Back'" @click="back" />
       <v-app-bar-title class="text-h6 font-weight-regular">
-        {{ route.meta.title }}
+        {{ toolbarTitle }}
         <v-chip v-if="route.path === '/library' && server.connected" size="small" class="ml-2" variant="tonal" :aria-label="`${server.totalLibraryCount} manga in library`">{{ server.totalLibraryCount }}</v-chip>
       </v-app-bar-title>
       <v-btn :icon="dark ? 'light_mode' : 'dark_mode'" :aria-label="dark ? 'Use light theme' : 'Use dark theme'" @click="toggleTheme" />

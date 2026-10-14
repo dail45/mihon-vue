@@ -69,3 +69,20 @@ Additional REST contracts verified in `MangaController.kt`:
 `ChapterPatch` is serialized as `application/x-www-form-urlencoded`, not JSON. `markPrevRead` is typed for API completeness but never sent by this reader.
 
 [Chapter ordering and progress update implementation](https://github.com/Suwayomi/Suwayomi-Server/blob/e2ce828abb81f0f5ce1a3fb86194a2746b519c85/server/src/main/kotlin/suwayomi/tachidesk/manga/impl/Chapter.kt) establishes reversed source-list indexing (oldest first) and zero-based saved pages. [Chapter serialization](https://github.com/Suwayomi/Suwayomi-Server/blob/e2ce828abb81f0f5ce1a3fb86194a2746b519c85/server/src/main/kotlin/suwayomi/tachidesk/manga/model/table/ChapterTable.kt) leaves deprecated user fields at DTO defaults; [chapter retrieval](https://github.com/Suwayomi/Suwayomi-Server/blob/e2ce828abb81f0f5ce1a3fb86194a2746b519c85/server/src/main/kotlin/suwayomi/tachidesk/manga/impl/chapter/ChapterForDownload.kt) reads `ChapterTable` without hydrating `ChapterUserTable`. This is why autosave is opt-in and no reliable legacy bookmark toggle/restore is claimed.
+
+
+## Source catalogue extension
+
+Same pinned Mihon revision, inspected for compact grid, paged loading, and recoverable append errors:
+
+- [Browse source content](https://github.com/mihonapp/mihon/blob/446f6df82c390ab760802c2fce3b677bce3f31c1/app/src/main/java/eu/kanade/presentation/browse/BrowseSourceScreen.kt)
+- [Suwayomi source controller](https://github.com/Suwayomi/Suwayomi-Server/blob/e2ce828abb81f0f5ce1a3fb86194a2746b519c85/server/src/main/kotlin/suwayomi/tachidesk/manga/controller/SourceController.kt)
+- [Server catalogue caching and supportsLatest guard](https://github.com/Suwayomi/Suwayomi-Server/blob/e2ce828abb81f0f5ce1a3fb86194a2746b519c85/server/src/main/kotlin/suwayomi/tachidesk/manga/impl/MangaList.kt)
+
+| Method | Path | Contract |
+|---|---|---|
+| GET | `/source/{sourceId}/popular/{pageNum}` | `PagedMangaList`; one-based page number |
+| GET | `/source/{sourceId}/latest/{pageNum}` | `PagedMangaList`; requires source `supportsLatest` |
+| GET | `/source/{sourceId}/search?searchTerm=…&pageNum=…` | `PagedMangaList`; query encoded by ofetch |
+
+All three return `mangaList: Manga[]` and `hasNextPage: boolean`. Source IDs remain strings end-to-end. Client pagination advances only after success, deduplicates manga IDs, and ignores stale responses on source/query/server changes or screen disposal. No client source scraping, extension management, catalogue POST filters, or global search was added.

@@ -9,6 +9,7 @@ export const router = createRouter({
     { path: '/updates', component: () => import('../views/PlannedView.vue'), meta: { title: 'Updates', icon: 'update' } },
     { path: '/history', component: () => import('../views/PlannedView.vue'), meta: { title: 'History', icon: 'history' } },
     { path: '/browse', component: () => import('../views/BrowseView.vue'), meta: { title: 'Browse' } },
+    { path: '/browse/source/:sourceId', component: () => import('../views/SourceView.vue'), meta: { title: 'Source', detail: true, catalogue: true } },
     { path: '/more', component: () => import('../views/MoreView.vue'), meta: { title: 'More' } },
     { path: '/:pathMatch(.*)*', component: () => import('../views/NotFoundView.vue'), meta: { title: 'Not found' } },
   ],

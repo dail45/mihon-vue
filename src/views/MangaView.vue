@@ -10,6 +10,9 @@ const firstChapter = computed(() => orderedChapters.value[0])
 const visibleChapters = computed(() => orderedChapters.value.filter(c => c.name.toLowerCase().includes(chapterQuery.value.toLowerCase())).sort((a, b) => oldestFirst.value ? a.index - b.index : b.index - a.index))
 watch(() => [route.params.id, server.apiUrl], () => { brokenCover.value = false; void server.loadManga(Number(route.params.id)) }, { immediate: true })
 const detail = computed(() => server.manga)
+// Stable REST can return source:null even when the installed source is available.
+watch(() => server.apiUrl, () => { if (!server.sources.length) void server.loadSources() }, { immediate: true })
+const sourceName = computed(() => detail.value?.source?.displayName || server.sources.find(s => s.id === detail.value?.sourceId)?.displayName || (server.loadingSources ? 'Loading source…' : 'Source unavailable'))
 const status = computed(() => detail.value?.status.replaceAll('_', ' ').toLowerCase())
 function chapterDate(value: number) { return value > 0 ? new Date(value).toLocaleDateString() : 'Date unknown' }
 async function remove() { removeOpen.value = false; await server.setLibraryMembership(false) }
@@ -26,7 +29,7 @@ async function remove() { removeOpen.value = false; await server.setLibraryMembe
         <p v-if="detail.author" class="text-body-2 mb-1">{{ detail.author }}</p>
         <p v-if="detail.artist && detail.artist !== detail.author" class="text-body-2 mb-1">{{ detail.artist }}</p>
         <p class="text-body-2 text-on-surface-variant text-capitalize">{{ status }}</p>
-        <p class="text-body-2 text-on-surface-variant mt-1">{{ detail.source?.displayName || 'Source unavailable' }}</p>
+        <p class="text-body-2 text-on-surface-variant mt-1">{{ sourceName }}</p>
       </div>
     </div>
     <div class="d-flex flex-wrap ga-2 mb-6">

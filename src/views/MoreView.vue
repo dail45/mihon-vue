@@ -8,7 +8,7 @@ const themeOptions = [{ title: 'System default', value: 'system' }, { title: 'Li
 </script>
 <template>
   <v-container class="pa-4" style="max-width: 680px">
-    <div class="text-center py-8"><v-icon icon="auto_stories" size="56" color="primary"/><h1 class="text-h5 mt-3">Mihon Vue</h1><p class="text-body-2 text-on-surface-variant mt-2">A UI client for Suwayomi</p><v-chip variant="tonal" size="small" class="mt-3">UI preview · 0.2.0</v-chip></div>
+    <div class="text-center py-8"><v-icon icon="auto_stories" size="56" color="primary"/><h1 class="text-h5 mt-3">Mihon Vue</h1><p class="text-body-2 text-on-surface-variant mt-2">A UI client for Suwayomi</p><v-chip variant="tonal" size="small" class="mt-3">UI preview · 0.3.0</v-chip></div>
     <v-list bg-color="transparent">
       <v-list-subheader>Connection</v-list-subheader>
       <v-list-item title="Suwayomi-Server" :subtitle="server.apiUrl" prepend-icon="dns" append-icon="chevron_right" @click="settingsOpen = true" />

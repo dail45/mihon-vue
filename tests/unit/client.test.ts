@@ -29,6 +29,17 @@ describe('REST client', () => {
     await api.categories(); await api.categoryManga(4); await api.manga(12); await api.chapters(12, true); await api.sources()
     expect(requests).toEqual(expect.arrayContaining(['GET /api/v1/category', 'GET /api/v1/category/4', 'GET /api/v1/manga/12/full?onlineFetch=false', 'GET /api/v1/manga/12/chapters?onlineFetch=true', 'GET /api/v1/source/list']))
   })
+  it('uses paged source routes and safely encodes a search query', async () => {
+    const api = createSuwayomiApi(address)
+    await api.sourceCatalogue('9223372036854775806', 'popular', 2)
+    await api.sourceCatalogue('9223372036854775806', 'latest', 1)
+    await api.sourceCatalogue('9223372036854775806', 'search', 3, 'stars & moon')
+    expect(requests).toContain('GET /api/v1/source/9223372036854775806/popular/2')
+    expect(requests).toContain('GET /api/v1/source/9223372036854775806/latest/1')
+    const search = new URL(requests.find(r => r.includes('/search?'))!.slice(4), address)
+    expect(search.searchParams.get('searchTerm')).toBe('stars & moon')
+    expect(search.searchParams.get('pageNum')).toBe('3')
+  })
   it('uses a source index and form-encoded chapter patches', async () => {
     const api = createSuwayomiApi(address)
     await api.chapter(12, 7)

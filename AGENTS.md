@@ -14,6 +14,7 @@
 - UI reference directory: `app/src/main/java/eu/kanade/presentation/`.
 - Library toolbar, tabs, compact grid, cover overlays, and theme colors informed the initial UI.
 - Reader reference files: `reader/appbars/ReaderTopBar.kt`, `reader/appbars/ReaderBottomBar.kt`, and `reader/settings/ReaderSettingsDialog.kt`, under the UI reference directory above.
+- Catalogue UI reference: `browse/BrowseSourceScreen.kt` (compact grid, refresh/append loading and recoverable errors).
 - Default color reference: `theme/colorscheme/TachiyomiColorScheme.kt`.
 - These references are pinned to this commit; do not claim parity against a newer Mihon version without inspecting it.
 
@@ -35,3 +36,7 @@
 - Production code remains a headless REST client: no scraping, extension management, or local SQL database.
 - Never store access tokens in source files, environment examples, Git remotes, documentation, or committed configuration.
 - Validation commands: `npm test`, `npm run build`, `npm run test:e2e`. Set `CHROMIUM_PATH` for an existing Chromium installation.
+
+- Live catalogue GETs can populate server cache. They must not be described as guaranteeing zero backend side effects. Keep library/progress/bookmark mutations blocked in smoke tests.
+- User preference: manual acceptance tests and screenshots must use the real user-provided Suwayomi server and real source content, never the synthetic test source. Use `scripts/capture-live.mjs` with `LIVE_SUWAYOMI_API_URL` explicitly set. Isolated fixture tests are regression checks only, not evidence of live behavior.
+- Do not commit live screenshots, manga covers/pages, chapter metadata, or raw API dumps. Save live QA output outside the repository.

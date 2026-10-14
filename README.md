@@ -37,14 +37,15 @@ The client sends session cookies with requests. Cross-origin APIs require approp
 - Manga details, expandable descriptions, searchable/sortable chapter listing, and server-backed add/remove library membership (confirmation before removal).
 - Full-viewport reader with left-to-right/right-to-left paging, webtoon scrolling, page slider, chapter sheet, touch swipes, keyboard controls, fit-page/fit-width scaling, and background preferences.
 - Manual and opt-in automatic progress writes plus explicit server bookmark commands.
-- Read-only installed-source listing, server settings, appearance settings, and not-found route.
+- Installed-source listing and paged source catalogues: Popular, Latest (when supported), submitted search, in-library badges, and recoverable pagination errors.
+- Server settings, appearance settings, and not-found route.
 - Typed `Manga`, `Chapter`, `Source`, `Category`, and tracker DTOs; API adapter; `useSuwayomiStore` Pinia store.
 - Request-version guards prevent stale reads from a previous server or screen replacing current state.
 - No scraping, extension management, SQL database, or fabricated production manga data.
 
 ## Deliberate scope limits
 
-This is an **initial scaffold**, not a complete pixel-perfect clone. Updates/History explicitly identify themselves as not implemented. Browse lists installed sources but does not browse/search their catalogues. Downloads, selection mode, category editing, tracking, authentication UI, and background subscriptions are not implemented. The reader does not yet implement double-page spreads, border cropping, image filters, rotation locking, or advanced zoom/pan controls.
+This is an **initial scaffold**, not a complete pixel-perfect clone. Updates/History explicitly identify themselves as not implemented. Source-specific advanced filters and global multi-source search are not implemented. Downloads, selection mode, category editing, tracking, authentication UI, and background subscriptions are not implemented. The reader does not yet implement double-page spreads, border cropping, image filters, rotation locking, or advanced zoom/pan controls.
 
 Mihon's Compose sources were inspected for color roles, cover overlays, grid spacing, category tabs, and navigation structure. Pixel-perfect parity against native Android screenshots has **not** been established. Desktop currently retains the requested bottom navigation, rather than Mihon's adaptive tablet rail.
 
@@ -58,7 +59,7 @@ src/stores/          In-memory server state; harmless UI preferences
 src/plugins/         Vuetify MD3, themes, Material Symbols icon set
 src/router/          Lazy-loaded Vue Router screens
 src/components/      Manga card, empty state, connection dialog
-src/views/           Library, manga, browse, more, planned screens
+src/views/           Library, manga, reader, source catalogue, more, planned screens
 src/styles/          Compose-specific geometry and accessibility styles
 src/assets/          Checked-in self-hosted icon font subset
 scripts/             Optional font-subsetting and screenshot QA utilities
@@ -117,3 +118,27 @@ node scripts/smoke-live.mjs
 ```
 
 Start Vite at the chosen local URL first. This opt-in script blocks non-GET/HEAD requests, the legacy mutating library GET, forced source refreshes, and image URLs that could update progress. It records partial results separately and exits non-zero if page delivery is not verified. Normal unit/browser tests do not contact the live server.
+
+
+## Source catalogue
+
+Open **Browse → an installed source**. Popular loads the first server-provided page. Latest is available only when the source advertises support. Search submits with Enter or the search button; queries and tabs are reflected in the URL. Load more preserves previous results and deduplicates server IDs. A failed next page can be retried without dropping loaded cards. Opening a card never implicitly adds it to the library.
+
+All catalogue fetching and source interaction happen inside Suwayomi. Catalogue GETs may populate the server's manga cache; “no client mutations” does not mean the backend performs no internal database writes. Library membership, extensions, bookmarks, and reading progress are unchanged by catalogue browsing.
+
+Use the real-data screenshot workflow below for catalogue acceptance. Add `LIVE_TEST_CATALOGUE=1` to the explicit live-smoke command to also test Popular for the successfully read manga's source. `LIVE_CATALOGUE_SOURCE_ID` overrides that source explicitly. The live script also exercises next-page navigation, RTL, and Webtoon without saving progress. This does not establish that every source, search, or page works.
+
+
+### Real-data screenshots / manual acceptance
+
+Use the live server for acceptance screenshots, not the synthetic QA source:
+
+```sh
+LIVE_SUWAYOMI_API_URL=https://suwayomi.dail45.ru/api/v1 \
+CHROMIUM_PATH=/path/to/chromium \
+QA_BASE_URL=http://127.0.0.1:5180 \
+QA_OUTPUT=/data/live-ui-qa \
+node scripts/capture-live.mjs
+```
+
+This script uses real library titles, covers, chapters, page images, Popular, Latest, and search results in mobile and desktop Chromium. It has no fixtures or mocked responses. Its request guard blocks library/progress/bookmark mutations. Catalogue and chapter GETs can still populate the server cache. Screenshots and raw live reports must remain outside the repository. Browser regression tests remain isolated and must not be presented as live-server verification.

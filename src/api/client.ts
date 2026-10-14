@@ -1,5 +1,5 @@
 import { ofetch } from 'ofetch'
-import type { Category, Chapter, ChapterPatch, Manga, Source } from './types'
+import type { Category, Chapter, ChapterPatch, Manga, PagedMangaList, Source } from './types'
 export const DEFAULT_API_URL = import.meta.env.VITE_SUWAYOMI_API_URL || 'http://localhost:4567/api/v1'
 export function normalizeApiUrl(value: string): string {
   const url = value.trim().replace(/\/+$/, '')
@@ -24,6 +24,12 @@ export function createSuwayomiApi(baseURL: string) {
       return api<void>(`/manga/${mangaId}/chapter/${chapterIndex}`, { method: 'PATCH', body })
     },
     sources: () => api<Source[]>('/source/list'),
+    sourceCatalogue: (sourceId: string, mode: 'popular' | 'latest' | 'search', page = 1, searchTerm = '') => {
+      const source = encodeURIComponent(sourceId)
+      return mode === 'search'
+        ? api<PagedMangaList>(`/source/${source}/search`, { query: { searchTerm, pageNum: page } })
+        : api<PagedMangaList>(`/source/${source}/${mode}/${page}`)
+    },
     // Legacy REST v1 intentionally uses GET for add. Never retry this mutation.
     addToLibrary: (id: number) => api<void>(`/manga/${id}/library`, { method: 'GET' }),
     removeFromLibrary: (id: number) => api<void>(`/manga/${id}/library`, { method: 'DELETE' }),

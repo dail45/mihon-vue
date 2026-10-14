@@ -14,9 +14,9 @@ watch(() => server.apiUrl, () => { void server.loadSources() })
     <EmptyState v-if="server.sourcesError" icon="cloud_off" title="Sources unavailable" :description="server.sourcesError"><v-btn @click="server.loadSources" color="primary">Try again</v-btn></EmptyState>
     <EmptyState v-else-if="!server.loadingSources && !server.sources.length" icon="explore" title="No installed sources" description="Manage sources on Suwayomi-Server. This client does not install or manage extensions." />
     <template v-else-if="server.sources.length">
-      <p class="text-body-2 text-on-surface-variant mb-4">Installed sources from your server. Source catalogue browsing is planned; this initial view is read-only.</p>
+      <p class="text-body-2 text-on-surface-variant mb-4">Browse your installed sources. Popular titles, latest updates, and search are fetched through Suwayomi.</p>
       <v-list bg-color="transparent">
-        <v-list-item v-for="source in server.sources.filter(s => s.displayName.toLowerCase().includes(query.toLowerCase()))" :key="source.id" :title="source.displayName" :subtitle="`${source.lang.toUpperCase()}${source.isNsfw ? ' · NSFW' : ''}`" prepend-icon="public" />
+        <v-list-item v-for="source in server.sources.filter(s => s.displayName.toLowerCase().includes(query.toLowerCase()))" :key="source.id" :to="`/browse/source/${encodeURIComponent(source.id)}`" :title="source.displayName" :subtitle="`${source.lang.toUpperCase()}${source.isNsfw ? ' · NSFW' : ''}`" prepend-icon="public" />
       </v-list>
       <p v-if="!server.sources.some(s => s.displayName.toLowerCase().includes(query.toLowerCase()))" class="text-center py-6">No matching sources.</p>
     </template>
