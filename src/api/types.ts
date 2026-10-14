@@ -41,6 +41,10 @@ export interface Manga {
 export interface Category {
   id: number; order: number; name: string; default: boolean;
   includeInUpdate: -1 | 0 | 1; includeInDownload: -1 | 0 | 1;
-  isDefaultCategory: boolean; version: number; uid: number; lastModifiedAt: number;
+  /** Present in the reference master DTO; omitted by live stable v2.4.2366. */
+  isDefaultCategory?: boolean; version: number; uid: number; lastModifiedAt: number;
 }
 export interface PagedMangaList { mangaList: Manga[]; hasNextPage: boolean }
+
+/** PATCH chapter fields are submitted as application/x-www-form-urlencoded. */
+export interface ChapterPatch { read?: boolean; bookmarked?: boolean; markPrevRead?: boolean; lastPageRead?: number }

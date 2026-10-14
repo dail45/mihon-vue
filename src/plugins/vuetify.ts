@@ -1,6 +1,6 @@
 import { h } from 'vue'
 import { createVuetify, type IconSet } from 'vuetify'
-import { VAlert, VApp, VAppBar, VAppBarTitle, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSpacer, VSwitch, VTab, VTabs, VTextField } from 'vuetify/components'
+import { VAlert, VApp, VAppBar, VAppBarTitle, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VCardTitle, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VProgressCircular, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSlider, VSpacer, VSwitch, VTab, VTabs, VTextField, VThemeProvider } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { md3 } from 'vuetify/blueprints'
 import { aliases } from 'vuetify/iconsets/md'
@@ -10,7 +10,7 @@ const symbols: IconSet = {
 // Colors translated from Mihon's TachiyomiColorScheme.kt. See docs/REFERENCES.md.
 export const vuetify = createVuetify({
   blueprint: md3,
-  components: { VAlert, VApp, VAppBar, VAppBarTitle, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSpacer, VSwitch, VTab, VTabs, VTextField }, directives,
+  components: { VAlert, VApp, VAppBar, VAppBarTitle, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VCardTitle, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VProgressCircular, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSlider, VSpacer, VSwitch, VTab, VTabs, VTextField, VThemeProvider }, directives,
   icons: { defaultSet: 'symbols', aliases, sets: { symbols } },
   theme: {
     defaultTheme: 'mihonLight',

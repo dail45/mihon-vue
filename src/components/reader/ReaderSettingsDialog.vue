@@ -1,0 +1,29 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useReaderPreferences } from '../../stores/readerPreferences'
+const open = defineModel<boolean>({ required: true }), preferences = useReaderPreferences(), tab = ref('reading')
+const modes = [{ title: 'Left to right', value: 'ltr' }, { title: 'Right to left', value: 'rtl' }, { title: 'Webtoon · vertical scroll', value: 'webtoon' }]
+const backgrounds = [{ title: 'Black', value: 'black' }, { title: 'Dark gray', value: 'gray' }, { title: 'Paper', value: 'paper' }]
+</script>
+<template>
+  <v-dialog v-model="open" max-width="520" scrollable>
+    <v-card rounded="xl" color="surface-container-high">
+      <v-card-title class="pt-6 px-6">Reader settings</v-card-title>
+      <v-tabs v-model="tab" color="primary" grow><v-tab value="reading" class="text-none">Reading</v-tab><v-tab value="general" class="text-none">General</v-tab></v-tabs>
+      <v-card-text class="pt-6">
+        <template v-if="tab === 'reading'">
+          <v-select v-model="preferences.mode" :items="modes" label="Reading mode" class="mb-4" hide-details />
+          <v-select v-model="preferences.fit" :items="[{ title: 'Fit entire page', value: 'page' }, { title: 'Fit width', value: 'width' }]" label="Image scale" :disabled="preferences.mode === 'webtoon'" class="mb-4" hide-details />
+          <v-select v-model="preferences.background" :items="backgrounds" label="Reader background" hide-details />
+          <p class="text-body-2 text-on-surface-variant mt-6">Swipe or use the arrow keys to turn pages. Tap the page, or press Space, to show and hide controls.</p>
+        </template>
+        <template v-else>
+          <v-switch v-model="preferences.saveProgress" color="primary" label="Automatically save reading progress" hide-details />
+          <p class="text-body-2 text-on-surface-variant mt-4">Only displayed, loaded pages are saved to Suwayomi. The final page marks the chapter as read. Image preloading never updates progress.</p>
+          <v-alert type="info" color="primary" variant="tonal" class="mt-4 text-body-2">Legacy REST versions may return default progress or bookmark values. Automatic saving is off until you enable it; restoring a position depends on your server version.</v-alert>
+        </template>
+      </v-card-text>
+      <v-card-actions class="px-4 pb-4"><v-spacer/><v-btn color="primary" @click="open = false">Done</v-btn></v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>

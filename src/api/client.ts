@@ -1,5 +1,5 @@
 import { ofetch } from 'ofetch'
-import type { Category, Chapter, Manga, Source } from './types'
+import type { Category, Chapter, ChapterPatch, Manga, Source } from './types'
 export const DEFAULT_API_URL = import.meta.env.VITE_SUWAYOMI_API_URL || 'http://localhost:4567/api/v1'
 export function normalizeApiUrl(value: string): string {
   const url = value.trim().replace(/\/+$/, '')
@@ -17,6 +17,12 @@ export function createSuwayomiApi(baseURL: string) {
     categoryManga: (id: number) => api<Manga[]>(`/category/${id}`),
     manga: (id: number, onlineFetch = false) => api<Manga>(`/manga/${id}/full`, { query: { onlineFetch } }),
     chapters: (id: number, onlineFetch = false) => api<Chapter[]>(`/manga/${id}/chapters`, { query: { onlineFetch } }),
+    chapter: (mangaId: number, chapterIndex: number) => api<Chapter>(`/manga/${mangaId}/chapter/${chapterIndex}`),
+    modifyChapter: (mangaId: number, chapterIndex: number, patch: ChapterPatch) => {
+      const body = new URLSearchParams()
+      for (const [key, value] of Object.entries(patch)) if (value !== undefined) body.set(key, String(value))
+      return api<void>(`/manga/${mangaId}/chapter/${chapterIndex}`, { method: 'PATCH', body })
+    },
     sources: () => api<Source[]>('/source/list'),
     // Legacy REST v1 intentionally uses GET for add. Never retry this mutation.
     addToLibrary: (id: number) => api<void>(`/manga/${id}/library`, { method: 'GET' }),

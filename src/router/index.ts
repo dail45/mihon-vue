@@ -5,6 +5,7 @@ export const router = createRouter({
     { path: '/', redirect: '/library' },
     { path: '/library', component: () => import('../views/LibraryView.vue'), meta: { title: 'Library' } },
     { path: '/manga/:id(\\d+)', component: () => import('../views/MangaView.vue'), meta: { title: 'Manga', detail: true } },
+    { path: '/manga/:id(\\d+)/read/:chapterIndex(\\d+)', component: () => import('../views/ReaderView.vue'), meta: { title: 'Reader', detail: true, reader: true } },
     { path: '/updates', component: () => import('../views/PlannedView.vue'), meta: { title: 'Updates', icon: 'update' } },
     { path: '/history', component: () => import('../views/PlannedView.vue'), meta: { title: 'History', icon: 'history' } },
     { path: '/browse', component: () => import('../views/BrowseView.vue'), meta: { title: 'Browse' } },

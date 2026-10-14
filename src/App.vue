@@ -29,7 +29,7 @@ function toggleTheme() { preferences.themeMode = dark.value ? 'light' : 'dark' }
 <template>
   <v-app>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <v-app-bar flat height="64" color="surface" class="app-toolbar">
+    <v-app-bar v-if="!route.meta.reader" flat height="64" color="surface" class="app-toolbar">
       <v-btn v-if="route.meta.detail" icon="arrow_back" aria-label="Back to library" @click="router.push('/library')" />
       <v-app-bar-title class="text-h6 font-weight-regular">
         {{ route.meta.title }}
