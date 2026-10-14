@@ -1,20 +1,29 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 import type { Manga } from '../api/types'
 import type { DisplayMode } from '../stores/preferences'
+import type { ChapterSummary } from '../utils/library'
 import { usePreferencesStore } from '../stores/preferences'
 import { useSuwayomiStore } from '../stores/suwayomi'
 import MangaCard from './MangaCard.vue'
-defineProps<{ items: Manga[]; display: DisplayMode; catalogue?: boolean }>()
-const server = useSuwayomiStore(), preferences = usePreferencesStore(), broken = ref(new Set<number>())
+import MangaBadges from './MangaBadges.vue'
+defineProps<{ items: Manga[]; display: DisplayMode; catalogue?: boolean; summaries?: Record<number, ChapterSummary> }>()
+const server = useSuwayomiStore(), prefs = usePreferencesStore(), broken = ref(new Set<number>()), viewport = useDisplay()
+const columns = computed(() => viewport.width.value > viewport.height.value ? prefs.landscapeColumns : prefs.portraitColumns)
+const gridStyle = computed(() => columns.value ? { gridTemplateColumns: `repeat(${columns.value}, minmax(0, 1fr))` } : {})
 watch(() => server.apiUrl, () => { broken.value = new Set() })
 </script>
 <template>
-  <v-list v-if="display === 'list'" class="py-2" bg-color="transparent" aria-label="Manga list">
-    <v-list-item v-for="item in items" :key="item.id" :to="`/manga/${item.id}`" :title="item.title" min-height="72" class="px-4">
-      <template #prepend><v-img v-if="!broken.has(item.id)" :src="server.thumbnailUrl(item.id)" width="40" height="56" cover rounded="sm" alt="" class="mr-4" @error="broken.add(item.id)" /><v-icon v-else icon="image_not_supported" class="mr-4" /></template>
-      <template #append><div v-if="preferences.showBadges" class="d-flex ga-1 ml-3"><v-chip v-if="catalogue && item.inLibrary" size="small" color="secondary">In library</v-chip><v-chip v-if="!catalogue && (item.downloadCount ?? 0) > 0" size="small" color="tertiary" :aria-label="`${item.downloadCount} downloaded chapters`">{{ item.downloadCount }}</v-chip><v-chip v-if="!catalogue && (item.unreadCount ?? 0) > 0" size="small" color="primary" :aria-label="`${item.unreadCount} unread chapters`">{{ item.unreadCount }}</v-chip></div></template>
-    </v-list-item>
-  </v-list>
-  <div v-else class="library-grid" :aria-label="`${display} manga grid`"><MangaCard v-for="item in items" :key="item.id" :manga="item" :display="display" :catalogue="catalogue" /></div>
+  <div v-if="display === 'list'" class="manga-list" aria-label="Manga list">
+    <div v-for="item in items" :key="item.id" class="manga-list-row">
+      <router-link :to="`/manga/${item.id}`" class="manga-list-link" :aria-label="item.title">
+        <v-img v-if="!broken.has(item.id)" :src="server.thumbnailUrl(item.id)" class="list-cover-image" width="40" min-width="40" height="40" cover rounded="sm" alt="" :class="{ 'in-library-cover': catalogue && item.inLibrary }" @error="broken.add(item.id)" /><span v-else class="list-cover-fallback"><v-icon icon="image_not_supported" /></span>
+        <span class="manga-list-title">{{ item.title }}</span>
+        <MangaBadges :manga="item" :catalogue="catalogue" side="all" />
+      </router-link>
+      <router-link v-if="!catalogue && prefs.showContinue && summaries?.[item.id]?.nextUnread != null" :to="`/manga/${item.id}/read/${summaries[item.id]!.nextUnread}`" class="continue-reading list-continue" :aria-label="`Continue reading ${item.title}`"><v-icon icon="play_arrow" size="16" class="filled-symbol" /></router-link>
+    </div>
+  </div>
+  <div v-else class="library-grid" :style="gridStyle" :aria-label="`${display} manga grid`"><MangaCard v-for="item in items" :key="item.id" :manga="item" :display="display" :catalogue="catalogue" :next-unread="summaries?.[item.id]?.nextUnread" /></div>
 </template>

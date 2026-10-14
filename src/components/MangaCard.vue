@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import type { Manga } from '../api/types'
 import { usePreferencesStore, type DisplayMode } from '../stores/preferences'
 import { useSuwayomiStore } from '../stores/suwayomi'
-const props = defineProps<{ manga: Manga; catalogue?: boolean; display?: DisplayMode }>(), server = useSuwayomiStore(), broken = ref(false)
-const preferences = usePreferencesStore()
-const displayMode = computed(() => props.display || 'compact')
-watch(() => server.apiUrl, () => { broken.value = false })
+import MangaBadges from './MangaBadges.vue'
+const props = withDefaults(defineProps<{ manga: Manga; catalogue?: boolean; display?: DisplayMode; nextUnread?: number | null }>(), { display: 'compact', nextUnread: null })
+const server = useSuwayomiStore(), prefs = usePreferencesStore(), broken = ref(false)
+watch(() => [server.apiUrl, props.manga.id], () => { broken.value = false })
 </script>
 <template>
-  <v-card :to="`/manga/${manga.id}`" :class="['manga-card', `manga-card-${displayMode}`]" rounded="sm" :aria-label="catalogue ? `${manga.title}${manga.inLibrary ? ', in library' : ''}` : `${manga.title}, ${manga.unreadCount ?? 'unknown'} unread chapters`">
-    <v-img v-if="!broken" :src="server.thumbnailUrl(manga.id)" :aspect-ratio="2 / 3" cover alt="" @error="broken = true" />
-    <div v-else class="cover-fallback bg-surface-container d-flex align-center justify-center"><v-icon icon="image_not_supported" size="40" /></div>
-    <div v-if="preferences.showBadges" class="manga-badges d-flex">
-      <span v-if="catalogue && manga.inLibrary" class="bg-secondary-container px-1 py-1 d-flex" aria-label="In library"><v-icon icon="collections_bookmark" size="18" /></span>
-      <span v-if="!catalogue && (manga.downloadCount ?? 0) > 0" class="bg-tertiary px-1 text-caption font-weight-medium" :aria-label="`${manga.downloadCount} downloaded`">{{ manga.downloadCount }}</span>
-      <span v-if="!catalogue && (manga.unreadCount ?? 0) > 0" class="bg-secondary px-1 text-caption font-weight-medium" :aria-label="`${manga.unreadCount} unread`">{{ manga.unreadCount }}</span>
-    </div>
-    <div v-if="displayMode !== 'covers'" class="manga-title"><span class="manga-title-text text-body-2 font-weight-medium">{{ manga.title }}</span></div>
-  </v-card>
+  <div class="manga-tile" :class="`manga-tile-${display}`">
+    <router-link :to="`/manga/${manga.id}`" :class="['manga-card', `manga-card-${display}`]" :aria-label="catalogue ? `${manga.title}${manga.inLibrary ? ', in library' : ''}` : `${manga.title}, ${manga.unreadCount ?? 'unknown'} unread chapters`">
+      <div class="manga-grid-cover">
+        <v-img v-if="!broken" :src="server.thumbnailUrl(manga.id)" :aspect-ratio="2 / 3" cover alt="" class="manga-cover-image" :class="{ 'in-library-cover': catalogue && manga.inLibrary }" @error="broken = true" />
+        <div v-else class="cover-fallback d-flex align-center justify-center"><v-icon icon="image_not_supported" size="40" /></div>
+        <span v-if="display === 'compact'" class="manga-shade" />
+        <MangaBadges :manga="manga" :catalogue="catalogue" side="start" class="grid-badges-start" /><MangaBadges v-if="!catalogue" :manga="manga" side="end" class="grid-badges-end" />
+        <div v-if="display === 'compact'" class="manga-title" :class="{ 'has-continue': !catalogue && prefs.showContinue && nextUnread !== null }"><span class="manga-title-text">{{ manga.title }}</span></div>
+      </div>
+      <div v-if="display === 'comfortable'" class="manga-title"><span class="manga-title-text">{{ manga.title }}</span></div>
+    </router-link>
+    <router-link v-if="!catalogue && prefs.showContinue && nextUnread !== null" :to="`/manga/${manga.id}/read/${nextUnread}`" class="continue-reading" :class="{ 'continue-reading-small': display === 'compact' }" :aria-label="`Continue reading ${manga.title}`"><v-icon icon="play_arrow" size="20" class="filled-symbol" /></router-link>
+  </div>
 </template>

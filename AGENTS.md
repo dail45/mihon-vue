@@ -3,7 +3,7 @@
 ## Working repository
 
 - Target frontend: https://github.com/dail45/mihon-vue
-- Stack: Vue 3 Composition API (`<script setup lang="ts">`), Vite, TypeScript, Pinia, Vue Router, Vuetify 3 with the explicit `md3` blueprint, and ofetch.
+- Stack: Vue 3 Composition API (`<script setup lang="ts">`), Vite, TypeScript, Pinia, Vue Router, Vuetify 4 with native MD3 typography/elevation (no legacy MD2 compatibility blueprint), and ofetch.
 - This is an independently implemented web UI inspired by Mihon, not a Kotlin fork or a complete pixel-perfect port.
 
 ## UI reference: Mihon

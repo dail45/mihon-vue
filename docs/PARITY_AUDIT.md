@@ -1,5 +1,7 @@
 # Mihon presentation parity inventory
 
+This file is an inventory, **not a completed behavioral verification of all listed files**. Follow [SORT_DISPLAY_AUDIT.md](SORT_DISPLAY_AUDIT.md) for the subsequent targeted source-to-web audit and sorting/display regression evidence.
+
 Reference: `446f6df82c390ab760802c2fce3b677bce3f31c1` ([source](https://github.com/mihonapp/mihon/tree/446f6df82c390ab760802c2fce3b677bce3f31c1)).
 
 ## What this establishes

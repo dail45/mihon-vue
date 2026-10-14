@@ -4,7 +4,7 @@ const preferences = usePreferencesStore()
 </script>
 <template>
   <v-container class="pa-0 settings-content">
-    <div class="text-center py-10"><v-icon icon="auto_stories" size="64" color="primary" /><h1 class="text-h5 mt-4">Mihon Vue</h1></div>
+    <div class="text-center py-10"><v-icon icon="auto_stories" size="64" color="primary" /><h1 class="text-headline-small mt-4">Mihon Vue</h1></div>
     <v-list bg-color="transparent" class="py-0">
       <v-list-item prepend-icon="cloud_off" title="Downloaded only" subtitle="Filter library titles with chapters downloaded on Suwayomi" min-height="88" @click="preferences.downloadedOnly = !preferences.downloadedOnly">
         <template #append><v-switch :model-value="preferences.downloadedOnly" color="primary" hide-details inset aria-label="Downloaded only" @click.stop @update:model-value="preferences.downloadedOnly = !!$event" /></template>

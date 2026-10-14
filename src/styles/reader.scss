@@ -1,3 +1,4 @@
+@layer app-components {
 .reader {
   position: fixed; inset: 0; z-index: 100; color: #f4f2f6; background: #000; overflow: hidden;
   --reader-chrome: #202024;
@@ -27,4 +28,6 @@
   .v-btn.bg-primary, .v-btn.text-primary { color: rgb(var(--v-theme-on-primary)); }
   .v-slider { flex: 1; }
   .v-slider-track__background { opacity: .55; background-color: #c5c6d0 !important; }
+}
+
 }

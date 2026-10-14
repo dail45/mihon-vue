@@ -85,16 +85,16 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKey); cancelAnim
   <section class="reader v-theme--mihonDark" :class="[`reader-background-${preferences.background}`, { 'reader-fit-width': preferences.fit === 'width', 'reader-webtoon': modeIsWebtoon }]" aria-label="Manga reader">
     <div v-show="controls" class="reader-topbar" role="toolbar" aria-label="Reader controls">
       <v-btn icon="arrow_back" variant="text" :to="`/manga/${route.params.id}`" aria-label="Back to manga" />
-      <div class="reader-heading"><h1 class="text-subtitle-1 font-weight-medium text-truncate">{{ reader.manga?.title || 'Reader' }}</h1><p class="text-body-2 text-truncate">{{ reader.chapter?.name || (reader.loading ? 'Loading chapter…' : 'Chapter unavailable') }}</p></div>
+      <div class="reader-heading"><h1 class="text-body-large font-weight-medium text-truncate">{{ reader.manga?.title || 'Reader' }}</h1><p class="text-body-medium text-truncate">{{ reader.chapter?.name || (reader.loading ? 'Loading chapter…' : 'Chapter unavailable') }}</p></div>
       <v-menu><template #activator="{ props }"><v-btn v-bind="props" icon="bookmark_border" variant="text" :disabled="!reader.chapter || !!reader.saveError || !!reader.pendingWrites" aria-label="Chapter bookmark actions" /></template><v-list><v-list-item title="Add bookmark on server" prepend-icon="bookmark_add" @click="reader.bookmark(true)"/><v-list-item title="Remove bookmark on server" prepend-icon="bookmark_remove" @click="reader.bookmark(false)"/></v-list></v-menu>
       <v-btn icon="settings" variant="text" aria-label="Reader settings" @click="settings = true" />
     </div>
     <div v-if="reader.loading" class="reader-message" role="status"><v-progress-circular indeterminate color="primary" size="40"/><p class="mt-4">Loading chapter from Suwayomi…</p></div>
-    <div v-else-if="reader.error" class="reader-message" role="alert"><v-icon icon="cloud_off" size="56"/><h2 class="text-h6 mt-4">Unable to open chapter</h2><p class="mt-2 mb-6">{{ reader.error }}</p><v-btn color="primary" variant="flat" rounded="pill" @click="reader.open(server.apiUrl, Number(route.params.id), Number(route.params.chapterIndex))">Try again</v-btn></div>
-    <div v-else-if="!reader.pageCount" class="reader-message"><v-icon icon="auto_stories" size="56"/><h2 class="text-h6 mt-4">No pages returned</h2><p class="mt-2">Suwayomi returned an empty page list for this chapter.</p></div>
+    <div v-else-if="reader.error" class="reader-message" role="alert"><v-icon icon="cloud_off" size="56"/><h2 class="text-title-large mt-4">Unable to open chapter</h2><p class="mt-2 mb-6">{{ reader.error }}</p><v-btn color="primary" variant="flat" rounded="pill" @click="reader.open(server.apiUrl, Number(route.params.id), Number(route.params.chapterIndex))">Try again</v-btn></div>
+    <div v-else-if="!reader.pageCount" class="reader-message"><v-icon icon="auto_stories" size="56"/><h2 class="text-title-large mt-4">No pages returned</h2><p class="mt-2">Suwayomi returned an empty page list for this chapter.</p></div>
     <div v-else ref="viewport" class="reader-viewport" @scroll.passive="scheduleScroll" @touchstart.passive="touchDown" @touchend.passive="touchUp">
       <template v-if="!modeIsWebtoon">
-        <div v-if="failed.has(reader.pageIndex)" class="reader-message" role="alert"><v-icon icon="broken_image" size="48"/><h2 class="text-h6 mt-4">Page {{ reader.pageIndex + 1 }} could not load</h2><p class="mt-2 mb-4">The source or server may be unavailable. Check your connection and Suwayomi logs, or retry this page.</p><v-btn color="primary" variant="flat" @click="retryImage(reader.pageIndex)">Retry page</v-btn></div>
+        <div v-if="failed.has(reader.pageIndex)" class="reader-message" role="alert"><v-icon icon="broken_image" size="48"/><h2 class="text-title-large mt-4">Page {{ reader.pageIndex + 1 }} could not load</h2><p class="mt-2 mb-4">The source or server may be unavailable. Check your connection and Suwayomi logs, or retry this page.</p><v-btn color="primary" variant="flat" @click="retryImage(reader.pageIndex)">Retry page</v-btn></div>
         <button v-else class="reader-page-surface" aria-label="Toggle reading controls" @click="controls = !controls">
           <img :key="`${route.params.chapterIndex}-${reader.pageIndex}-${revisions[reader.pageIndex] || 0}`" :src="reader.pageUrl(reader.pageIndex, revisions[reader.pageIndex])" :alt="`Page ${reader.pageIndex + 1} of ${reader.pageCount}`" :data-page="reader.pageIndex" class="reader-page" @load="imageLoaded(Number(($event.target as HTMLImageElement).dataset.page), $event)" @error="imageFailed(Number(($event.target as HTMLImageElement).dataset.page), $event)" />
           <span v-if="!loaded.has(reader.pageIndex)" class="reader-image-loading" role="status">Loading page {{ reader.pageIndex + 1 }}…</span>
@@ -107,14 +107,14 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKey); cancelAnim
         </div>
       </div>
     </div>
-    <div v-if="reader.chapter && !reader.loading && reader.pageCount && !controls" class="reader-page-indicator text-body-2" aria-live="polite">{{ reader.pageIndex + 1 }} / {{ reader.pageCount }}</div>
+    <div v-if="reader.chapter && !reader.loading && reader.pageCount && !controls" class="reader-page-indicator text-body-medium" aria-live="polite">{{ reader.pageIndex + 1 }} / {{ reader.pageCount }}</div>
     <div v-show="controls" v-if="reader.chapter && reader.pageCount" class="reader-bottom" role="region" aria-label="Page navigation">
-      <v-alert v-if="reader.saveError" type="warning" variant="tonal" class="mb-3 text-body-2">{{ reader.saveError }}</v-alert>
-      <p class="text-center text-body-2 mb-1">{{ reader.pageIndex + 1 }} / {{ reader.pageCount }}</p>
-      <p class="text-body-2 reader-save-status mb-1" role="status">{{ reader.notice || saveLabel }}</p>
+      <v-alert v-if="reader.saveError" type="warning" variant="tonal" class="mb-3 text-body-medium">{{ reader.saveError }}</v-alert>
+      <p class="text-center text-body-medium mb-1">{{ reader.pageIndex + 1 }} / {{ reader.pageCount }}</p>
+      <p class="text-body-medium reader-save-status mb-1" role="status">{{ reader.notice || saveLabel }}</p>
       <div class="d-flex align-center ga-2" :class="{ 'flex-row-reverse': preferences.mode === 'rtl' }">
         <v-btn :icon="preferences.mode === 'rtl' ? 'skip_next' : 'skip_previous'" variant="text" :disabled="!reader.previousChapter" aria-label="Previous chapter" @click="reader.previousChapter && goChapter(reader.previousChapter.index)"/>
-        <span class="text-body-2">1</span><v-slider :reverse="preferences.mode === 'rtl'" :model-value="reader.pageIndex" :min="0" :max="Math.max(0, reader.pageCount - 1)" :step="1" :disabled="reader.pageCount <= 1" color="primary" track-color="on-surface-variant" hide-details aria-label="Page position" @update:model-value="goPage"/><span class="text-body-2">{{ reader.pageCount }}</span>
+        <span class="text-body-medium">1</span><v-slider :reverse="preferences.mode === 'rtl'" :model-value="reader.pageIndex" :min="0" :max="Math.max(0, reader.pageCount - 1)" :step="1" :disabled="reader.pageCount <= 1" color="primary" track-color="on-surface-variant" hide-details aria-label="Page position" @update:model-value="goPage"/><span class="text-body-medium">{{ reader.pageCount }}</span>
         <v-btn :icon="preferences.mode === 'rtl' ? 'skip_previous' : 'skip_next'" variant="text" :disabled="!reader.nextChapter" aria-label="Next chapter" @click="reader.nextChapter && goChapter(reader.nextChapter.index)"/>
       </div>
       <div class="d-flex align-center justify-space-between">

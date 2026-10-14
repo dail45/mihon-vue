@@ -1,0 +1,2 @@
+/* Loaded before Vuetify: app component geometry must not override spacing utilities. */
+@layer vuetify-core, vuetify-components, vuetify-overrides, app-base, app-components, vuetify-utilities, app-utilities, vuetify-final;

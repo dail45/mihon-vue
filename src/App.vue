@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDisplay, useTheme } from 'vuetify'
+import { version as vuetifyVersion, useDisplay, useTheme } from 'vuetify'
 import { usePreferencesStore } from './stores/preferences'
 import { useSuwayomiStore } from './stores/suwayomi'
 const route = useRoute(), router = useRouter(), preferences = usePreferencesStore(), server = useSuwayomiStore()
@@ -35,18 +35,18 @@ function back() {
 }
 </script>
 <template>
-  <v-app>
+  <v-app :data-vuetify-version="vuetifyVersion">
     <a class="skip-link" href="#main-content">Skip to content</a>
     <v-navigation-drawer v-if="tabletUi && !route.meta.detail" permanent width="80" color="surface-container" elevation="0" class="mihon-rail" aria-label="Main navigation">
       <div class="d-flex flex-column justify-center h-100">
         <v-btn v-for="item in navItems" :key="item.path" :to="item.path" :active="activeNav === item.path" :color="activeNav === item.path ? 'on-secondary-container' : 'on-surface-variant'" :aria-label="item.title" :aria-current="activeNav === item.path ? 'page' : undefined" variant="text" height="72" rounded="0" class="pa-0 rail-button">
-          <span class="navigation-icon" :class="{ 'bg-secondary-container': activeNav === item.path }"><v-icon :icon="item.icon" /></span><span class="text-body-2 mt-1">{{ item.title }}</span>
+          <span class="navigation-icon" :class="{ 'bg-secondary-container': activeNav === item.path }"><v-icon :icon="item.icon" /></span><span class="text-body-medium mt-1">{{ item.title }}</span>
         </v-btn>
       </div>
     </v-navigation-drawer>
     <v-app-bar v-if="!route.meta.reader && !route.meta.catalogue && !['/library', '/browse', '/updates', '/more'].includes(route.path)" flat height="64" color="surface" class="app-toolbar">
       <v-btn v-if="route.meta.detail" icon="arrow_back" :aria-label="route.meta.catalogue ? 'Back to sources' : 'Back'" @click="back" />
-      <v-app-bar-title class="text-h6 font-weight-regular">
+      <v-app-bar-title class="text-title-large font-weight-regular">
         {{ toolbarTitle }}
         <v-chip v-if="route.path === '/library' && server.connected" size="small" class="ml-2" variant="tonal" :aria-label="`${server.totalLibraryCount} manga in library`">{{ server.totalLibraryCount }}</v-chip>
       </v-app-bar-title>
@@ -55,7 +55,7 @@ function back() {
     <v-bottom-navigation v-if="!route.meta.detail && !tabletUi" :model-value="activeNav" grow height="80" color="on-secondary-container" bg-color="surface-container" elevation="0" class="mihon-navigation" aria-label="Main navigation">
       <v-btn v-for="item in navItems" :key="item.path" :value="item.path" :to="item.path" :aria-label="item.title" :aria-current="activeNav === item.path ? 'page' : undefined">
         <span class="navigation-icon" :class="{ 'bg-secondary-container': activeNav === item.path }"><v-icon :icon="item.icon" /></span>
-        <span class="mt-1 text-body-2 font-weight-medium">{{ item.title }}</span>
+        <span class="mt-1 text-body-medium font-weight-medium">{{ item.title }}</span>
       </v-btn>
     </v-bottom-navigation>
   </v-app>

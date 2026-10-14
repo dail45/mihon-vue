@@ -1,35 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { usePreferencesStore } from '../stores/preferences'
+import { useSuwayomiStore } from '../stores/suwayomi'
+import { librarySortOptions } from '../utils/library'
+import AdaptiveSettingsSheet from './AdaptiveSettingsSheet.vue'
+import LibraryDisplaySettings from './LibraryDisplaySettings.vue'
+import TriStateRow from './TriStateRow.vue'
 const open = defineModel<boolean>({ required: true })
-const unread = defineModel<'all' | 'include' | 'exclude'>('unread', { required: true })
-const completed = defineModel<'all' | 'include' | 'exclude'>('completed', { required: true })
-const sort = defineModel<'title' | 'unread' | 'total' | 'added'>('sort', { required: true })
-const descending = defineModel<boolean>('descending', { required: true })
-const tab = ref('filter'), preferences = usePreferencesStore()
-const states = [{ title: 'Any', value: 'all' }, { title: 'Only', value: 'include' }, { title: 'Exclude', value: 'exclude' }]
+const tab = ref('filter'), prefs = usePreferencesStore(), server = useSuwayomiStore()
+const sort = computed(() => prefs.getLibrarySort(server.apiUrl, server.activeCategoryId))
+const downloaded = computed({ get: () => prefs.downloadedOnly ? 'include' as const : prefs.filters.downloaded, set: v => { if (!prefs.downloadedOnly) prefs.filters.downloaded = v } })
 </script>
 <template>
-  <v-bottom-sheet v-model="open" max-width="640" scrollable>
-    <v-card rounded="t-xl" color="surface-container-high">
-      <v-card-title>Library settings</v-card-title>
-      <v-tabs v-model="tab" color="primary" grow><v-tab value="filter">Filter</v-tab><v-tab value="sort">Sort</v-tab><v-tab value="display">Display</v-tab></v-tabs>
-      <v-card-text class="pt-6" style="min-height: 264px">
-        <template v-if="tab === 'filter'">
-          <v-switch v-model="preferences.downloadedOnly" label="Downloaded chapters only" color="primary" hide-details class="mb-4" />
-          <v-select v-model="unread" label="Unread chapters" :items="states" hide-details class="mb-4" />
-          <v-select v-model="completed" label="Completed titles" :items="states" hide-details />
-        </template>
-        <template v-else-if="tab === 'sort'">
-          <v-radio-group v-model="sort" hide-details><v-radio value="title" label="Alphabetically" /><v-radio value="total" label="Total chapters" /><v-radio value="unread" label="Unread chapters" /><v-radio value="added" label="Date added" /></v-radio-group>
-          <v-switch v-model="descending" label="Descending order" color="primary" hide-details />
-        </template>
-        <template v-else>
-          <v-radio-group v-model="preferences.libraryDisplay" label="Display mode" hide-details><v-radio value="compact" label="Compact grid" /><v-radio value="comfortable" label="Comfortable grid" /><v-radio value="covers" label="Cover-only grid" /><v-radio value="list" label="List" /></v-radio-group>
-          <v-switch v-model="preferences.showBadges" label="Show chapter badges" color="primary" hide-details />
-        </template>
-      </v-card-text>
-      <v-card-actions><v-spacer /><v-btn color="primary" @click="open = false">Done</v-btn></v-card-actions>
-    </v-card>
-  </v-bottom-sheet>
+  <AdaptiveSettingsSheet v-model="open" v-model:tab="tab" title="Library settings" :tabs="['Filter', 'Sort', 'Display']">
+    <div v-if="tab === 'filter'" class="py-2"><TriStateRow v-model="downloaded" label="Downloaded" :disabled="prefs.downloadedOnly" /><TriStateRow v-model="prefs.filters.unread" label="Unread" /><TriStateRow v-model="prefs.filters.started" label="Started" /><TriStateRow v-model="prefs.filters.bookmarked" label="Bookmarked" /><TriStateRow v-model="prefs.filters.completed" label="Completed" /><p v-if="prefs.downloadedOnly" class="settings-note">Downloaded-only mode in More locks the Downloaded filter.</p></div>
+    <div v-else-if="tab === 'sort'" class="py-2">
+      <template v-for="(option, i) in librarySortOptions" :key="option.value">
+        <button v-if="i === 3" type="button" class="settings-row" disabled aria-label="Last update unavailable"><span class="settings-icon-space" /><span>Last update <small class="d-block">Unavailable in the integrated Suwayomi REST data</small></span></button>
+        <button type="button" class="settings-row" :data-sort="option.value" :aria-label="option.label" :aria-pressed="sort.type === option.value" :aria-description="sort.type === option.value ? option.value === 'random' ? 'Reshuffle' : sort.descending ? 'Descending; activate to switch to ascending' : 'Ascending; activate to switch to descending' : 'Activate to select this ordering'" @click="prefs.chooseLibrarySort(server.apiUrl, server.activeCategoryId, option.value)"><v-icon v-if="sort.type === option.value" :icon="option.value === 'random' ? 'refresh' : sort.descending ? 'arrow_downward' : 'arrow_upward'" color="primary" /><span v-else class="settings-icon-space" /><span>{{ option.label }}</span></button>
+      </template>
+      <p class="settings-note">{{ prefs.categorizedSort ? 'Sorting is saved for this category on this server.' : 'Sorting is shared by all categories.' }} Tap the selected order again to reverse it; Random reshuffles.</p>
+    </div>
+    <LibraryDisplaySettings v-else />
+  </AdaptiveSettingsSheet>
 </template>

@@ -36,7 +36,7 @@ try {
       await page.screenshot({path:`${output}/${size}-${state}.png`,animations:'disabled'})
       report.captures.push(`${size}-${state}`)
     }
-    await page.goto(`${base}/library`); await page.locator('.manga-card').first().waitFor({timeout:30000}); await capture('library')
+    await page.goto(`${base}/library`); await page.locator('.manga-card').first().waitFor({timeout:30000}); report.vuetifyVersion = await page.locator('.v-application').getAttribute('data-vuetify-version'); if (!report.vuetifyVersion?.startsWith('4.')) throw Error('Live acceptance requires Vuetify 4'); await capture('library')
     const href=await page.locator('.manga-card').first().getAttribute('href'), id=href.split('/')[2]
     const sourceId=await page.evaluate(async({api,id})=>{const r=await fetch(`${api}/manga/${id}/full?onlineFetch=false`,{credentials:'include'});if(!r.ok)throw Error('Manga lookup failed');return (await r.json()).sourceId},{api,id})
     await page.getByRole('button',{name:'Open library search'}).click(); await capture('library-search'); await page.getByRole('button',{name:'Close search',exact:true}).click()
@@ -44,7 +44,7 @@ try {
       await page.getByRole('button',{name:'Filter and sort library'}).click(); await page.getByRole('tab',{name:tab,exact:true}).click(); await capture(`library-${tab.toLowerCase()}`); await page.getByRole('button',{name:'Done',exact:true}).click()
     }
     for(const [label,state] of [['Comfortable grid','comfortable'],['Cover-only grid','covers'],['List','list'],['Compact grid','compact']]) {
-      await page.getByRole('button',{name:'Filter and sort library'}).click(); await page.getByRole('tab',{name:'Display',exact:true}).click(); await page.getByRole('radio',{name:label,exact:true}).check(); await page.getByRole('button',{name:'Done',exact:true}).click(); if(state!=='compact')await capture(`library-${state}`)
+      await page.getByRole('button',{name:'Filter and sort library'}).click(); await page.getByRole('tab',{name:'Display',exact:true}).click(); await page.getByRole('button',{name:label,exact:true}).click(); await page.getByRole('button',{name:'Done',exact:true}).click(); if(state!=='compact')await capture(`library-${state}`)
     }
     await page.goto(`${base}${href}`); await page.locator('.manga-detail h1').waitFor({timeout:30000}); await capture('manga')
     await page.getByRole('button',{name:'View full cover'}).click(); await capture('cover'); await page.getByRole('button',{name:'Close cover'}).click()

@@ -29,11 +29,11 @@ The client sends session cookies with requests. Cross-origin APIs require approp
 
 ## Implemented
 
-- Explicit Vuetify **`md3` blueprint** and Mihon's default light/dark color tokens.
+- **Vuetify 4** native MD3 typography/elevation and Mihon's default light/dark color tokens.
 - System/light/dark theme preferences under Settings → Appearance; self-hosted Roboto and rounded Material Symbols.
 - 64px top app bar, adaptive tablet rail from 720 CSS px, and 80px mobile five-destination bottom navigation: Library, Updates, History, Browse, More.
-- Server-backed library categories and compact, comfortable, cover-only and list display modes with unread/download badges.
-- Inline toolbar search; Filter/Sort/Display library sheet; unread/completion/download filters; title/unread/total/date-added sorts; loading/error/empty states and retry.
+- Server-backed library categories and compact, comfortable, cover-only and list display modes; shared portrait/landscape column controls; independent unread/download/local/language badges; optional continue-reading buttons and category counts.
+- Inline toolbar search; Filter/Sort/Display library sheet; tri-state downloaded/unread/started/bookmarked/completed filters; eight sort modes (with unsupported Last update explicitly disabled); loading/error/empty states and retry.
 - Manga details, expandable descriptions, full-cover viewer, searchable/sortable/filterable chapter listing, and server-backed add/remove library membership (confirmation before removal).
 - Full-viewport reader with left-to-right/right-to-left paging, webtoon scrolling, page slider, chapter sheet, touch swipes, keyboard controls, fit-page/fit-width scaling, and background preferences.
 - Manual and opt-in automatic progress writes plus explicit server bookmark commands.
@@ -49,7 +49,7 @@ The client sends session cookies with requests. Cross-origin APIs require approp
 
 This is an **incremental independent implementation**, not a complete pixel-perfect clone. History explicitly identifies itself as not implemented. Updates is a limited read-only recent-chapter feed; calendar, multi-select and batch commands are absent. Source-specific advanced filters and global multi-source search are not implemented. Downloads, selection mode, category editing, tracking, authentication UI, and background subscriptions are not implemented. The reader does not yet implement double-page spreads, border cropping, image filters, rotation locking, or advanced zoom/pan controls.
 
-Mihon's Compose sources were inspected for color roles, cover overlays, grid spacing, category tabs, and navigation structure. Pixel-perfect parity against native Android screenshots has **not** been established. The web rail uses viewport width ≥720 CSS px; Android uses a configurable smallest-screen-width check, so this is an adaptation rather than exact platform parity. See [the file-by-file parity inventory](docs/PARITY_AUDIT.md) for all 190 files in the pinned presentation directory and explicit gaps.
+Mihon's Compose sources were inspected for color roles, cover overlays, grid spacing, category tabs, and navigation structure. Pixel-perfect parity against native Android screenshots has **not** been established. Vuetify 4 supplies native MD3 typography/elevation; no v3 compatibility blueprint is enabled. This remains a web adaptation, not a certification of every custom component. See [the Vuetify 4 migration record](docs/VUETIFY4_MIGRATION.md). See the [targeted behavioral file audit](docs/SORT_DISPLAY_AUDIT.md) for sorting/display corrections, test evidence and remaining gaps. The web rail uses viewport width ≥720 CSS px; Android uses a configurable smallest-screen-width check, so this is an adaptation rather than exact platform parity. See [the file-by-file parity inventory](docs/PARITY_AUDIT.md) for all 190 files in the pinned presentation directory and explicit gaps.
 
 Suwayomi's inspected master revision disables its OpenAPI plugin and uses stub documentation builders. Contracts were hand-written from the actual REST controllers/models, **not** generated from a working Swagger endpoint. See [the pinned references and endpoint map](docs/REFERENCES.md). Verify against your installed server version; initial contracts were written without a live server; later read-only checks against the user-provided server are recorded in `docs/VALIDATION.md`.
 
@@ -58,7 +58,7 @@ Suwayomi's inspected master revision disables its OpenAPI plugin and uses stub d
 ```text
 src/api/             REST client, DTO contracts, error translation
 src/stores/          In-memory server state; harmless UI preferences
-src/plugins/         Vuetify MD3, themes, Material Symbols icon set
+src/plugins/         Vuetify 4, themes, Material Symbols icon set
 src/router/          Lazy-loaded Vue Router screens
 src/components/      Search toolbar, manga collections/cards, sheets, empty state, connection dialog
 src/views/           Library, updates, manga, reader, catalogue, settings, more, planned history

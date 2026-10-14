@@ -28,21 +28,21 @@ onUnmounted(() => updates.dispose())
       <v-btn icon="refresh" variant="text" aria-label="Reload updates feed" :loading="updates.loading" @click="updates.refresh(server.apiUrl)" />
     </SearchAppBar>
     <v-progress-linear v-if="updates.loading" color="primary" indeterminate aria-label="Loading updates" />
-    <p class="text-body-2 text-on-surface-variant px-4 py-3">Recent library chapters · {{ updates.entries.length }} loaded<span v-if="updates.hasNextPage"> · More available</span></p>
+    <p class="text-body-medium text-on-surface-variant px-4 py-3">Recent library chapters · {{ updates.entries.length }} loaded<span v-if="updates.hasNextPage"> · More available</span></p>
     <EmptyState v-if="updates.error && !updates.entries.length" icon="cloud_off" title="Updates unavailable" :description="updates.error"><v-btn color="primary" @click="updates.refresh(server.apiUrl)">Try again</v-btn></EmptyState>
     <EmptyState v-else-if="!updates.loading && !updates.entries.length" icon="update" title="No recent updates" description="Suwayomi returned no recent library chapters. This refresh reloads the feed; it does not start a server library update." />
     <EmptyState v-else-if="!updates.loading && !visible.length" icon="search_off" title="No matching updates" description="Search and filters apply to loaded chapters. Clear them or load more below."><v-btn variant="text" color="primary" @click="query = ''; downloadedOnly = false">Clear filters</v-btn></EmptyState>
     <div v-else class="updates-feed">
       <section v-for="group in grouped" :key="group.key" :aria-label="group.label">
-        <h2 class="text-subtitle-2 text-primary px-4 pt-4 pb-2">{{ group.label }}</h2>
+        <h2 class="text-title-small text-primary px-4 pt-4 pb-2">{{ group.label }}</h2>
         <div v-for="entry in group.entries" :key="`${entry.manga.id}:${entry.chapter.id}`" class="update-row d-flex align-center px-4">
           <router-link :to="`/manga/${entry.manga.id}`" class="update-cover flex-shrink-0" :aria-label="`Open ${entry.manga.title}`">
             <v-img v-if="!broken.has(entry.manga.id)" :src="server.thumbnailUrl(entry.manga.id)" width="44" height="44" cover rounded="sm" alt="" @error="broken.add(entry.manga.id)" />
             <v-icon v-else icon="image_not_supported" />
           </router-link>
           <router-link :to="`/manga/${entry.manga.id}/read/${entry.chapter.index}`" class="update-text flex-grow-1 ml-4 py-2" :aria-label="`Read ${entry.chapter.name} — ${entry.manga.title}`">
-            <p class="text-body-2 text-truncate">{{ entry.manga.title }}</p>
-            <p class="text-body-2 text-on-surface-variant text-truncate">{{ entry.chapter.name }}</p>
+            <p class="text-body-medium text-truncate">{{ entry.manga.title }}</p>
+            <p class="text-body-medium text-on-surface-variant text-truncate">{{ entry.chapter.name }}</p>
           </router-link>
           <v-icon v-if="entry.chapter.downloaded" icon="download_done" color="primary" size="22" class="ml-3" aria-label="Downloaded" />
         </div>
@@ -51,7 +51,7 @@ onUnmounted(() => updates.dispose())
     <div v-if="updates.entries.length" class="pa-4 text-center">
       <v-alert v-if="updates.error" type="error" variant="tonal" class="mb-4 text-start">{{ updates.error }} Previously loaded chapters are retained.</v-alert>
       <v-btn v-if="updates.hasNextPage" :loading="updates.loading" color="primary" variant="tonal" @click="updates.loadMore">{{ updates.error ? 'Retry next page' : 'Load more updates' }}</v-btn>
-      <p v-else class="text-body-2 text-on-surface-variant">End of recent updates</p>
+      <p v-else class="text-body-medium text-on-surface-variant">End of recent updates</p>
     </div>
   </section>
 </template>
