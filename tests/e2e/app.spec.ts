@@ -11,6 +11,7 @@ async function mockServer(page: Page, mode: 'populated' | 'empty' | 'error' = 'p
     else if (path === '/api/v1/category/19') body = mode === 'empty' ? [] : [manga(4, 'Reading category title', 1)]
     else if (path.endsWith('/full')) body = manga(1, 'A journey beyond the stars', 5)
     else if (path.endsWith('/chapters')) body = [chapter]
+    else if (path.startsWith('/api/v1/update/recentChapters/')) body = { page: [], hasNextPage: false }
     else if (path === '/api/v1/source/list') body = [source]
     else if (path.endsWith('/thumbnail')) { await route.fulfill({ status: 404 }); return }
     await route.fulfill({ json: body })
@@ -31,12 +32,14 @@ async function noOverflow(page: Page) {
 test('library, search, filters, category tabs and manga details work', async ({ page }) => {
   await mockServer(page); await page.goto('/library')
   await expect(page.getByRole('link', { name: /A journey/ })).toBeVisible()
+  await page.getByRole('button', { name: 'Open library search' }).click()
   await page.getByLabel('Search library').fill('quiet')
   await expect(page.getByRole('link', { name: /The quiet city/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /A journey/ })).toHaveCount(0)
   await page.getByLabel('Search library').fill('')
   await page.getByLabel('Filter and sort library').click()
-  await page.getByLabel('Unread chapters only').check()
+  await page.getByRole('combobox', { name: 'Unread chapters', exact: true }).press('Enter')
+  await page.getByRole('option', { name: 'Only', exact: true }).click()
   await page.getByRole('button', { name: 'Done', exact: true }).click()
   await expect(page.getByRole('link', { name: /The quiet city/ })).toHaveCount(0)
   await page.getByRole('tab', { name: /Reading/ }).click()
@@ -53,7 +56,10 @@ test('library, search, filters, category tabs and manga details work', async ({ 
 test('connection error, address validation, and theme toggle', async ({ page }) => {
   await mockServer(page, 'error'); await page.goto('/library')
   await expect(page.getByRole('heading', { name: 'Your library, on your server' })).toBeVisible()
-  await page.getByRole('button', { name: 'Use dark theme' }).click()
+  await expect(page.locator('.app-toolbar [aria-label="Server connection settings"]')).toHaveCount(0)
+  await page.goto('/settings/appearance')
+  await page.getByRole('radio', { name: 'Dark', exact: true }).check()
+  await page.goto('/library')
   await expect(page.locator('.v-application')).toHaveClass(/v-theme--mihonDark/)
   await page.getByRole('button', { name: 'Connect to Suwayomi' }).click()
   await page.getByLabel('REST API URL').fill('javascript:bad')
@@ -65,7 +71,7 @@ test('empty library and each navigation route are honest and usable', async ({ p
   await mockServer(page, 'empty'); await page.goto('/library')
   await expect(page.getByRole('heading', { name: 'Your library is empty' })).toBeVisible()
   await page.getByRole('link', { name: 'Updates', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Updates is not implemented yet' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'No recent updates' })).toBeVisible()
   await page.getByRole('link', { name: 'History', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'History is not implemented yet' })).toBeVisible()
   await page.getByRole('link', { name: 'Browse', exact: true }).click()

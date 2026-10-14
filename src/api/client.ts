@@ -1,5 +1,5 @@
 import { ofetch } from 'ofetch'
-import type { Category, Chapter, ChapterPatch, Manga, PagedMangaList, Source } from './types'
+import type { Category, Chapter, ChapterPatch, Manga, PagedMangaList, RecentChapters, Source } from './types'
 export const DEFAULT_API_URL = import.meta.env.VITE_SUWAYOMI_API_URL || 'http://localhost:4567/api/v1'
 export function normalizeApiUrl(value: string): string {
   const url = value.trim().replace(/\/+$/, '')
@@ -13,6 +13,7 @@ export function normalizeApiUrl(value: string): string {
 export function createSuwayomiApi(baseURL: string) {
   const api = ofetch.create({ baseURL: normalizeApiUrl(baseURL), timeout: 15000, retry: 0, credentials: 'include' })
   return {
+    recentChapters: (page = 0) => api<RecentChapters>(`/update/recentChapters/${page}`),
     categories: () => api<Category[]>('/category'),
     categoryManga: (id: number) => api<Manga[]>(`/category/${id}`),
     manga: (id: number, onlineFetch = false) => api<Manga>(`/manga/${id}/full`, { query: { onlineFetch } }),

@@ -17,6 +17,10 @@ Copyright (C) Contributors to the Suwayomi project.
 
 Suwayomi-Server source is licensed under MPL-2.0. Its REST routes and DTO definitions were used as API documentation; no backend Kotlin implementation is incorporated here. Pinned references are recorded in `docs/REFERENCES.md`.
 
+## Roboto
+
+The bundled `@fontsource/roboto` version uses SIL Open Font License 1.1. Copyright 2011 The Roboto Project Authors. A copy is included in `licenses/Roboto-OFL-1.1.txt`.
+
 ## Dependencies
 
 Vue, Vue Router, Pinia, Vuetify, ofetch, Vite, Roboto, and test/build dependencies retain their respective upstream licenses. Dependency licenses are available in their installed npm packages. This notice does not select a project-wide license for the original frontend code.

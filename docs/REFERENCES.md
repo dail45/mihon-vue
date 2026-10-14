@@ -86,3 +86,12 @@ Same pinned Mihon revision, inspected for compact grid, paged loading, and recov
 | GET | `/source/{sourceId}/search?searchTerm=…&pageNum=…` | `PagedMangaList`; query encoded by ofetch |
 
 All three return `mangaList: Manga[]` and `hasNextPage: boolean`. Source IDs remain strings end-to-end. Client pagination advances only after success, deduplicates manga IDs, and ignores stale responses on source/query/server changes or screen disposal. No client source scraping, extension management, catalogue POST filters, or global search was added.
+
+
+## Parity increment reference details
+
+- [Source listing FilterChip row](https://github.com/mihonapp/mihon/blob/446f6df82c390ab760802c2fce3b677bce3f31c1/app/src/main/java/eu/kanade/tachiyomi/ui/browse/source/browse/BrowseSourceScreen.kt): Popular uses a filled Favorite leading icon; Latest uses Verified; these are filter chips, not tab indicators.
+- [BrowseSourceToolbar](https://github.com/mihonapp/mihon/blob/446f6df82c390ab760802c2fce3b677bce3f31c1/app/src/main/java/eu/kanade/presentation/browse/components/BrowseSourceToolbar.kt) and [SearchToolbar](https://github.com/mihonapp/mihon/blob/446f6df82c390ab760802c2fce3b677bce3f31c1/app/src/main/java/eu/kanade/presentation/components/AppBar.kt): search replaces the app-bar title; display mode remains a toolbar action. The browser implementation uses keyboard submit and a clear action. No native embedded WebView is provided; an explicit external website link is offered when available.
+- `GET /update/recentChapters/{pageNum}` begins at 0 and returns `{ page: MangaChapter[], hasNextPage }`. Chapter `fetchedAt` is epoch seconds, unlike millisecond `uploadDate`. Used for the recent updates feed, not as a library-update mutation.
+- [LazyLibraryGrid](https://github.com/mihonapp/mihon/blob/446f6df82c390ab760802c2fce3b677bce3f31c1/app/src/main/java/eu/kanade/presentation/library/components/LazyLibraryGrid.kt): adaptive 128dp minimum cells, 8dp content inset and 4dp spacing. CSS translates these values to px; native density/font metrics and user-selected column settings are not replicated.
+- [Complete presentation-file mapping](PARITY_AUDIT.md), with conservative partial/missing statuses rather than a parity claim.

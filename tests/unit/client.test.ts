@@ -40,6 +40,11 @@ describe('REST client', () => {
     expect(search.searchParams.get('searchTerm')).toBe('stars & moon')
     expect(search.searchParams.get('pageNum')).toBe('3')
   })
+  it('loads the zero-indexed recent chapter feed', async () => {
+    await createSuwayomiApi(address).recentChapters(); await createSuwayomiApi(address).recentChapters(2)
+    expect(requests).toContain('GET /api/v1/update/recentChapters/0')
+    expect(requests).toContain('GET /api/v1/update/recentChapters/2')
+  })
   it('uses a source index and form-encoded chapter patches', async () => {
     const api = createSuwayomiApi(address)
     await api.chapter(12, 7)

@@ -40,3 +40,23 @@ Not verified: live progress/bookmark persistence, all live titles/pages/sources,
 Per the user's request, final acceptance uses **only the real Suwayomi server**, not the synthetic QA source. `scripts/capture-live.mjs` captured 24 actual screens: 12 each at 390×844 and 1440×1000. Library covers, manga metadata, reader pages, hidden controls, page 2, settings, Webtoon, the real chapter sheet, Popular, Latest, search, and dark search were individually inspected. The final report recorded no runtime errors, no blocked/attempted client mutations, no failed mounted visible images, and no horizontal overflow. Images remain outside Git; no live manga content was committed.
 
 The first real manga capture exposed a stable REST compatibility issue: `source: null` produced an incorrect “Source unavailable” label even with a working `sourceId`. The detail screen now resolves a missing source object through the installed-source list; the corrected MangaDex (RU) label was verified on the real mobile and desktop captures. `npm run build` passed again after this fix. The 24 unit / 22 fixture browser results above were obtained before this final label-only correction and are not substituted for live acceptance evidence.
+
+## 0.4.0 parity and toolbar increment
+
+Final code checks:
+
+- `npm test`: **31 passed** in 6 test files. Includes a new static guard that every Vuetify component used in Vue templates is explicitly registered, recent-feed REST paths, zero-based pagination, deduplication, retry retention, stale-response disposal and second-based date handling.
+- `npm run build`: passed with TypeScript checking.
+- `CHROMIUM_PATH=... npm run test:e2e`: **34 passed**, across mobile and desktop. These are isolated synthetic-fixture regression checks, not live acceptance. Added coverage for all four library layouts, settings routes, recent feed groups/search/filter, chapter filters, catalogue layouts, filter-chip geometry (32px height / 8px corners), inline source search, absent global server/theme actions, rail geometry and inactive-icon colors.
+- `git diff --check`: passed. Secret-pattern scan across source/tests/scripts/docs/manifests: passed.
+
+Real-data acceptance used the user-provided Suwayomi endpoint, never the synthetic test source:
+
+- `scripts/capture-parity-live.mjs`: **64 route/state captures** (33 mobile including 320px/720px source checks, 31 desktop). Library layouts and Filter/Sort/Display sheets, cover viewer, chapter settings, source Popular/Latest/search/display menu/list, recent updates, More, read-only categories, limited settings and About were exercised. History's explicit unimplemented state was captured, not counted as an implemented history feed.
+- The desktop pass was repeated after refining active/inactive rail colors. Its final 31 captures replace the earlier desktop images in the deliverable.
+- `scripts/capture-live.mjs`: a further **24 real-data regression captures** for library/manga, reader controls, next page, Webtoon, chapter sheet, catalogue/search and dark search. The deliverable keeps 12 reader-specific states from this set and the 64 controls captures, avoiding duplicate route images.
+- Final live reports recorded no page exceptions, unresolved Vue components, horizontal page overflow, blocked/attempted client mutations or failed visible mounted images. The control harness also checked visible icon ligatures. No library membership, bookmarks or progress writes were sent. GETs can still populate the server's own caches and perform server-side discovery.
+- Contact-sheet inspection and full-size toolbar checks caught a real desktop layout defect: `VNavigationDrawer` had not been explicitly registered. This was corrected; geometry assertions and the registration test were added, and both regression tests and live captures were repeated. Earlier passing tests did not establish correct drawer placement.
+- The capture harness initially checked images before Vuetify had mounted lazy image elements. It now waits for visible image containers to decode their actual images. Final captures contain the real covers; an early blank-cover capture is not acceptance evidence.
+
+This is not an exhaustive native parity or accessibility audit. No Android/native screenshot baseline or pixel-diff run was performed. Live pagination error recovery, updates pagination beyond the first page, live mutations, authenticated deployments, non-Chromium browsers and physical-device behavior remain unverified. The 190-file source inventory in `PARITY_AUDIT.md` lists missing/partial components rather than claiming full implementation; native controllers and shared widgets outside that directory are not exhaustively inventoried.

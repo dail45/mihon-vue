@@ -107,16 +107,17 @@ try {
       try {
         await page.locator('.manga-card').first().waitFor({ timeout: 30000 }); result.catalogue = true
         const title = (await page.locator('.manga-title-text').first().innerText()).trim()
-        const latest = page.getByRole('tab', { name: 'Latest', exact: true })
-        if (await latest.isEnabled()) {
+        const latest = page.getByRole('button', { name: 'Latest', exact: true })
+        if (await latest.count() && await latest.isEnabled()) {
           const response = page.waitForResponse(r => new URL(r.url()).pathname.includes(`/source/${sourceId}/latest/`), { timeout: 25000 })
           await latest.click()
           const data = await response
           result.catalogueLatest = data.ok() && Array.isArray((await data.json()).mangaList)
         }
         const response = page.waitForResponse(r => new URL(r.url()).pathname.endsWith(`/source/${sourceId}/search`), { timeout: 25000 })
-        await page.getByLabel('Search source').fill(title)
-        await page.getByRole('button', { name: 'Search catalogue' }).click()
+        await page.getByRole('button', { name: 'Open source search' }).click()
+    await page.getByLabel('Search source').fill(title)
+        await page.getByLabel('Search source').press('Enter')
         const data = await response
         result.catalogueSearch = data.ok() && Array.isArray((await data.json()).mangaList)
         await page.waitForFunction(() => !document.querySelector('[aria-label="Loading catalogue"]'))

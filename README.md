@@ -12,7 +12,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Open the URL printed by Vite. The example environment uses `/api/v1` through Vite's development proxy to `http://localhost:4567`. Without an environment override, the store defaults to `http://localhost:4567/api/v1` directly. Change the backend address in **More → Suwayomi-Server** or the toolbar's server button. It is saved as a UI preference, not a database.
+Open the URL printed by Vite. The example environment uses `/api/v1` through Vite's development proxy to `http://localhost:4567`. Without an environment override, the store defaults to `http://localhost:4567/api/v1` directly. Change the backend address in **More → Settings → Server connection**. It is saved as a UI preference, not a database.
 
 `localhost` means the browser's device for absolute API URLs, and the Vite host for the development proxy. Phones usually need your server's LAN address or a same-origin proxy. Run Vite only on a trusted network; the dev server exposes the proxied API.
 
@@ -30,24 +30,26 @@ The client sends session cookies with requests. Cross-origin APIs require approp
 ## Implemented
 
 - Explicit Vuetify **`md3` blueprint** and Mihon's default light/dark color tokens.
-- System/light/dark theme preference; theme toggle; self-hosted Roboto and rounded Material Symbols.
-- 64px top app bar and 80px five-destination bottom navigation: Library, Updates, History, Browse, More.
-- Server-backed library categories and compact covers with unread/download badges.
-- Library search, unread filtering, title/unread sorting, loading/error/empty states, and retry.
-- Manga details, expandable descriptions, searchable/sortable chapter listing, and server-backed add/remove library membership (confirmation before removal).
+- System/light/dark theme preferences under Settings → Appearance; self-hosted Roboto and rounded Material Symbols.
+- 64px top app bar, adaptive tablet rail from 720 CSS px, and 80px mobile five-destination bottom navigation: Library, Updates, History, Browse, More.
+- Server-backed library categories and compact, comfortable, cover-only and list display modes with unread/download badges.
+- Inline toolbar search; Filter/Sort/Display library sheet; unread/completion/download filters; title/unread/total/date-added sorts; loading/error/empty states and retry.
+- Manga details, expandable descriptions, full-cover viewer, searchable/sortable/filterable chapter listing, and server-backed add/remove library membership (confirmation before removal).
 - Full-viewport reader with left-to-right/right-to-left paging, webtoon scrolling, page slider, chapter sheet, touch swipes, keyboard controls, fit-page/fit-width scaling, and background preferences.
 - Manual and opt-in automatic progress writes plus explicit server bookmark commands.
 - Installed-source listing and paged source catalogues: Popular, Latest (when supported), submitted search, in-library badges, and recoverable pagination errors.
-- Server settings, appearance settings, and not-found route.
-- Typed `Manga`, `Chapter`, `Source`, `Category`, and tracker DTOs; API adapter; `useSuwayomiStore` Pinia store.
+- Paged recent-library-chapters feed with date groups and loaded-feed search/download filter. Refresh reloads the feed, not a server-wide library update.
+- Read-only categories, More, About, appearance/library/reader/connection settings, and not-found route.
+- Catalogue Popular/Latest are Material-style filter buttons, not underlined tabs; source search opens inside the top bar. Theme/server shortcuts are not placed on every screen.
+- Typed `Manga`, `Chapter`, `Source`, `Category`, recent-chapter and tracker DTOs; API adapter; `useSuwayomiStore` Pinia store.
 - Request-version guards prevent stale reads from a previous server or screen replacing current state.
 - No scraping, extension management, SQL database, or fabricated production manga data.
 
 ## Deliberate scope limits
 
-This is an **initial scaffold**, not a complete pixel-perfect clone. Updates/History explicitly identify themselves as not implemented. Source-specific advanced filters and global multi-source search are not implemented. Downloads, selection mode, category editing, tracking, authentication UI, and background subscriptions are not implemented. The reader does not yet implement double-page spreads, border cropping, image filters, rotation locking, or advanced zoom/pan controls.
+This is an **incremental independent implementation**, not a complete pixel-perfect clone. History explicitly identifies itself as not implemented. Updates is a limited read-only recent-chapter feed; calendar, multi-select and batch commands are absent. Source-specific advanced filters and global multi-source search are not implemented. Downloads, selection mode, category editing, tracking, authentication UI, and background subscriptions are not implemented. The reader does not yet implement double-page spreads, border cropping, image filters, rotation locking, or advanced zoom/pan controls.
 
-Mihon's Compose sources were inspected for color roles, cover overlays, grid spacing, category tabs, and navigation structure. Pixel-perfect parity against native Android screenshots has **not** been established. Desktop currently retains the requested bottom navigation, rather than Mihon's adaptive tablet rail.
+Mihon's Compose sources were inspected for color roles, cover overlays, grid spacing, category tabs, and navigation structure. Pixel-perfect parity against native Android screenshots has **not** been established. The web rail uses viewport width ≥720 CSS px; Android uses a configurable smallest-screen-width check, so this is an adaptation rather than exact platform parity. See [the file-by-file parity inventory](docs/PARITY_AUDIT.md) for all 190 files in the pinned presentation directory and explicit gaps.
 
 Suwayomi's inspected master revision disables its OpenAPI plugin and uses stub documentation builders. Contracts were hand-written from the actual REST controllers/models, **not** generated from a working Swagger endpoint. See [the pinned references and endpoint map](docs/REFERENCES.md). Verify against your installed server version; initial contracts were written without a live server; later read-only checks against the user-provided server are recorded in `docs/VALIDATION.md`.
 
@@ -58,15 +60,15 @@ src/api/             REST client, DTO contracts, error translation
 src/stores/          In-memory server state; harmless UI preferences
 src/plugins/         Vuetify MD3, themes, Material Symbols icon set
 src/router/          Lazy-loaded Vue Router screens
-src/components/      Manga card, empty state, connection dialog
-src/views/           Library, manga, reader, source catalogue, more, planned screens
+src/components/      Search toolbar, manga collections/cards, sheets, empty state, connection dialog
+src/views/           Library, updates, manga, reader, catalogue, settings, more, planned history
 src/styles/          Compose-specific geometry and accessibility styles
 src/assets/          Checked-in self-hosted icon font subset
 scripts/             Optional font-subsetting and screenshot QA utilities
 tests/               DTO fixtures, unit tests, intercepted browser tests
 ```
 
-Server state is in memory only. Local storage contains the API address, theme, and reader UI preferences; it contains no manga library, chapters, credentials, or reading history. TypeScript interfaces provide compile-time checks, not runtime schema validation.
+Server state is in memory only. Local storage contains the API address, theme, display/filter preferences, and reader UI preferences; it contains no manga library, chapters, credentials, or reading history. TypeScript interfaces provide compile-time checks, not runtime schema validation.
 
 ## Validation
 

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useTheme } from 'vuetify'
+import { useDisplay, useTheme } from 'vuetify'
 import { usePreferencesStore } from './stores/preferences'
 import { useSuwayomiStore } from './stores/suwayomi'
-import ServerSettingsDialog from './components/ServerSettingsDialog.vue'
 const route = useRoute(), router = useRouter(), preferences = usePreferencesStore(), server = useSuwayomiStore()
-const theme = useTheme(), settingsOpen = ref(false)
+const { width } = useDisplay()
+const tabletUi = computed(() => width.value >= 720)
+const theme = useTheme()
 const media = window.matchMedia('(prefers-color-scheme: dark)'), systemDark = ref(media.matches)
 const updateSystemTheme = (e: MediaQueryListEvent) => { systemDark.value = e.matches }
 onMounted(() => media.addEventListener('change', updateSystemTheme))
@@ -26,38 +27,36 @@ const navItems = [
 const activeNav = computed(() => route.path.startsWith('/manga/') ? '/library' : route.path)
 const toolbarTitle = computed(() => route.meta.catalogue ? server.sources.find(s => s.id === route.params.sourceId)?.displayName || 'Source' : route.meta.title)
 function back() {
+  if (route.path.startsWith('/settings/')) { void router.push('/settings'); return }
+  if (route.path === '/settings' || route.path === '/about' || route.path === '/categories') { void router.push('/more'); return }
   if (route.meta.catalogue) { void router.push('/browse'); return }
   if (typeof window.history.state?.back === 'string' && window.history.state.back.startsWith('/browse/source/')) { router.back(); return }
   void router.push('/library')
 }
-function toggleTheme() { preferences.themeMode = dark.value ? 'light' : 'dark' }
 </script>
 <template>
   <v-app>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <v-app-bar v-if="!route.meta.reader" flat height="64" color="surface" class="app-toolbar">
+    <v-navigation-drawer v-if="tabletUi && !route.meta.detail" permanent width="80" color="surface-container" elevation="0" class="mihon-rail" aria-label="Main navigation">
+      <div class="d-flex flex-column justify-center h-100">
+        <v-btn v-for="item in navItems" :key="item.path" :to="item.path" :active="activeNav === item.path" :color="activeNav === item.path ? 'on-secondary-container' : 'on-surface-variant'" :aria-label="item.title" :aria-current="activeNav === item.path ? 'page' : undefined" variant="text" height="72" rounded="0" class="pa-0 rail-button">
+          <span class="navigation-icon" :class="{ 'bg-secondary-container': activeNav === item.path }"><v-icon :icon="item.icon" /></span><span class="text-body-2 mt-1">{{ item.title }}</span>
+        </v-btn>
+      </div>
+    </v-navigation-drawer>
+    <v-app-bar v-if="!route.meta.reader && !route.meta.catalogue && !['/library', '/browse', '/updates', '/more'].includes(route.path)" flat height="64" color="surface" class="app-toolbar">
       <v-btn v-if="route.meta.detail" icon="arrow_back" :aria-label="route.meta.catalogue ? 'Back to sources' : 'Back'" @click="back" />
       <v-app-bar-title class="text-h6 font-weight-regular">
         {{ toolbarTitle }}
         <v-chip v-if="route.path === '/library' && server.connected" size="small" class="ml-2" variant="tonal" :aria-label="`${server.totalLibraryCount} manga in library`">{{ server.totalLibraryCount }}</v-chip>
       </v-app-bar-title>
-      <v-btn :icon="dark ? 'light_mode' : 'dark_mode'" :aria-label="dark ? 'Use light theme' : 'Use dark theme'" @click="toggleTheme" />
-      <v-btn icon="dns" aria-label="Server connection settings" @click="settingsOpen = true" />
-      <v-menu>
-        <template #activator="{ props }"><v-btn v-bind="props" icon="more_vert" aria-label="More options" /></template>
-        <v-list>
-          <v-list-item title="Connection settings" prepend-icon="dns" @click="settingsOpen = true" />
-          <v-list-item title="Follow system theme" prepend-icon="contrast" @click="preferences.themeMode = 'system'" />
-        </v-list>
-      </v-menu>
     </v-app-bar>
     <v-main id="main-content" tabindex="-1"><router-view /></v-main>
-    <v-bottom-navigation v-if="!route.meta.detail" :model-value="activeNav" grow height="80" color="on-secondary-container" bg-color="surface-container" elevation="0" class="mihon-navigation" aria-label="Main navigation">
+    <v-bottom-navigation v-if="!route.meta.detail && !tabletUi" :model-value="activeNav" grow height="80" color="on-secondary-container" bg-color="surface-container" elevation="0" class="mihon-navigation" aria-label="Main navigation">
       <v-btn v-for="item in navItems" :key="item.path" :value="item.path" :to="item.path" :aria-label="item.title" :aria-current="activeNav === item.path ? 'page' : undefined">
         <span class="navigation-icon" :class="{ 'bg-secondary-container': activeNav === item.path }"><v-icon :icon="item.icon" /></span>
         <span class="mt-1 text-body-2 font-weight-medium">{{ item.title }}</span>
       </v-btn>
     </v-bottom-navigation>
-    <ServerSettingsDialog v-model="settingsOpen" />
   </v-app>
 </template>

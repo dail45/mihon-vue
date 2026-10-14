@@ -71,20 +71,23 @@ try {
     await page.goto(`${base}/browse/source/${encodeURIComponent(selected.sourceId)}`)
     await page.locator('.manga-card').first().waitFor({ timeout: 30000 }); await capture('popular')
     const title = (await page.locator('.manga-title-text').first().innerText()).trim()
-    const latest = page.getByRole('tab', { name: 'Latest', exact: true })
-    if (await latest.isEnabled()) {
+    const latest = page.getByRole('button', { name: 'Latest', exact: true })
+    if (await latest.count() && await latest.isEnabled()) {
       const response = page.waitForResponse(r => new URL(r.url()).pathname.includes(`/source/${selected.sourceId}/latest/`), { timeout: 25000 })
       await latest.click(); if (!(await response).ok()) throw Error('Live Latest request failed')
       await page.waitForFunction(() => !document.querySelector('[aria-label="Loading catalogue"]'))
       await page.locator('.manga-card').first().waitFor({ timeout: 25000 }); await capture('latest')
     }
+    await page.getByRole('button', { name: 'Open source search' }).click()
     await page.getByLabel('Search source').fill(title)
     const searchResponse = page.waitForResponse(r => new URL(r.url()).pathname.endsWith(`/source/${selected.sourceId}/search`), { timeout: 25000 })
-    await page.getByRole('button', { name: 'Search catalogue' }).click()
+    await page.getByLabel('Search source').press('Enter')
     if (!(await searchResponse).ok()) throw Error('Live search request failed')
     await page.waitForFunction(() => !document.querySelector('[aria-label="Loading catalogue"]'))
     await page.locator('.manga-card').first().waitFor({ timeout: 25000 }); await capture('search')
-    await page.getByRole('button', { name: 'Use dark theme' }).click(); await capture('search-dark')
+    const searchUrl = page.url()
+    await page.goto(`${base}/settings/appearance`); await page.getByRole('radio', { name: 'Dark', exact: true }).check()
+    await page.goto(searchUrl); await page.locator('.manga-card').first().waitFor(); await capture('search-dark')
     await context.close()
   }
 } catch (error) { report.errors.push(error.message); process.exitCode = 1 }

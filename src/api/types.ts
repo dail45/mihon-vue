@@ -48,3 +48,7 @@ export interface PagedMangaList { mangaList: Manga[]; hasNextPage: boolean }
 
 /** PATCH chapter fields are submitted as application/x-www-form-urlencoded. */
 export interface ChapterPatch { read?: boolean; bookmarked?: boolean; markPrevRead?: boolean; lastPageRead?: number }
+
+export interface MangaChapter { manga: Manga; chapter: Chapter }
+/** Recent chapters are zero-based pages; the payload key is page, NOT mangaList. */
+export interface RecentChapters { page: MangaChapter[]; hasNextPage: boolean }

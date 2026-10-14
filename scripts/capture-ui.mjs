@@ -23,6 +23,7 @@ try {
       else if (path === '/api/v1/category/19') body = []
       else if (path.endsWith('/full')) body = manga(1, 'A journey beyond the stars', 5)
       else if (path.endsWith('/chapters')) body = [chapter]
+      else if (path.startsWith('/api/v1/update/recentChapters/')) body = { page: [], hasNextPage: false }
       else if (path === '/api/v1/source/list') body = [source]
       else if (path.endsWith('/thumbnail')) return route.fulfill({ status: 404 })
       await route.fulfill({ json: body })
@@ -43,6 +44,7 @@ try {
     await page.getByLabel('Filter and sort library').click()
     await snap('filters')
     await page.getByRole('button', { name: 'Done', exact: true }).click()
+    await page.getByRole('button', { name: 'Open library search' }).click()
     await page.getByLabel('Search library').fill('no match')
     await snap('search-empty')
     await page.goto(`${base}/manga/1`)
@@ -65,7 +67,8 @@ try {
     await page.reload()
     await page.getByRole('heading', { name: 'Your library, on your server' }).waitFor()
     await snap('error-light')
-    await page.getByRole('button', { name: 'Use dark theme' }).click()
+    await page.goto(`${base}/settings/appearance`); await page.getByRole('radio', { name: 'Dark', exact: true }).check()
+    await page.goto(`${base}/library`); await page.getByRole('heading', { name: 'Your library, on your server' }).waitFor()
     await snap('error-dark')
     await page.getByRole('button', { name: 'Connect to Suwayomi' }).click()
     await page.getByLabel('REST API URL').fill('invalid')

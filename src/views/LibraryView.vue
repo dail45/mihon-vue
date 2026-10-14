@@ -1,20 +1,40 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useSuwayomiStore } from '../stores/suwayomi'
+import SearchAppBar from '../components/SearchAppBar.vue'
 import EmptyState from '../components/EmptyState.vue'
-import MangaCard from '../components/MangaCard.vue'
+import MangaCollection from '../components/MangaCollection.vue'
+import LibrarySettingsSheet from '../components/LibrarySettingsSheet.vue'
+import { usePreferencesStore } from '../stores/preferences'
 import ServerSettingsDialog from '../components/ServerSettingsDialog.vue'
-const server = useSuwayomiStore(), search = ref(''), filtersOpen = ref(false), unreadOnly = ref(false), sort = ref<'title' | 'unread'>('title'), settingsOpen = ref(false)
-const visibleManga = computed(() => server.library.filter(m => m.title.toLocaleLowerCase().includes(search.value.toLocaleLowerCase()) && (!unreadOnly.value || (m.unreadCount ?? 0) > 0)).slice().sort((a, b) => sort.value === 'unread' ? (b.unreadCount ?? 0) - (a.unreadCount ?? 0) || a.title.localeCompare(b.title) : a.title.localeCompare(b.title)))
+const server = useSuwayomiStore(), preferences = usePreferencesStore(), search = ref(''), filtersOpen = ref(false), settingsOpen = ref(false)
+const unread = ref<'all' | 'include' | 'exclude'>('all'), completed = ref<'all' | 'include' | 'exclude'>('all')
+const sort = ref<'title' | 'unread' | 'total' | 'added'>('title'), descending = ref(false)
+function triState(value: boolean | null, state: 'all' | 'include' | 'exclude') { return state === 'all' || (value !== null && value === (state === 'include')) }
+const visibleManga = computed(() => server.library.filter(m => m.title.toLocaleLowerCase().includes(search.value.toLocaleLowerCase())
+  && (!preferences.downloadedOnly || (m.downloadCount ?? 0) > 0)
+  && triState(m.unreadCount === null ? null : m.unreadCount > 0, unread.value)
+  && triState(m.status === 'COMPLETED' || m.status === 'PUBLISHING_FINISHED', completed.value))
+  .slice().sort((a, b) => {
+    let result = a.title.localeCompare(b.title)
+    if (sort.value !== 'title') {
+      const av = sort.value === 'unread' ? a.unreadCount : sort.value === 'total' ? a.chapterCount : a.inLibraryAt
+      const bv = sort.value === 'unread' ? b.unreadCount : sort.value === 'total' ? b.chapterCount : b.inLibraryAt
+      if (av === null || bv === null) return av === bv ? a.title.localeCompare(b.title) : av === null ? 1 : -1
+      result = av - bv || result
+    }
+    return descending.value ? -result : result
+  }))
+function clearFilters() { search.value = ''; unread.value = 'all'; completed.value = 'all'; preferences.downloadedOnly = false }
 onMounted(() => { if (!server.categories.length) void server.loadLibrary() })
 </script>
 <template>
   <section>
-    <div class="d-flex align-center px-2 py-1">
-      <v-text-field v-model="search" variant="solo" flat hide-details density="compact" label="Search library" prepend-inner-icon="search" clearable @click:clear="search = ''" />
-      <v-btn variant="text" icon="filter_list" :color="unreadOnly ? 'primary' : undefined" aria-label="Filter and sort library" @click="filtersOpen = true" />
-      <v-btn variant="text" icon="refresh" aria-label="Reload library from server" :loading="server.loadingLibrary" @click="server.loadLibrary" />
-    </div>
+    <SearchAppBar v-model="search" title="Library" label="Search library" open-label="Open library search">
+      <template #title><v-chip v-if="server.connected" size="small" class="ml-2" variant="tonal" :aria-label="`${server.totalLibraryCount} manga in library`">{{ server.totalLibraryCount }}</v-chip></template>
+      <v-btn variant="text" icon="filter_list" :color="unread !== 'all' || completed !== 'all' || preferences.downloadedOnly ? 'primary' : undefined" aria-label="Filter and sort library" @click="filtersOpen = true" />
+      <v-menu><template #activator="{ props }"><v-btn v-bind="props" icon="more_vert" aria-label="Library options" /></template><v-list><v-list-item title="Reload library from server" prepend-icon="refresh" :disabled="server.loadingLibrary" @click="server.loadLibrary" /><v-list-item title="Library settings" prepend-icon="settings" to="/settings/library" /></v-list></v-menu>
+    </SearchAppBar>
     <v-tabs v-if="server.categories.length" v-model="server.activeCategoryId" color="primary" align-tabs="start" aria-label="Library categories">
       <v-tab v-for="category in server.categories" :key="category.id" :value="category.id" class="text-none">
         {{ category.name }} <v-chip size="x-small" variant="tonal" class="ml-2">{{ server.libraryByCategory[category.id]?.length ?? 0 }}</v-chip>
@@ -27,22 +47,14 @@ onMounted(() => { if (!server.categories.length) void server.loadLibrary() })
       <div class="mt-3"><v-btn variant="text" :loading="server.loadingLibrary" @click="server.loadLibrary">Try again</v-btn></div>
     </EmptyState>
     <div v-else-if="server.loadingLibrary && !server.library.length" class="pa-4" role="status">Loading your library…</div>
-    <EmptyState v-else-if="!server.library.length" icon="collections_bookmark" title="Your library is empty" description="Add manga to your library on Suwayomi. Your titles and categories will appear here.">
+    <EmptyState v-else-if="!server.library.length" icon="collections_bookmark" :title="server.totalLibraryCount ? 'This category is empty' : 'Your library is empty'" description="Browse sources or choose another category to find manga.">
       <v-btn to="/browse" color="primary" rounded="pill">Browse sources</v-btn>
     </EmptyState>
     <EmptyState v-else-if="!visibleManga.length" icon="search_off" title="No matches" description="Try a different search or clear your filters.">
-      <v-btn color="primary" variant="text" @click="search = ''; unreadOnly = false">Clear filters</v-btn>
+      <v-btn color="primary" variant="text" @click="clearFilters">Clear filters</v-btn>
     </EmptyState>
-    <div v-else class="library-grid"><MangaCard v-for="item in visibleManga" :key="item.id" :manga="item" /></div>
-    <v-bottom-sheet v-model="filtersOpen" max-width="640">
-      <v-card rounded="t-xl" color="surface-container-high" title="Library filters">
-        <v-card-text>
-          <v-switch v-model="unreadOnly" color="primary" label="Unread chapters only" hide-details />
-          <v-radio-group v-model="sort" label="Sort by" hide-details><v-radio label="Title" value="title"/><v-radio label="Unread chapters" value="unread"/></v-radio-group>
-        </v-card-text>
-        <v-card-actions><v-spacer/><v-btn color="primary" @click="filtersOpen = false">Done</v-btn></v-card-actions>
-      </v-card>
-    </v-bottom-sheet>
+    <MangaCollection v-else :items="visibleManga" :display="preferences.libraryDisplay" />
+    <LibrarySettingsSheet v-model="filtersOpen" v-model:unread="unread" v-model:completed="completed" v-model:sort="sort" v-model:descending="descending" />
     <ServerSettingsDialog v-model="settingsOpen" />
   </section>
 </template>
