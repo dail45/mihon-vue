@@ -68,9 +68,9 @@ try {
         result.readerNavigation = true
       } else result.notes.push('Single-page chapter: page-turn navigation not exercised.')
       await page.getByRole('button', { name: 'Reader settings', exact: true }).click()
-      await page.getByRole('combobox', { name: 'Reading mode', exact: true }).press('Enter')
-      await page.getByRole('option', { name: 'Right to left', exact: true }).click()
-      await page.getByRole('button', { name: 'Done', exact: true }).click()
+      await page.getByText('Reading mode', { exact: true }).click()
+      await page.getByRole('radio', { name: 'Right to left', exact: true }).click()
+      await page.keyboard.press('Escape')
       // Return to the initial page with reversed controls; no progress writes.
       if (result.readerNavigation) {
         await page.getByRole('button', { name: direction === 1 ? 'Previous page' : 'Next page', exact: true }).click()
@@ -78,9 +78,9 @@ try {
         result.readerRtl = true
       }
       await page.getByRole('button', { name: 'Reader settings', exact: true }).click()
-      await page.getByRole('combobox', { name: 'Reading mode', exact: true }).press('Enter')
-      await page.getByRole('option', { name: 'Webtoon · vertical scroll', exact: true }).click()
-      await page.getByRole('button', { name: 'Done', exact: true }).click()
+      await page.getByText('Reading mode', { exact: true }).click()
+      await page.getByRole('radio', { name: 'Webtoon · vertical scroll', exact: true }).click()
+      await page.keyboard.press('Escape')
       await page.waitForFunction(() => {
         const image = document.querySelector('.reader-strip img')
         return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0

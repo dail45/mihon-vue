@@ -21,11 +21,11 @@ test('settings, appearance, reader defaults, connection, categories and about ro
   await setup(page); await page.goto('/more')
   await page.getByRole('link', { name: 'Settings', exact: true }).click()
   await page.getByRole('link', { name: /Appearance/ }).click()
-  await page.getByRole('radio', { name: 'Dark', exact: true }).check()
+  await page.getByRole('button', { name: 'Dark', exact: true }).click()
   await expect(page.locator('.v-application')).toHaveClass(/mihonDark/)
   await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page.getByRole('link', { name: /^Reader/ }).click()
-  await expect(page.getByRole('combobox', { name: 'Reading mode' })).toBeVisible()
+  await expect(page.getByText('Reading mode', { exact: true })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Automatically save reading progress' })).not.toBeChecked()
   await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page.getByRole('link', { name: /^Server connection/ }).click()
@@ -37,22 +37,22 @@ test('settings, appearance, reader defaults, connection, categories and about ro
   await page.goto('/about'); await expect(page.getByRole('heading', { name: 'Mihon Vue' })).toBeVisible()
   await expect(page.getByText(/SIL Open Font License/)).toBeVisible(); await noOverflow(page)
 })
-test('library display modes persist and the 720px rail breakpoint is respected', async ({ page }) => {
+test('library display modes persist and the Mihon automatic tablet thresholds is respected', async ({ page }) => {
   await setup(page); await page.goto('/library')
   for (const [label, value] of [['Comfortable grid','comfortable'], ['Cover-only grid','covers'], ['List','list'], ['Compact grid','compact']]) {
     await page.getByRole('button', { name: 'Filter and sort library' }).click()
     await page.getByRole('tab', { name: 'Display', exact: true }).click()
     await page.getByRole('button', { name: label, exact: true }).click()
-    await page.getByRole('button', { name: 'Done', exact: true }).click()
+    await page.keyboard.press('Escape')
     if (value === 'list') await expect(page.getByLabel('Manga list')).toBeVisible()
     else await expect(page.getByLabel(`${value} manga grid`)).toBeVisible()
     await noOverflow(page)
   }
   await page.reload(); await expect(page.getByLabel('compact manga grid')).toBeVisible()
-  for (const width of [719, 720]) {
+  for (const width of [699, 700]) {
     await page.setViewportSize({ width, height: 900 })
-    await expect(page.locator('.mihon-rail')).toHaveCount(width >= 720 ? 1 : 0)
-    if (width >= 720) {
+    await expect(page.locator('.mihon-rail')).toHaveCount(width >= 700 ? 1 : 0)
+    if (width >= 700) {
       await expect(page.locator('.mihon-rail')).toHaveClass(/v-navigation-drawer/)
       const box = await page.locator('.mihon-rail').boundingBox()
       expect(box!.x).toBe(0); expect(box!.width).toBe(80)
@@ -60,7 +60,7 @@ test('library display modes persist and the 720px rail breakpoint is respected',
       const tabs = await page.getByRole('tablist', { name: 'Library categories' }).boundingBox()
       expect(tabs!.x).toBeGreaterThanOrEqual(80); expect(tabs!.y).toBe(64)
     }
-    await expect(page.locator('.mihon-navigation')).toHaveCount(width < 720 ? 1 : 0)
+    await expect(page.locator('.mihon-navigation')).toHaveCount(width < 700 ? 1 : 0)
     await noOverflow(page)
   }
 })
@@ -81,13 +81,13 @@ test('chapter filters and sort are independent of library filters', async ({ pag
   await expect(page.getByText('Chapter 2', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Chapter settings', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Unread', exact: true }).click()
-  await page.getByRole('button', { name: 'Done', exact: true }).click()
+  await page.keyboard.press('Escape')
   await expect(page.getByText('Chapter 2', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Chapter settings', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Unread', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Unread', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Bookmarked', exact: true }).click()
-  await page.getByRole('button', { name: 'Done', exact: true }).click()
+  await page.keyboard.press('Escape')
   await expect(page.getByText('Chapter 1', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Chapter 2', { exact: true })).toBeVisible(); await noOverflow(page)
 })
@@ -95,7 +95,7 @@ test('catalogue supports list and comfortable display without changing library p
   await setup(page); await page.goto(`/browse/source/${source.id}`)
   await expect(page.getByLabel('compact manga grid')).toBeVisible()
   await page.getByRole('button', { name: 'Catalogue display mode' }).click()
-  await page.getByText('List', { exact: true }).click(); await expect(page.getByLabel('Manga list')).toBeVisible()
+  await page.getByText('List', { exact: true }).click(); await expect(page.getByRole('list', {name:'Catalogue display modes'})).toBeHidden(); await expect(page.getByLabel('Manga list')).toBeVisible()
   await page.getByRole('button', { name: 'Catalogue display mode' }).click()
   await page.getByText('Comfortable grid', { exact: true }).click(); await expect(page.getByLabel('comfortable manga grid')).toBeVisible()
   await page.goto('/library'); await expect(page.getByLabel('compact manga grid')).toBeVisible(); await noOverflow(page)
@@ -138,5 +138,5 @@ test('Vuetify 4 runtime uses MD3 typography and native search and checkbox contr
   await checkbox.press('Space'); await expect(checkbox).toBeChecked()
   await checkbox.press('Space'); await expect(checkbox).toHaveAttribute('aria-checked','mixed')
   await checkbox.press('Space'); await expect(checkbox).not.toBeChecked()
-  await page.getByRole('button',{name:'Done',exact:true}).click(); await noOverflow(page)
+  await page.keyboard.press('Escape'); await noOverflow(page)
 })

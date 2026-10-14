@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSuwayomiStore } from '../stores/suwayomi'
 import { useReaderStore } from '../stores/reader'
 import { useReaderPreferences } from '../stores/readerPreferences'
+import Md3Slider from '../components/Md3Slider.vue'
 import ReaderSettingsDialog from '../components/reader/ReaderSettingsDialog.vue'
 const route = useRoute(), router = useRouter(), server = useSuwayomiStore(), reader = useReaderStore(), preferences = useReaderPreferences()
 const controls = ref(true), settings = ref(false), chaptersOpen = ref(false), viewport = ref<HTMLElement | null>(null)
@@ -114,7 +115,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKey); cancelAnim
       <p class="text-body-medium reader-save-status mb-1" role="status">{{ reader.notice || saveLabel }}</p>
       <div class="d-flex align-center ga-2" :class="{ 'flex-row-reverse': preferences.mode === 'rtl' }">
         <v-btn :icon="preferences.mode === 'rtl' ? 'skip_next' : 'skip_previous'" variant="text" :disabled="!reader.previousChapter" aria-label="Previous chapter" @click="reader.previousChapter && goChapter(reader.previousChapter.index)"/>
-        <span class="text-body-medium">1</span><v-slider :reverse="preferences.mode === 'rtl'" :model-value="reader.pageIndex" :min="0" :max="Math.max(0, reader.pageCount - 1)" :step="1" :disabled="reader.pageCount <= 1" color="primary" track-color="on-surface-variant" hide-details aria-label="Page position" @update:model-value="goPage"/><span class="text-body-medium">{{ reader.pageCount }}</span>
+        <span class="text-body-medium">1</span><Md3Slider :reverse="preferences.mode === 'rtl'" :model-value="reader.pageIndex" :min="0" :max="Math.max(0, reader.pageCount - 1)" :step="1" :disabled="reader.pageCount <= 1" label="Page position" @update:model-value="goPage"/><span class="text-body-medium">{{ reader.pageCount }}</span>
         <v-btn :icon="preferences.mode === 'rtl' ? 'skip_previous' : 'skip_next'" variant="text" :disabled="!reader.nextChapter" aria-label="Next chapter" @click="reader.nextChapter && goChapter(reader.nextChapter.index)"/>
       </div>
       <div class="d-flex align-center justify-space-between">

@@ -12,7 +12,7 @@ export const router = createRouter({
     { path: '/browse/source/:sourceId', component: () => import('../views/SourceView.vue'), meta: { title: 'Source', detail: true, catalogue: true } },
     { path: '/more', component: () => import('../views/MoreView.vue'), meta: { title: 'More' } },
     { path: '/settings', component: () => import('../views/SettingsView.vue'), meta: { title: 'Settings', detail: true } },
-    ...['appearance', 'library', 'reader', 'connection'].map(section => ({ path: `/settings/${section}`, component: () => import('../views/SettingsView.vue'), meta: { title: section === 'connection' ? 'Server connection' : section[0]!.toUpperCase() + section.slice(1), detail: true, settingsSection: section } })),
+    ...['appearance', 'library', 'reader', 'downloads', 'tracking', 'browse', 'data', 'security', 'advanced', 'about', 'connection'].map(section => ({ path: `/settings/${section}`, component: () => import('../views/SettingsView.vue'), meta: { title: section === 'connection' ? 'Server connection' : section === 'data' ? 'Data & storage' : section[0]!.toUpperCase() + section.slice(1), detail: true, settingsSection: section } })),
     { path: '/categories', component: () => import('../views/CategoriesView.vue'), meta: { title: 'Categories', detail: true } },
     { path: '/about', component: () => import('../views/AboutView.vue'), meta: { title: 'About', detail: true } },
     { path: '/:pathMatch(.*)*', component: () => import('../views/NotFoundView.vue'), meta: { title: 'Not found' } },

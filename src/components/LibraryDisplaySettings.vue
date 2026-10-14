@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import { usePreferencesStore } from '../stores/preferences'
+import Md3Slider from './Md3Slider.vue'
 import PreferenceCheckbox from './PreferenceCheckbox.vue'
 const prefs = usePreferencesStore(), display = useDisplay()
 const landscape = computed(() => display.width.value > display.height.value)
@@ -11,7 +12,7 @@ const modes = [{ title: 'Compact grid', value: 'compact' }, { title: 'Comfortabl
 <template>
   <h3 class="settings-heading">Display mode</h3>
   <div class="display-mode-chips" role="group" aria-label="Library display mode"><v-chip v-for="mode in modes" :key="mode.value" tag="button" type="button" class="display-mode-chip" rounded="lg" :variant="prefs.libraryDisplay === mode.value ? 'flat' : 'outlined'" :color="prefs.libraryDisplay === mode.value ? 'secondary-container' : 'on-surface-variant'" :aria-pressed="prefs.libraryDisplay === mode.value" @click="prefs.libraryDisplay = mode.value">{{ mode.title }}</v-chip></div>
-  <div v-if="prefs.libraryDisplay !== 'list'" class="settings-columns"><div class="d-flex align-center justify-space-between"><span>Items per row · {{ landscape ? 'Landscape' : 'Portrait' }}</span><span class="columns-pill">{{ columns || 'Auto' }}</span></div><v-slider v-model="columns" name="Items per row" :min="0" :max="10" :step="1" color="primary" hide-details thumb-label /></div>
+  <div v-if="prefs.libraryDisplay !== 'list'" class="settings-columns"><div class="d-flex align-center justify-space-between"><span>Items per row · {{ landscape ? 'Landscape' : 'Portrait' }}</span><span class="columns-pill">{{ columns || 'Auto' }}</span></div><Md3Slider v-model="columns" label="Items per row" :max="10" :value-text="columns ? String(columns) : 'Auto'" /></div>
   <h3 class="settings-heading">Overlay</h3>
   <PreferenceCheckbox v-model="prefs.downloadBadge" label="Download badges" /><PreferenceCheckbox v-model="prefs.unreadBadge" label="Unread badges" /><PreferenceCheckbox v-model="prefs.localBadge" label="Local source badges" /><PreferenceCheckbox v-model="prefs.languageBadge" label="Language badges" /><PreferenceCheckbox v-model="prefs.showContinue" label="Show continue reading button" />
   <h3 class="settings-heading">Tabs</h3><PreferenceCheckbox v-model="prefs.categoryTabs" label="Show category tabs" /><PreferenceCheckbox v-model="prefs.categoryCounts" label="Show number of items" />

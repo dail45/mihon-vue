@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { defaultFilters, defaultSort, librarySortOptions, type LibraryFilters, type LibrarySort, type LibrarySortType } from '../utils/library'
 export type DisplayMode = 'compact' | 'comfortable' | 'covers' | 'list'
+export type TabletUiMode = 'automatic' | 'always' | 'landscape' | 'never'
 export type ThemeMode = 'system' | 'light' | 'dark'
 // Only harmless UI preferences are stored; no manga database or credentials.
 export function readPreference(key: string): string | null {
@@ -11,6 +12,9 @@ export function writePreference(key: string, value: string) {
   try { localStorage.setItem(key, value) } catch { /* private mode: session-only preference */ }
 }
 export const usePreferencesStore = defineStore('preferences', () => {
+  const savedTablet = readPreference('mihon.tabletUiMode')
+  const tabletUiMode = ref<TabletUiMode>(['always', 'landscape', 'never'].includes(savedTablet || '') ? savedTablet as TabletUiMode : 'automatic')
+  watch(tabletUiMode, v => writePreference('mihon.tabletUiMode', v))
   const savedTheme = readPreference('mihon.theme')
   const themeMode = ref<ThemeMode>(savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : 'system')
   watch(themeMode, value => writePreference('mihon.theme', value))
@@ -62,5 +66,5 @@ export const usePreferencesStore = defineStore('preferences', () => {
   watch(categorySorts, v => writePreference('mihon.library.categorySorts', JSON.stringify(v)), { deep: true })
   watch(libraryDisplay, v => writePreference('mihon.library.display', v))
   watch(downloadedOnly, v => writePreference('mihon.library.downloadedOnly', String(v)))
-  return { themeMode, libraryDisplay, catalogueDisplay, downloadedOnly, downloadBadge, unreadBadge, localBadge, languageBadge, showContinue, categoryTabs, categoryCounts, portraitColumns, landscapeColumns, categorizedSort, filters, globalSort, categorySorts, getLibrarySort, chooseLibrarySort }
+  return { tabletUiMode, themeMode, libraryDisplay, catalogueDisplay, downloadedOnly, downloadBadge, unreadBadge, localBadge, languageBadge, showContinue, categoryTabs, categoryCounts, portraitColumns, landscapeColumns, categorizedSort, filters, globalSort, categorySorts, getLibrarySort, chooseLibrarySort }
 })

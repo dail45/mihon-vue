@@ -41,14 +41,14 @@ try {
     const sourceId=await page.evaluate(async({api,id})=>{const r=await fetch(`${api}/manga/${id}/full?onlineFetch=false`,{credentials:'include'});if(!r.ok)throw Error('Manga lookup failed');return (await r.json()).sourceId},{api,id})
     await page.getByRole('button',{name:'Open library search'}).click(); await capture('library-search'); await page.getByRole('button',{name:'Close search',exact:true}).click()
     for(const tab of ['Filter','Sort','Display']) {
-      await page.getByRole('button',{name:'Filter and sort library'}).click(); await page.getByRole('tab',{name:tab,exact:true}).click(); await capture(`library-${tab.toLowerCase()}`); await page.getByRole('button',{name:'Done',exact:true}).click()
+      await page.getByRole('button',{name:'Filter and sort library'}).click(); await page.getByRole('tab',{name:tab,exact:true}).click(); await capture(`library-${tab.toLowerCase()}`); await page.keyboard.press('Escape')
     }
     for(const [label,state] of [['Comfortable grid','comfortable'],['Cover-only grid','covers'],['List','list'],['Compact grid','compact']]) {
-      await page.getByRole('button',{name:'Filter and sort library'}).click(); await page.getByRole('tab',{name:'Display',exact:true}).click(); await page.getByRole('button',{name:label,exact:true}).click(); await page.getByRole('button',{name:'Done',exact:true}).click(); if(state!=='compact')await capture(`library-${state}`)
+      await page.getByRole('button',{name:'Filter and sort library'}).click(); await page.getByRole('tab',{name:'Display',exact:true}).click(); await page.getByRole('button',{name:label,exact:true}).click(); await page.keyboard.press('Escape'); if(state!=='compact')await capture(`library-${state}`)
     }
     await page.goto(`${base}${href}`); await page.locator('.manga-detail h1').waitFor({timeout:30000}); await capture('manga')
     await page.getByRole('button',{name:'View full cover'}).click(); await capture('cover'); await page.getByRole('button',{name:'Close cover'}).click()
-    await page.getByRole('button',{name:'Chapter settings',exact:true}).click(); await capture('chapter-filter'); await page.getByRole('tab',{name:'Sort',exact:true}).click(); await capture('chapter-sort'); await page.getByRole('button',{name:'Done',exact:true}).click()
+    await page.getByRole('button',{name:'Chapter settings',exact:true}).click(); await capture('chapter-filter'); await page.getByRole('tab',{name:'Sort',exact:true}).click(); await capture('chapter-sort'); await page.keyboard.press('Escape')
     await page.goto(`${base}/browse`); await page.getByRole('link',{name:/./}).last().waitFor(); await page.getByRole('button',{name:'Open source list search'}).click(); await capture('sources-search')
     await page.goto(`${base}/browse/source/${encodeURIComponent(sourceId)}`); await page.locator('.manga-card').first().waitFor({timeout:30000}); await capture('source-popular')
     if(await page.getByRole('button',{name:'Use dark theme'}).count() || await page.getByRole('button',{name:'Server connection settings'}).count())throw Error('Extraneous toolbar actions')

@@ -1,18 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useDisplay } from 'vuetify'
+import { ref } from 'vue'
 import { VDialog, VBottomSheet } from 'vuetify/components'
+import { useTabletUi } from '../composables/useTabletUi'
 defineProps<{ title: string; tabs: string[] }>()
 const opened = defineModel<boolean>({ required: true }), tab = defineModel<string>('tab', { required: true })
-const { width } = useDisplay(), tablet = computed(() => width.value >= 720)
+const tablet = useTabletUi(), dragStart = ref<number | null>(null)
+function endDrag(e: TouchEvent) {
+  if (!tablet.value && dragStart.value !== null && e.changedTouches[0]!.clientY - dragStart.value > 72) opened.value = false
+  dragStart.value = null
+}
 </script>
 <template>
   <component :is="tablet ? VDialog : VBottomSheet" v-model="opened" max-width="460" :aria-label="title" scrollable>
     <v-card class="adaptive-settings-card" :class="{ 'mobile-settings-card': !tablet }" color="surface-container-high" rounded="xl">
       <h2 class="sr-only">{{ title }}</h2>
-      <v-tabs v-model="tab" grow color="primary" height="48" :aria-label="`${title} sections`"><v-tab v-for="name in tabs" :key="name" :value="name.toLowerCase()">{{ name }}</v-tab></v-tabs>
+      <div class="settings-tab-header" @touchstart="dragStart = $event.touches[0]!.clientY" @touchend="endDrag">
+        <v-tabs v-model="tab" class="settings-primary-tabs" grow color="primary" height="48" :aria-label="`${title} sections`"><v-tab v-for="name in tabs" :key="name" :value="name.toLowerCase()" hide-slider><span class="settings-tab-label">{{ name }}</span></v-tab></v-tabs>
+        <slot name="overflow" />
+      </div>
       <div class="settings-scroll"><slot /></div>
-      <v-card-actions><slot name="footer" /><v-spacer /><v-btn color="primary" @click="opened = false">Done</v-btn></v-card-actions>
     </v-card>
   </component>
 </template>
+<style scoped>
+@layer app-components {
+.settings-tab-header { display: flex; align-items: center; flex-shrink: 0; border-bottom: 1px solid rgb(var(--v-theme-outline-variant)); }
+.settings-primary-tabs { flex: 1; min-width: 0; }
+.settings-primary-tabs :deep(.v-tab) { min-width: 0; color: rgb(var(--v-theme-on-surface)); }
+.settings-primary-tabs :deep(.v-tab--selected) { color: rgb(var(--v-theme-primary)); }
+.settings-tab-label { position: relative; display: inline-block; }
+.settings-primary-tabs :deep(.v-tab--selected) .settings-tab-label::after { content: ''; position: absolute; height: 3px; min-width: 24px; width: calc(100% - 4px); left: 50%; transform: translateX(-50%); bottom: -14px; background: rgb(var(--v-theme-primary)); border-radius: 3px 3px 0 0; }
+}
+</style>

@@ -64,9 +64,9 @@ try {
     const next = page.getByRole('button', { name: 'Next page', exact: true })
     if (await next.isEnabled()) { await next.click(); await capture('next-page') }
     await page.getByRole('button', { name: 'Reader settings', exact: true }).click(); await capture('reader-settings')
-    await page.getByRole('combobox', { name: 'Reading mode', exact: true }).press('Enter')
-    await page.getByRole('option', { name: 'Webtoon · vertical scroll', exact: true }).click()
-    await page.getByRole('button', { name: 'Done', exact: true }).click(); await capture('webtoon')
+    await page.getByText('Reading mode', { exact: true }).click()
+    await page.getByRole('radio', { name: 'Webtoon · vertical scroll', exact: true }).click()
+    await page.keyboard.press('Escape'); await capture('webtoon')
     await page.getByRole('button', { name: 'Chapter list', exact: true }).click(); await capture('chapters')
     await page.goto(`${base}/browse/source/${encodeURIComponent(selected.sourceId)}`)
     await page.locator('.manga-card').first().waitFor({ timeout: 30000 }); await capture('popular')
@@ -86,7 +86,7 @@ try {
     await page.waitForFunction(() => !document.querySelector('[aria-label="Loading catalogue"]'))
     await page.locator('.manga-card').first().waitFor({ timeout: 25000 }); await capture('search')
     const searchUrl = page.url()
-    await page.goto(`${base}/settings/appearance`); await page.getByRole('radio', { name: 'Dark', exact: true }).check()
+    await page.goto(`${base}/settings/appearance`); await page.getByRole('button', { name: 'Dark', exact: true }).click()
     await page.goto(searchUrl); await page.locator('.manga-card').first().waitFor(); await capture('search-dark')
     await context.close()
   }

@@ -2,11 +2,11 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { version as vuetifyVersion, useDisplay, useTheme } from 'vuetify'
+import { useTabletUi } from './composables/useTabletUi'
 import { usePreferencesStore } from './stores/preferences'
 import { useSuwayomiStore } from './stores/suwayomi'
 const route = useRoute(), router = useRouter(), preferences = usePreferencesStore(), server = useSuwayomiStore()
-const { width } = useDisplay()
-const tabletUi = computed(() => width.value >= 720)
+const tabletUi = useTabletUi(), { width } = useDisplay()
 const theme = useTheme()
 const media = window.matchMedia('(prefers-color-scheme: dark)'), systemDark = ref(media.matches)
 const updateSystemTheme = (e: MediaQueryListEvent) => { systemDark.value = e.matches }
@@ -25,7 +25,7 @@ const navItems = [
   { title: 'More', icon: 'more_horiz', path: '/more' },
 ]
 const activeNav = computed(() => route.path.startsWith('/manga/') ? '/library' : route.path)
-const toolbarTitle = computed(() => route.meta.catalogue ? server.sources.find(s => s.id === route.params.sourceId)?.displayName || 'Source' : route.meta.title)
+const toolbarTitle = computed(() => route.path.startsWith('/settings') && tabletUi.value && width.value >= 600 ? 'Settings' : route.meta.catalogue ? server.sources.find(s => s.id === route.params.sourceId)?.displayName || 'Source' : route.meta.title)
 function back() {
   if (route.path.startsWith('/settings/')) { void router.push('/settings'); return }
   if (route.path === '/settings' || route.path === '/about' || route.path === '/categories') { void router.push('/more'); return }

@@ -26,7 +26,7 @@ async function sheet(page:Page, tab:string, chapterMode=false) {
   await page.getByRole('button',{name:chapterMode?'Chapter settings':'Filter and sort library',exact:true}).click()
   await page.getByRole('tab',{name:tab,exact:true}).click()
 }
-async function done(page:Page) { await page.getByRole('button',{name:'Done',exact:true}).click() }
+async function done(page:Page) { await page.keyboard.press('Escape'); await expect(page.locator('.adaptive-settings-card')).toBeHidden() }
 test('library ordering reverses primary only, keeps zero unread last, persists across routes and categories', async ({page}) => {
   await setup(page); await page.goto('/library')
   await expect.poll(()=>order(page)).toEqual(['Alpha','Beta','Read','Zulu'])

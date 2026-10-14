@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import PreferenceChoice from '../PreferenceChoice.vue'
 import AdaptiveSettingsSheet from '../AdaptiveSettingsSheet.vue'
 import { useReaderPreferences } from '../../stores/readerPreferences'
 const open = defineModel<boolean>({ required: true }), preferences = useReaderPreferences(), tab = ref('reading')
@@ -10,9 +11,9 @@ const backgrounds = [{ title: 'Black', value: 'black' }, { title: 'Dark gray', v
   <AdaptiveSettingsSheet v-model="open" v-model:tab="tab" title="Reader settings" :tabs="['Reading', 'General']">
       <div class="pa-6">
         <template v-if="tab === 'reading'">
-          <v-select v-model="preferences.mode" :items="modes" label="Reading mode" class="mb-4" hide-details />
-          <v-select v-model="preferences.fit" :items="[{ title: 'Fit entire page', value: 'page' }, { title: 'Fit width', value: 'width' }]" label="Image scale" :disabled="preferences.mode === 'webtoon'" class="mb-4" hide-details />
-          <v-select v-model="preferences.background" :items="backgrounds" label="Reader background" hide-details />
+          <PreferenceChoice v-model="preferences.mode" :items="modes" title="Reading mode" />
+          <PreferenceChoice v-model="preferences.fit" :items="[{ title: 'Fit entire page', value: 'page' }, { title: 'Fit width', value: 'width' }]" title="Image scale" :disabled="preferences.mode === 'webtoon'" />
+          <PreferenceChoice v-model="preferences.background" :items="backgrounds" title="Reader background" />
           <p class="text-body-medium text-on-surface-variant mt-6">Swipe or use the arrow keys to turn pages. Tap the page, or press Space, to show and hide controls.</p>
         </template>
         <template v-else>
