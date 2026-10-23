@@ -1,14 +1,15 @@
 import type { Chapter, Manga, Source } from '../api/types'
 export type TriState = 'all' | 'include' | 'exclude'
-export type LibrarySortType = 'title' | 'total' | 'lastRead' | 'unread' | 'latestChapter' | 'chapterFetched' | 'added' | 'random'
+export type LibrarySortType = 'title' | 'total' | 'lastRead' | 'lastUpdate' | 'unread' | 'latestChapter' | 'chapterFetched' | 'added' | 'trackerScore' | 'random'
 export interface LibrarySort { type: LibrarySortType; descending: boolean; seed: number }
-export interface LibraryFilters { downloaded: TriState; unread: TriState; started: TriState; bookmarked: TriState; completed: TriState }
+export interface LibraryFilters { downloaded: TriState; unread: TriState; started: TriState; bookmarked: TriState; completed: TriState; tracking?: Record<number, TriState> }
 export interface ChapterSummary { bookmarked: boolean; started: boolean; latestUpload: number; fetchedAt: number; lastRead: number; nextUnread: number | null }
 export const defaultFilters = (): LibraryFilters => ({ downloaded: 'all', unread: 'all', started: 'all', bookmarked: 'all', completed: 'all' })
 export const defaultSort = (): LibrarySort => ({ type: 'title', descending: false, seed: 0 })
 export const librarySortOptions: { value: LibrarySortType; label: string }[] = [
   { value: 'title', label: 'Alphabetically' }, { value: 'total', label: 'Total chapters' }, { value: 'lastRead', label: 'Last read' },
-  { value: 'unread', label: 'Unread chapters' }, { value: 'latestChapter', label: 'Latest chapter' },
+  { value: 'lastUpdate', label: 'Last update check' },
+  { value: 'unread', label: 'Unread count' }, { value: 'latestChapter', label: 'Latest chapter' },
   { value: 'chapterFetched', label: 'Chapter fetch date' }, { value: 'added', label: 'Date added' }, { value: 'random', label: 'Random' },
 ]
 export const nextTriState = (value: TriState): TriState => value === 'all' ? 'include' : value === 'include' ? 'exclude' : 'all'
@@ -26,12 +27,24 @@ export function summarizeChapters(chapters: Chapter[]): ChapterSummary {
   return summary
 }
 export function sourceOf(manga: Manga, sources: Source[]) { return manga.source || sources.find(s => s.id === manga.sourceId) }
-export function isLocal(manga: Manga, sources: Source[]) { return sourceOf(manga, sources)?.lang === 'localsourcelang' }
+/** Mihon: `Manga.isLocal()` is `source == LocalSource.ID` (0). Suwayomi's local source is id "0", lang "localsourcelang". */
+export function isLocal(manga: Manga, sources: Source[]) {
+  const source = sourceOf(manga, sources)
+  return !!source && (source.id === '0' || source.lang === 'localsourcelang')
+}
 const finite = (n: unknown): number | null => typeof n === 'number' && Number.isFinite(n) ? n : null
 export function matchesLibrary(manga: Manga, filters: LibraryFilters, downloadedOnly: boolean, summary?: ChapterSummary, sources: Source[] = []) {
   const unread = finite(manga.unreadCount), total = finite(manga.chapterCount), downloads = finite(manga.downloadCount)
   const started = summary?.started ?? (unread !== null && total !== null ? total > unread : null)
   const downloaded = isLocal(manga, sources) ? true : downloads === null ? null : downloads > 0
+  if (filters.tracking) {
+    for (const [trackerIdStr, state] of Object.entries(filters.tracking)) {
+      if (state === 'all') continue
+      const trackerId = Number(trackerIdStr)
+      const hasTracker = manga.trackers?.some(t => t.id === trackerId && t.record !== null) ?? false
+      if (!matchesTriState(hasTracker, state)) return false
+    }
+  }
   return matchesTriState(downloaded, downloadedOnly ? 'include' : filters.downloaded)
     && matchesTriState(unread === null ? null : unread > 0, filters.unread)
     && matchesTriState(started, filters.started) && matchesTriState(summary?.bookmarked ?? null, filters.bookmarked)
@@ -48,9 +61,15 @@ export function sortLibrary(items: Manga[], sort: LibrarySort, summaries: Record
       case 'total': return finite(m.chapterCount)
       case 'unread': return finite(m.unreadCount)
       case 'lastRead': return finite(m.lastReadAt) ?? summaries[m.id]?.lastRead ?? null
+      case 'lastUpdate': return finite(m.lastFetchedAt) ?? finite(m.chaptersLastFetchedAt) ?? finite(m.lastModifiedAt)
       case 'latestChapter': return summaries[m.id]?.latestUpload ?? null
       case 'chapterFetched': return summaries[m.id]?.fetchedAt ?? null
       case 'added': return finite(m.inLibraryAt)
+      case 'trackerScore': {
+        if (!m.trackers || m.trackers.length === 0) return null
+        const scores = m.trackers.map(t => t.record?.score).filter((s): s is number => typeof s === 'number' && s > 0)
+        return scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null
+      }
       default: return null
     }
   }

@@ -16,31 +16,140 @@
 }
 @layer app-components {
 // App geometry/cover layering; MD3 component defaults stay with Vuetify 4.
-html { font-family: Roboto, sans-serif; }
-body { margin: 0; }
-.v-application { font-family: Roboto, sans-serif; }
+html {
+  font-family: Roboto, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+body {
+  margin: 0;
+  min-height: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+.v-application {
+  font-family: Roboto, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
 .material-symbols-rounded { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .mihon-navigation {
   padding-bottom: env(safe-area-inset-bottom);
   height: calc(80px + env(safe-area-inset-bottom)) !important;
-  .v-btn { min-width: 0; padding: 8px 0 12px; opacity: 1; flex: 1; }
+  .v-btn {
+    min-width: 0;
+    max-width: 100%;
+    padding: 8px 0 12px;
+    opacity: 1;
+    flex: 1;
+    overflow: hidden;
+  }
   .v-btn__overlay { display: none; }
   .v-btn:not(.v-btn--active) { color: rgb(var(--v-theme-on-surface-variant)); }
-  .v-btn__content { gap: 0; }
-  .navigation-icon { width: 64px; height: 32px; display: grid; place-items: center; border-radius: 16px; }
+  .v-btn__content {
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .navigation-icon { width: 64px; height: 32px; display: grid; place-items: center; border-radius: 16px; flex-shrink: 0; }
   .v-btn--active .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .navigation-label {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    padding: 0 4px;
+    box-sizing: border-box;
+  }
 }
-.v-main { padding-bottom: calc(var(--v-layout-bottom) + env(safe-area-inset-bottom)); }
-.empty-state { min-height: calc(100dvh - 260px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr)); gap: 4px; padding: 8px; }
-@media (max-width: 280px) { .library-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (hover: none) {
+  .v-tab:not(:active):not(:focus-visible) > .v-btn__overlay {
+    opacity: 0 !important;
+  }
+}
+.v-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+.v-main > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+.empty-state {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+// LazyLibraryGrid.kt: GridCells.Adaptive(128.dp) when the column preference is 0,
+// `contentPadding + PaddingValues(8.dp)` and 4dp spacers in both directions.
+// Modifier.fillMaxSize() packs rows from the top (align-content: start).
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr));
+  gap: 4px;
+  padding: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  align-content: start;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+// `GridItemSpan(maxLineSpan)`: the loading row of the catalogue grid spans the whole line.
+.library-grid-loading { grid-column: 1 / -1; }
 .v-container.manga-detail { max-width: 900px; }
 .manga-description-collapsed { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
 .description-text { white-space: pre-line; overflow-wrap: anywhere; }
 .v-list-item-title, .v-list-item-subtitle { overflow-wrap: anywhere; }
 .v-list-item-title { white-space: normal; }
 .v-list-item .v-list-item-subtitle { -webkit-line-clamp: unset; white-space: normal; display: block; overflow: visible; opacity: 1; color: rgb(var(--v-theme-on-surface-variant)); }
-.skip-link { position: fixed; top: -80px; left: 16px; z-index: 9999; padding: 12px; background: #fff; color: #0058ca; }
+.v-overlay-container { z-index: 10000 !important; }
+.v-btn { overflow: hidden; }
+.v-btn__overlay, .v-btn__underlay { border-radius: inherit !important; }
+.v-btn:focus-visible { outline: none !important; box-shadow: 0 0 0 2px rgb(var(--v-theme-primary)) !important; }
+.skip-link { position: fixed; top: -80px; left: 16px; z-index: 10001; padding: 12px; background: #fff; color: #0058ca; }
 .skip-link:focus { top: 8px; }
 a:focus-visible, button:focus-visible, .v-btn:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
@@ -50,11 +159,36 @@ a:focus-visible, button:focus-visible, .v-btn:focus-visible { outline: 2px solid
 .update-row:hover { background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 4%, transparent); }
 .v-container.settings-content { max-width: 760px; }
 .mihon-rail {
-  .v-btn__content { display: flex; flex-direction: column; }
-  .navigation-icon { width: 56px; height: 32px; border-radius: 16px; display: grid; place-items: center; }
+  .v-btn {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .v-btn__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .navigation-icon { width: 56px; height: 32px; border-radius: 16px; display: grid; place-items: center; flex-shrink: 0; }
   .v-btn:not(.v-btn--active) { color: rgb(var(--v-theme-on-surface-variant)); }
   .v-btn--active .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   .v-btn__overlay { display: none; }
+  .navigation-label {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    padding: 0 4px;
+    box-sizing: border-box;
+  }
 }
 
 .manga-cover-button { width: 112px; flex-shrink: 0; border: none; padding: 0; background: none; cursor: zoom-in; align-self: flex-start; }
@@ -78,53 +212,163 @@ a:focus-visible, button:focus-visible, .v-btn:focus-visible { outline: 2px solid
 .listing-chip:first-child .material-symbols-rounded, .source-toolbar [aria-label="Catalogue display mode"] .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
 
 // File-level geometry from CommonMangaItem.kt, MangaCover.kt and SettingsItems.kt.
-.manga-tile { position: relative; min-width: 0; padding: 4px; border-radius: 12px; }
+// GridItemSelectable.kt: `Box.clip(MaterialTheme.shapes.small)` (8dp) + `padding(4.dp)`,
+// with the `selectedOutline` rectangle painted in colorScheme.secondary behind the content.
+.manga-tile { position: relative; min-width: 0; padding: 0; border-radius: 8px; overflow: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.manga-tile-link { display: block; padding: 4px; border-radius: 8px; color: inherit; text-decoration: none; position: relative; transition: background-color 0.15s ease; }
+.manga-tile-link:hover { background-color: color-mix(in srgb, currentColor 8%, transparent); }
+.manga-tile-link:active { background-color: color-mix(in srgb, currentColor 12%, transparent); }
+.manga-tile-selected { background: rgb(var(--v-theme-secondary)); color: rgb(var(--v-theme-on-secondary)); }
+.manga-tile-selected .manga-title-below { color: rgb(var(--v-theme-on-secondary)); }
 .manga-card { display: block; color: inherit; text-decoration: none; }
-.manga-grid-cover { position: relative; aspect-ratio: 2 / 3; border-radius: 4px; overflow: hidden; background: #8888881f; }
+// `MangaGridCover`: `Box.fillMaxWidth().aspectRatio(MangaCover.Book.ratio)`. The box itself is
+// clipped to `shapes.extraSmall` (4dp) matching `MangaCover.Book`.
+.manga-grid-cover { position: relative; aspect-ratio: 2 / 3; border-radius: 4px; }
+// `MangaCover.Book`: the image (and its placeholder / error drawable) is clipped to 4dp.
+.manga-cover-media { position: absolute; inset: 0; border-radius: 4px; overflow: hidden; background: #8888881f; }
 .manga-cover-image { width: 100%; height: 100%; }
-.cover-fallback { width: 100%; height: 100%; background: #8888881f; }
+// `cover_error.xml`: the #1F888888 plate with the 24dp "hide image" glyph centered inside it.
+.cover-fallback { width: 100%; height: 100%; display: grid; place-items: center; background: #8888881f; }
 .in-library-cover { opacity: .34; }
-.manga-shade { position: absolute; inset: auto 0 0; height: 33%; background: linear-gradient(transparent, #000a); pointer-events: none; }
-.manga-title { font-size: 12px; line-height: 18px; font-weight: 500; }
-.manga-title-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
-.manga-card-compact .manga-title { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px; color: white; text-shadow: 0 0 4px black; }
-.manga-card-compact .manga-title.has-continue { padding-right: 38px; }
-.manga-card-comfortable .manga-title { padding: 4px; min-height: 44px; }
-.manga-badge-group { display: inline-flex; flex-shrink: 0; border-radius: 4px; overflow: hidden; }
-.manga-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 18px; padding: 0 3px; font-size: 12px; line-height: 18px; font-weight: 500; }
-.grid-badges-start { position: absolute; top: 4px; left: 4px; }
-.grid-badges-end { position: absolute; top: 4px; right: 4px; }
-.manga-list { padding: 8px 0; }
-.manga-list-row { display: flex; align-items: center; min-width: 0; height: 56px; padding-right: 16px; }
-.manga-list-link { display: flex; align-items: center; flex: 1 1 0; min-width: 0; height: 56px; padding: 8px 0 8px 16px; color: inherit; text-decoration: none; }
-.manga-list-title { min-width: 0; flex: 1 1 0; margin: 0 16px; font-size: 14px; line-height: 20px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-.list-cover-fallback { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; background: #8888881f; }
-.continue-reading { position: absolute; right: 10px; bottom: 10px; width: 32px; height: 32px; border-radius: 12px; display: grid; place-items: center; text-decoration: none; background: color-mix(in srgb, rgb(var(--v-theme-primary-container)) 90%, transparent); color: rgb(var(--v-theme-on-primary-container)); }
-.manga-tile-comfortable .continue-reading { bottom: 54px; }
+.in-library-cover-fav { opacity: .34; }
+// GRID_SELECTED_COVER_ALPHA = 0.76.
+.manga-cover-selected { opacity: .76; }
+.manga-shade { position: absolute; inset: auto 0 0; height: 33%; min-height: 52px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.667) 100%); pointer-events: none; }
+// GridItemTitle.kt: 12sp / 18sp, Medium, letterSpacing 0.1sp, overflow Ellipsis.
+.manga-title { font-size: 12px; line-height: 18px; font-weight: 500; letter-spacing: .1px; }
+.manga-title-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; word-break: break-word; }
+// CoverTextOverlay.kt: the title is drawn over the bottom of the cover.
+.manga-title-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px; color: white; text-shadow: 0 0 4px black; }
+// The compact overlay reserves the small resume button on the title row:
+// 8dp title padding + 28dp button + 6dp end padding = 42dp.
+.manga-title-overlay.has-continue { padding-right: 42px; }
+// GridItemTitle.kt below the cover: `Modifier.padding(4.dp)`, minLines = 2, maxLines = 2.
+.manga-title-below { padding: 4px; color: rgb(var(--v-theme-on-surface)); }
+.manga-card-comfortable .manga-title-below .manga-title-text { min-height: 36px; }
+// Badges.kt: BadgeGroup is a Row clipped to shapes.extraSmall (4dp).
+.manga-badge-group { display: inline-flex; align-items: flex-start; flex-shrink: 0; border-radius: 4px; overflow: hidden; box-sizing: border-box; user-select: none; }
+// Badges.kt: Badge is a bodySmall Text (12sp / 16sp, Medium) with a rectangular shape
+// and 3dp horizontal / 1dp vertical padding inside the clipped group.
+.manga-badge { display: inline-flex; align-items: center; justify-content: center; height: 18px; padding: 1px 3px; border-radius: 0; box-sizing: border-box; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .4px; white-space: nowrap; user-select: none; }
+// Badges.kt `Badge(imageVector = �)`: the vector is drawn into a placeholder of
+// `bodySmall.fontSize` (12sp) square, so the glyph box is exactly 12x12dp.
+.manga-badge-icon { display: block; flex: 0 0 auto; width: 12px; height: 12px; }
+// Badges.kt: the container is colorScheme.secondary (unread, in library) or
+// colorScheme.tertiary (downloads, local, language) with the matching on-color.
+.manga-badge.bg-secondary { background-color: rgb(var(--v-theme-secondary)); color: rgb(var(--v-theme-on-secondary)); }
+.manga-badge.bg-tertiary { background-color: rgb(var(--v-theme-tertiary)); color: rgb(var(--v-theme-on-tertiary)); }
+.grid-badges-start { position: absolute; top: 4px; left: 4px; pointer-events: none; }
+.grid-badges-end { position: absolute; top: 4px; right: 4px; pointer-events: none; }
+.manga-list {
+  padding: 8px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+// `combinedClickable` draws a Material ripple over the whole row; the link content sits
+// above the ripple container (z-index 0) so the ink stays visible.
+.manga-list-row { position: relative; overflow: hidden; display: flex; align-items: center; min-width: 0; height: 56px; padding: 0 16px; cursor: pointer; user-select: none; }
+.manga-list-row .manga-list-link { position: relative; z-index: 1; }
+// BrowseSourceCompactGrid.kt / BrowseSourceComfortableGrid.kt: the loading item spans the
+// whole line (`GridItemSpan(maxLineSpan)`), so it occupies one grid row across all columns.
+.library-grid > .browse-source-loading-item { grid-column: 1 / -1; }
+// Modifier.kt `selectedBackground`: `colorScheme.secondary.copy(alpha)` drawn behind the
+// row content - 0.16 in the dark theme, 0.22 in the light one.
+.manga-list-row.is-selected { background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 22%, transparent); }
+.v-theme--mihonDark .manga-list-row.is-selected,
+.v-theme--dark .manga-list-row.is-selected { background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 16%, transparent); }
+.updates-item.is-selected { background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 22%, transparent); }
+.v-theme--mihonDark .updates-item.is-selected,
+.v-theme--dark .updates-item.is-selected { background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 16%, transparent); }
+.cd-item.cd-item-selected { background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 22%, transparent); }
+.v-theme--mihonDark .cd-item.cd-item-selected,
+.v-theme--dark .cd-item.cd-item-selected { background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 16%, transparent); }
+.v-theme--mihonDark .cd-item.cd-item-selected:hover,
+.v-theme--dark .cd-item.cd-item-selected:hover {
+background: color-mix(in srgb, color-mix(in srgb, rgb(var(--v-theme-secondary)) 16%, transparent), rgb(var(--v-theme-on-surface)) 8%);
+}
+.v-theme--mihonDark .library-tab-pill,
+.v-theme--dark .library-tab-pill {
+--pill-alpha: 0.12;
+}
+@media (prefers-color-scheme: dark) {
+:root:not(.v-theme--mihonLight) .library-tab-pill {
+--pill-alpha: 0.12;
+}
+}
+.manga-list-link { display: flex; align-items: center; flex: 1 1 0; min-width: 0; height: 56px; padding: 0; color: rgb(var(--v-theme-on-surface)); text-decoration: none; }
+// MangaListItem.kt: `MaterialTheme.typography.bodyMedium` (14sp / 20sp, weight 400,
+// letterSpacing 0.25sp), `maxLines = 2` with an ellipsis overflow.
+.manga-list-title { min-width: 0; flex: 1 1 0; margin: 0 16px; font-size: 14px; line-height: 20px; font-weight: 400; letter-spacing: .25px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-overflow: ellipsis; }
+.list-cover-fallback { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; background: #8888881f; border-radius: 4px; overflow: hidden; }
+// ContinueReadingButton.kt: a FilledIconButton with `MaterialTheme.shapes.small` (8dp),
+// `primaryContainer.copy(alpha = 0.9f)` and `contentColorFor(primaryContainer)`.
+.continue-reading { border: 0; outline: none; padding: 0; cursor: pointer; border-radius: 8px; display: grid; place-items: center; text-decoration: none; background: color-mix(in srgb, rgb(var(--v-theme-primary-container)) 90%, transparent); color: rgb(var(--v-theme-on-primary-container)); transition: background 0.15s ease; }
+.continue-reading:hover { background: color-mix(in srgb, rgb(var(--v-theme-on-primary-container)) 8%, color-mix(in srgb, rgb(var(--v-theme-primary-container)) 90%, transparent)); }
 .continue-reading-small, .list-continue { width: 28px; height: 28px; }
-.list-continue { position: static; flex-shrink: 0; margin-left: 8px; }
+.continue-reading-large { width: 32px; height: 32px; }
+// `ContinueReadingButtonListSpacing` = 8dp between the badge group and the button.
+.list-continue { flex-shrink: 0; margin-left: 8px; }
+// The resume button is drawn inside the cover box (MangaGridCover `content` slot),
+// so the anchor mirrors the cover width and its 2:3 ratio.
+// ContinueReadingButtonGridPadding = 6dp.
+.manga-cover-anchor { position: absolute; left: 4px; right: 4px; top: 4px; aspect-ratio: 2 / 3; pointer-events: none; }
+.manga-cover-anchor .continue-reading { position: absolute; right: 6px; bottom: 6px; pointer-events: auto; }
+// VerticalFastScroller.kt: 12x48dp pill shape, primary color, 250ms fade-out animation.
+.fast-scroll-thumb { position: fixed; width: 12px; height: 48px; border-radius: 6px; background: rgb(var(--v-theme-primary)); pointer-events: auto; z-index: 10; touch-action: none; cursor: pointer; user-select: none; }
+.fast-scroll-fade-enter-active { transition: opacity 0ms; }
+.fast-scroll-fade-leave-active { transition: opacity 250ms ease-out; }
+.fast-scroll-fade-enter-from, .fast-scroll-fade-leave-to { opacity: 0; }
 .filled-symbol { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-.adaptive-settings-card { max-height: 85dvh; }
-.mobile-settings-card { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; }
-.settings-scroll { overflow-y: auto; padding: 8px 0; min-height: 200px; }
+.adaptive-settings-card { max-height: 85dvh; border-radius: 28px; }
+.mobile-settings-card { border-top-left-radius: 28px !important; border-top-right-radius: 28px !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+.adaptive-settings-card, .mobile-settings-card {
+background: rgb(var(--v-theme-surface-container-high)) !important;
+color: rgb(var(--v-theme-on-surface)) !important;
+width: min(460px, 100%) !important;
+max-width: 460px;
+margin-inline: auto !important;
+box-sizing: border-box;
+overflow: hidden;
+}
+.settings-scroll {
+overflow-y: auto;
+padding: 8px 0;
+min-height: 200px;
+scrollbar-width: none;
+&::-webkit-scrollbar {
+display: none;
+}
+}
 .settings-row { border: 0; background: transparent; display: flex; align-items: center; gap: 24px; width: 100%; min-height: 44px; padding: 10px 24px; color: rgb(var(--v-theme-on-surface)); font-size: 14px; line-height: 20px; text-align: start; cursor: pointer; }
-.settings-row:hover:not(:disabled) { background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 6%, transparent); }
+.settings-row:hover:not(:disabled) { background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 8%, transparent); }
 .settings-row:disabled { opacity: .38; cursor: default; }
 .settings-row small { font-size: 11px; line-height: 16px; }
 .settings-icon-space { width: 24px; height: 24px; flex-shrink: 0; }
-.settings-heading { padding: 10px 24px; font-size: 14px; line-height: 20px; font-weight: 500; color: rgb(var(--v-theme-primary)); }
+.settings-heading { padding: 10px 24px; font-size: 14px; line-height: 20px; font-weight: 600; color: rgb(var(--v-theme-on-surface-variant)); }
 .settings-note { margin: 10px 24px; font-size: 12px; line-height: 18px; color: rgb(var(--v-theme-on-surface-variant)); }
 .display-mode-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 10px; }
 .display-mode-chip.v-chip--variant-outlined { border-color: rgb(var(--v-theme-outline)); }
 .display-mode-chip.v-chip { border-radius: 8px; font-size: 14px; font-weight: 500; }
 .settings-columns { padding: 10px 24px; font-size: 14px; line-height: 20px; }
 
-.columns-pill { padding: 4px 12px; border-radius: 16px; background: rgb(var(--v-theme-surface-container-highest)); color: rgb(var(--v-theme-on-surface)); font-size: 14px; }
+.columns-pill { padding: 1px 6px; border-radius: 28px; background: rgb(var(--v-theme-surface-container-highest)); color: rgb(var(--v-theme-on-surface)); font-size: 14px; line-height: 20px; margin-left: 4px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
 
-.manga-list-link .list-cover-image { flex: 0 0 40px; width: 40px; min-width: 40px; max-width: 40px; height: 40px; }
+.manga-list-link .list-cover-image { flex: 0 0 40px; width: 40px; min-width: 40px; max-width: 40px; height: 40px; border-radius: 4px; overflow: hidden; }
 
 .settings-checkbox { padding: 0 24px; min-height: 44px; }
 .settings-checkbox .v-selection-control--dirty .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .settings-checkbox .v-label { font-size: 14px; line-height: 20px; }
 .settings-action { border: 0; background: transparent; padding: 0; cursor: pointer; }
+// BasePreferenceWidget.highlightBackground: surfaceTint.copy(alpha = .12f), animated with five
+// 200ms reverse iterations after a 600ms delay (SearchableSettings.highlightKey).
+.pref-highlight { animation: pref-highlight-blink 400ms ease-in-out 5 alternate 0.6s; }
+@keyframes pref-highlight-blink {
+from { background-color: transparent; }
+to { background-color: color-mix(in srgb, rgb(var(--v-theme-surface-tint)) 12%, transparent); }
+}
 }

@@ -49,4 +49,41 @@ describe('useSuwayomiStore', () => {
     const store = useSuwayomiStore(); await store.loadManga(1); store.setApiUrl('/proxy/api/v1')
     expect(store.manga).toBeNull(); expect(store.chapters).toEqual([])
   })
+  it('preserves existing manga and chapters during silent reload of same manga without flicker', async () => {
+    api.manga.mockResolvedValue(manga(1)); api.chapters.mockResolvedValue([chapter])
+    const store = useSuwayomiStore()
+    await store.loadManga(1)
+    expect(store.manga?.id).toBe(1)
+    expect(store.chapters.length).toBe(1)
+
+    // Second call for the same manga with silent = true
+    let resolveManga!: (val: unknown) => void
+    api.manga.mockReturnValue(new Promise(r => { resolveManga = r }))
+    const reloadPromise = store.loadManga(1, false, true)
+    // loadingManga should NOT be true when silent, and manga / chapters should NOT be wiped to null/empty
+    expect(store.loadingManga).toBe(false)
+    expect(store.manga?.id).toBe(1)
+    expect(store.chapters.length).toBe(1)
+    resolveManga(manga(1))
+    await reloadPromise
+    expect(store.manga?.id).toBe(1)
+  })
+  it('updates chapters locally and handles markPrevRead', () => {
+    const store = useSuwayomiStore()
+    store.chapters = [
+      { ...chapter, id: 10, index: 1, read: false, bookmarked: false },
+      { ...chapter, id: 20, index: 2, read: false, bookmarked: false },
+      { ...chapter, id: 30, index: 3, read: false, bookmarked: false },
+    ]
+    store.updateChapterLocally(2, { bookmarked: true, read: true })
+    expect(store.chapters[1]?.bookmarked).toBe(true)
+    expect(store.chapters[1]?.read).toBe(true)
+
+    store.updateChapterLocally(3, { markPrevRead: true })
+    expect(store.chapters[0]?.read).toBe(true)
+    expect(store.chapters[1]?.read).toBe(true)
+
+    store.updateChapterByIdLocally(30, { downloaded: true })
+    expect(store.chapters[2]?.downloaded).toBe(true)
+  })
 })

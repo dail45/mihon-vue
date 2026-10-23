@@ -8,6 +8,7 @@
 
 ## UI reference: Mihon
 
+- LOCAL: ./mihon
 - Repository: https://github.com/mihonapp/mihon
 - Inspected commit: **`446f6df82c390ab760802c2fce3b677bce3f31c1`**
 - Pinned revision: https://github.com/mihonapp/mihon/tree/446f6df82c390ab760802c2fce3b677bce3f31c1

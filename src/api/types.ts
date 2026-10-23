@@ -52,3 +52,14 @@ export interface ChapterPatch { read?: boolean; bookmarked?: boolean; markPrevRe
 export interface MangaChapter { manga: Manga; chapter: Chapter }
 /** Recent chapters are zero-based pages; the payload key is page, NOT mangaList. */
 export interface RecentChapters { page: MangaChapter[]; hasNextPage: boolean }
+
+/** Raw Suwayomi filter object payload for GET /source/{id}/filters and search queries */
+export interface RawSourceFilterObject {
+  type: string
+  filter: {
+    name?: string
+    values?: (string | number)[]
+    displayValues?: string[]
+    state?: unknown
+  }
+}

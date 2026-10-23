@@ -1,7 +1,7 @@
 {
   "name": "mihon-vue",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -9,14 +9,17 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "typecheck": "vue-tsc -b"
+    "typecheck": "vue-tsc -b",
+    "gen:locales": "node scripts/gen-locales.mjs"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.2.0",
+    "marked": "^15.0.12",
     "material-symbols": "^0.40.0",
     "ofetch": "^1.4.0",
     "pinia": "^3.0.0",
     "vue": "^3.5.0",
+    "vue-i18n": "^11.4.16",
     "vue-router": "^4.5.0",
     "vuetify": "^4.2.5"
   },

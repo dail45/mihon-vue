@@ -1,27 +1,119 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { nextTriState, type TriState } from '../utils/library'
-const props = defineProps<{ label: string; disabled?: boolean }>()
+
+const props = defineProps<{
+  label: string
+  disabled?: boolean
+}>()
+
 const value = defineModel<TriState>({ required: true })
-const control = ref<HTMLElement | null>(null)
-// Vuetify's boolean update can skip adjacent tri-states. Control activation and
-// bridge the native input properties after canceled click pre-activation settles.
-function syncNativeState() {
-  requestAnimationFrame(() => {
-    const input = control.value?.querySelector<HTMLInputElement>('input')
-    if (input) { input.checked = value.value === 'include'; input.indeterminate = value.value === 'exclude' }
-  })
-}
-function advance(event: MouseEvent) {
+
+function advance() {
   if (props.disabled) return
-  ;(event.currentTarget as HTMLElement)?.querySelector<HTMLInputElement>('input')?.focus()
   value.value = nextTriState(value.value)
 }
-watch(value, syncNativeState, { flush: 'post' })
-onMounted(syncNativeState)
+
+const iconName = computed(() => {
+  switch (value.value) {
+    case 'include':
+      return 'check_box'
+    case 'exclude':
+      return 'disabled_by_default'
+    default:
+      return 'check_box_outline_blank'
+  }
+})
+
+const isFilled = computed(() => value.value === 'include' || value.value === 'exclude')
+
+const iconColor = computed(() => {
+  if (props.disabled || value.value === 'all') {
+    return 'rgb(var(--v-theme-on-surface-variant))'
+  }
+  return 'rgb(var(--v-theme-primary))'
+})
+
+const ariaChecked = computed(() => {
+  if (value.value === 'include') return 'true'
+  if (value.value === 'exclude') return 'mixed'
+  return 'false'
+})
 </script>
+
 <template>
-  <div ref="control" @click.capture.prevent="advance">
-  <v-checkbox :model-value="value === 'include'" :indeterminate="value === 'exclude'" indeterminate-icon="disabled_by_default" :label="label" :disabled="disabled" :aria-description="value === 'all' ? 'No filter' : value === 'include' ? 'Include matching items' : 'Exclude matching items'" class="settings-checkbox" density="comfortable" hide-details @update:model-value="syncNativeState" @update:indeterminate="syncNativeState" />
-  </div>
+  <!-- Pixel parity with Mihon Compose TriStateItem (replaces legacy <v-checkbox) -->
+  <button
+    type="button"
+    role="checkbox"
+    class="settings-row tristate-item"
+    :class="{ 'tristate-item--disabled': disabled }"
+    :aria-checked="ariaChecked"
+    :aria-label="label"
+    :disabled="disabled"
+    @click="advance"
+  >
+    <span class="settings-icon-slot">
+      <v-icon
+        :icon="iconName"
+        :class="{ 'filled-symbol': isFilled }"
+        :style="{ color: iconColor }"
+        size="24"
+      />
+    </span>
+    <span class="settings-row-label">{{ label }}</span>
+  </button>
 </template>
+
+<style scoped>
+@layer app-components {
+.tristate-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 44px;
+  padding: 10px 24px;
+  color: rgb(var(--v-theme-on-surface));
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  text-align: start;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tristate-item:hover:not(:disabled) {
+  background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 8%, transparent);
+}
+.tristate-item:active:not(:disabled) {
+  background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 12%, transparent);
+}
+.tristate-item:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
+}
+.tristate-item--disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.settings-icon-slot {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+}
+.settings-row-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0.0178571429em;
+  color: rgb(var(--v-theme-on-surface));
+}
+}
+</style>

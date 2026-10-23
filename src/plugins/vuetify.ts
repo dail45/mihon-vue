@@ -1,6 +1,6 @@
 import { h } from 'vue'
 import { createVuetify, type IconSet } from 'vuetify'
-import { VAlert, VApp, VAppBar, VAppBarTitle, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VCardTitle, VCheckbox, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VNavigationDrawer, VProgressCircular, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSlider, VSpacer, VSwitch, VTab, VTabs, VTextField, VThemeProvider } from 'vuetify/components'
+import { VAlert, VApp, VAppBar, VAppBarTitle, VBadge, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VCardTitle, VCheckbox, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VNavigationDrawer, VProgressCircular, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSlider, VSnackbar, VSpacer, VSwitch, VTab, VTabs, VTextField, VThemeProvider, VTooltip } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { aliases } from 'vuetify/iconsets/md'
 const symbols: IconSet = {
@@ -9,10 +9,10 @@ const symbols: IconSet = {
 // Vuetify 4 native MD3 typography/elevation. No legacy MD2 compatibility blueprint.
 // Colors translated from Mihon's TachiyomiColorScheme.kt. See docs/REFERENCES.md.
 export const vuetify = createVuetify({
-  components: { VAlert, VApp, VAppBar, VAppBarTitle, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VCardTitle, VCheckbox, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VNavigationDrawer, VProgressCircular, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSlider, VSpacer, VSwitch, VTab, VTabs, VTextField, VThemeProvider }, directives,
+  components: { VAlert, VApp, VAppBar, VAppBarTitle, VBadge, VBottomNavigation, VBottomSheet, VBtn, VCard, VCardActions, VCardText, VCardTitle, VCheckbox, VChip, VContainer, VDialog, VDivider, VForm, VIcon, VImg, VList, VListItem, VListSubheader, VMain, VMenu, VNavigationDrawer, VProgressCircular, VProgressLinear, VRadio, VRadioGroup, VSelect, VSheet, VSlider, VSnackbar, VSpacer, VSwitch, VTab, VTabs, VTextField, VThemeProvider, VTooltip }, directives,
   icons: { defaultSet: 'symbols', aliases, sets: { symbols } },
   theme: {
-    defaultTheme: 'mihonLight',
+    defaultTheme: 'mihonDark',
     themes: {
       mihonLight: { dark: false, colors: {
         "primary": "#0058CA",

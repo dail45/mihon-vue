@@ -1,16 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { apiErrorMessage, createSuwayomiApi } from '../api/client'
-import type { Manga } from '../api/types'
+import type { Manga, RawSourceFilterObject } from '../api/types'
 export type CatalogueMode = 'popular' | 'latest' | 'search'
 export const useCatalogueStore = defineStore('catalogue', () => {
   const items = ref<Manga[]>([]), loading = ref(false), error = ref<string | null>(null)
   const hasNextPage = ref(false), page = ref(0)
   let generation = 0
-  let selection: { apiUrl: string; sourceId: string; mode: CatalogueMode; query: string } | null = null
+  let selection: { apiUrl: string; sourceId: string; mode: CatalogueMode; query: string; filters?: RawSourceFilterObject[] } | null = null
   function close() { generation++; selection = null; items.value = []; loading.value = false; error.value = null; page.value = 0; hasNextPage.value = false }
-  async function open(apiUrl: string, sourceId: string, mode: CatalogueMode, query = '') {
-    close(); selection = { apiUrl, sourceId, mode, query }; hasNextPage.value = true
+  async function open(apiUrl: string, sourceId: string, mode: CatalogueMode, query = '', filters?: RawSourceFilterObject[]) {
+    close(); selection = { apiUrl, sourceId, mode, query, filters }; hasNextPage.value = true
     await loadMore()
   }
   async function loadMore() {
@@ -18,7 +18,10 @@ export const useCatalogueStore = defineStore('catalogue', () => {
     const current = selection, request = generation, next = page.value + 1
     loading.value = true; error.value = null
     try {
-      const result = await createSuwayomiApi(current.apiUrl).sourceCatalogue(current.sourceId, current.mode, next, current.query)
+      const api = createSuwayomiApi(current.apiUrl)
+      const result = current.filters !== undefined
+        ? await api.sourceCatalogue(current.sourceId, current.mode, next, current.query, current.filters)
+        : await api.sourceCatalogue(current.sourceId, current.mode, next, current.query)
       if (request !== generation) return
       const existing = new Set(items.value.map(m => m.id))
       const unique = result.mangaList.filter(m => {

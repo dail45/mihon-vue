@@ -24,6 +24,35 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const catalogueDisplay = ref<DisplayMode>(['comfortable', 'covers', 'list'].includes(savedCatalogueDisplay || '') ? savedCatalogueDisplay as DisplayMode : 'compact')
   watch(catalogueDisplay, v => writePreference('mihon.catalogue.display', v))
   const downloadedOnly = ref(readPreference('mihon.library.downloadedOnly') === 'true')
+  // Mihon: `preferences.incognitoMode` (MoreScreen.kt:64 "Incognito mode" / "Pauses reading history").
+  // It drives the primary-coloured incognito banner (Banners.kt) and pauses the reading history.
+  // The storage key is the one the More screen already used, so both stay in sync.
+  const incognitoMode = ref(readPreference('mihon.reader.incognito') === 'true')
+  watch(incognitoMode, v => writePreference('mihon.reader.incognito', String(v)))
+  // Mihon: `preferences.shownOnboardingFlow` (MainActivity.kt:422) gates the onboarding push.
+  const onboardingShown = ref(readPreference('mihon.onboarding.shown') === 'true')
+  function setOnboardingShown() { onboardingShown.value = true; writePreference('mihon.onboarding.shown', 'true') }
+  // Mihon: `preferences.donationCampaignShown` (MainActivity.kt:436) is set when the sheet closes.
+  const donationCampaignShown = ref(readPreference('mihon.donation.shown') === 'true')
+  function setDonationCampaignShown() { donationCampaignShown.value = true; writePreference('mihon.donation.shown', 'true') }
+  /**
+   * Mihon reads `packageManager.getPackageInfo(packageName, 0).firstInstallTime` to decide whether
+   * the donation campaign is eligible (first install + 6 * 30 days). A browser has no package
+   * manager, so the first visit time is kept locally instead.
+   */
+  const installTime = ref(Number(readPreference('mihon.install.time')) || Date.now())
+  writePreference('mihon.install.time', String(installTime.value))
+  // Mihon: LibraryPreferences.kt:206-234 — `swipeToEndAction` ("pref_chapter_swipe_end_action",
+  // default ToggleBookmark) and `swipeToStartAction` ("pref_chapter_swipe_start_action",
+  // default ToggleRead).
+  const swipeActions = ['toggle-read', 'toggle-bookmark', 'download', 'disabled'] as const
+  type ChapterSwipeAction = typeof swipeActions[number]
+  function swipePref(key: string, fallback: ChapterSwipeAction) {
+    const stored = readPreference(key), value = ref<ChapterSwipeAction>(swipeActions.includes(stored as ChapterSwipeAction) ? stored as ChapterSwipeAction : fallback)
+    watch(value, v => writePreference(key, String(v))); return value
+  }
+  const chapterSwipeStartAction = swipePref('mihon.chapters.swipeEndAction', 'toggle-bookmark')
+  const chapterSwipeEndAction = swipePref('mihon.chapters.swipeStartAction', 'toggle-read')
   function bool(key: string, fallback: boolean) {
     const stored = readPreference(key), value = ref(stored === null ? fallback : stored === 'true')
     watch(value, v => writePreference(key, String(v))); return value
@@ -44,7 +73,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const filters = ref<LibraryFilters>(defaultFilters()), rawFilters = json('mihon.library.filters')
   if (rawFilters && typeof rawFilters === 'object') for (const key of Object.keys(filters.value) as (keyof LibraryFilters)[]) {
     const v = (rawFilters as Record<string, unknown>)[key]
-    if (v === 'all' || v === 'include' || v === 'exclude') filters.value[key] = v
+    if (key !== 'tracking' && (v === 'all' || v === 'include' || v === 'exclude')) filters.value[key] = v
   }
   function validSort(raw: unknown): LibrarySort {
     if (!raw || typeof raw !== 'object') return defaultSort()
@@ -66,5 +95,5 @@ export const usePreferencesStore = defineStore('preferences', () => {
   watch(categorySorts, v => writePreference('mihon.library.categorySorts', JSON.stringify(v)), { deep: true })
   watch(libraryDisplay, v => writePreference('mihon.library.display', v))
   watch(downloadedOnly, v => writePreference('mihon.library.downloadedOnly', String(v)))
-  return { tabletUiMode, themeMode, libraryDisplay, catalogueDisplay, downloadedOnly, downloadBadge, unreadBadge, localBadge, languageBadge, showContinue, categoryTabs, categoryCounts, portraitColumns, landscapeColumns, categorizedSort, filters, globalSort, categorySorts, getLibrarySort, chooseLibrarySort }
+  return { tabletUiMode, themeMode, libraryDisplay, catalogueDisplay, downloadedOnly, incognitoMode, onboardingShown, setOnboardingShown, donationCampaignShown, setDonationCampaignShown, installTime, downloadBadge, unreadBadge, localBadge, languageBadge, showContinue, categoryTabs, categoryCounts, portraitColumns, landscapeColumns, categorizedSort, filters, globalSort, categorySorts, getLibrarySort, chooseLibrarySort, chapterSwipeStartAction, chapterSwipeEndAction }
 })

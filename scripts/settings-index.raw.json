@@ -1,0 +1,1950 @@
+[
+  {
+    "key": "appearance",
+    "title": "Appearance",
+    "groups": [
+      {
+        "title": "Theme",
+        "items": [
+          {
+            "title": "App theme",
+            "subtitle": null
+          },
+          {
+            "title": "Pure black dark mode",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Display",
+        "items": [
+          {
+            "title": "App language",
+            "subtitle": null
+          },
+          {
+            "title": "Tablet UI",
+            "subtitle": null
+          },
+          {
+            "title": "Date format",
+            "subtitle": null
+          },
+          {
+            "title": "Time format",
+            "subtitle": null
+          },
+          {
+            "title": "Relative timestamps",
+            "subtitle": null
+          },
+          {
+            "title": "Render images in manga descriptions",
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [],
+    "ordered": [
+      {
+        "kind": "group",
+        "title": "Theme",
+        "start": 2495
+      },
+      {
+        "kind": "item",
+        "title": "App theme",
+        "subtitle": null,
+        "group": "Theme",
+        "start": 2645
+      },
+      {
+        "kind": "item",
+        "title": "Pure black dark mode",
+        "subtitle": null,
+        "group": "Theme",
+        "start": 3424
+      },
+      {
+        "kind": "group",
+        "title": "Display",
+        "start": 4552
+      },
+      {
+        "kind": "item",
+        "title": "App language",
+        "subtitle": null,
+        "group": "Display",
+        "start": 4704
+      },
+      {
+        "kind": "item",
+        "title": "Tablet UI",
+        "subtitle": null,
+        "group": "Display",
+        "start": 4926
+      },
+      {
+        "kind": "item",
+        "title": "Date format",
+        "subtitle": null,
+        "group": "Display",
+        "start": 5425
+      },
+      {
+        "kind": "item",
+        "title": "Time format",
+        "subtitle": null,
+        "group": "Display",
+        "start": 5962
+      },
+      {
+        "kind": "item",
+        "title": "Relative timestamps",
+        "subtitle": null,
+        "group": "Display",
+        "start": 6621
+      },
+      {
+        "kind": "item",
+        "title": "Render images in manga descriptions",
+        "subtitle": null,
+        "group": "Display",
+        "start": 7087
+      }
+    ]
+  },
+  {
+    "key": "library",
+    "title": "Library",
+    "groups": [
+      {
+        "title": "Categories",
+        "items": [
+          {
+            "title": "Edit categories",
+            "subtitle": null
+          },
+          {
+            "title": "Default category",
+            "subtitle": null
+          },
+          {
+            "title": "Per-category settings for sort",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Global update",
+        "items": [
+          {
+            "title": "Automatic updates",
+            "subtitle": null
+          },
+          {
+            "title": "Automatic updates device restrictions",
+            "subtitle": "Restrictions: %s"
+          },
+          {
+            "title": "Categories",
+            "subtitle": null
+          },
+          {
+            "title": "Automatically refresh metadata",
+            "subtitle": "Check for new cover and details when updating library"
+          },
+          {
+            "title": "Smart update",
+            "subtitle": null
+          },
+          {
+            "title": "Show unread count on Updates icon",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Behavior",
+        "items": [
+          {
+            "title": "Chapter on swipe to left",
+            "subtitle": null
+          },
+          {
+            "title": "Chapter on swipe to right",
+            "subtitle": null
+          },
+          {
+            "title": "Mark duplicate read chapter as read",
+            "subtitle": null
+          },
+          {
+            "title": "Hide missing chapter indicators",
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [],
+    "ordered": [
+      {
+        "kind": "group",
+        "title": "Categories",
+        "start": 3725
+      },
+      {
+        "kind": "item",
+        "title": "Edit categories",
+        "subtitle": null,
+        "group": "Categories",
+        "start": 3866
+      },
+      {
+        "kind": "item",
+        "title": "Default category",
+        "subtitle": null,
+        "group": "Categories",
+        "start": 4315
+      },
+      {
+        "kind": "item",
+        "title": "Per-category settings for sort",
+        "subtitle": null,
+        "group": "Categories",
+        "start": 4589
+      },
+      {
+        "kind": "group",
+        "title": "Global update",
+        "start": 6872
+      },
+      {
+        "kind": "item",
+        "title": "Automatic updates",
+        "subtitle": null,
+        "group": "Global update",
+        "start": 7031
+      },
+      {
+        "kind": "item",
+        "title": "Automatic updates device restrictions",
+        "subtitle": "Restrictions: %s",
+        "group": "Global update",
+        "start": 7899
+      },
+      {
+        "kind": "item",
+        "title": "Categories",
+        "subtitle": null,
+        "group": "Global update",
+        "start": 8962
+      },
+      {
+        "kind": "item",
+        "title": "Automatically refresh metadata",
+        "subtitle": "Check for new cover and details when updating library",
+        "group": "Global update",
+        "start": 9388
+      },
+      {
+        "kind": "item",
+        "title": "Smart update",
+        "subtitle": null,
+        "group": "Global update",
+        "start": 9736
+      },
+      {
+        "kind": "item",
+        "title": "Show unread count on Updates icon",
+        "subtitle": null,
+        "group": "Global update",
+        "start": 10479
+      },
+      {
+        "kind": "group",
+        "title": "Behavior",
+        "start": 10887
+      },
+      {
+        "kind": "item",
+        "title": "Chapter on swipe to left",
+        "subtitle": null,
+        "group": "Behavior",
+        "start": 11031
+      },
+      {
+        "kind": "item",
+        "title": "Chapter on swipe to right",
+        "subtitle": null,
+        "group": "Behavior",
+        "start": 11910
+      },
+      {
+        "kind": "item",
+        "title": "Mark duplicate read chapter as read",
+        "subtitle": null,
+        "group": "Behavior",
+        "start": 12785
+      },
+      {
+        "kind": "item",
+        "title": "Hide missing chapter indicators",
+        "subtitle": null,
+        "group": "Behavior",
+        "start": 13435
+      }
+    ]
+  },
+  {
+    "key": "reader",
+    "title": "Reader",
+    "groups": [
+      {
+        "title": "Display",
+        "items": [
+          {
+            "title": "Default rotation",
+            "subtitle": null
+          },
+          {
+            "title": "Background color",
+            "subtitle": null
+          },
+          {
+            "title": "Fullscreen",
+            "subtitle": null
+          },
+          {
+            "title": "Show content in cutout area",
+            "subtitle": null
+          },
+          {
+            "title": "Keep screen on",
+            "subtitle": null
+          },
+          {
+            "title": "Show page number",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "E-Ink",
+        "items": [
+          {
+            "title": "Flash on page change",
+            "subtitle": "Reduces ghosting on e-ink displays"
+          },
+          {
+            "title": "Flash duration",
+            "subtitle": null
+          },
+          {
+            "title": "Flash every",
+            "subtitle": null
+          },
+          {
+            "title": "Flash with",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Reading",
+        "items": [
+          {
+            "title": "Skip chapters marked read",
+            "subtitle": null
+          },
+          {
+            "title": "Skip filtered chapters",
+            "subtitle": null
+          },
+          {
+            "title": "Skip duplicate chapters",
+            "subtitle": null
+          },
+          {
+            "title": "Always show chapter transition",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Paged",
+        "items": [
+          {
+            "title": "Tap zones",
+            "subtitle": null
+          },
+          {
+            "title": "Invert tap zones",
+            "subtitle": null
+          },
+          {
+            "title": "Scale type",
+            "subtitle": null
+          },
+          {
+            "title": "Zoom start position",
+            "subtitle": null
+          },
+          {
+            "title": "Crop borders",
+            "subtitle": null
+          },
+          {
+            "title": "Automatically zoom into wide images",
+            "subtitle": null
+          },
+          {
+            "title": "Pan wide images",
+            "subtitle": null
+          },
+          {
+            "title": "Split wide pages",
+            "subtitle": null
+          },
+          {
+            "title": "Invert split page placement",
+            "subtitle": "If the placement of the split wide pages don\\'t match reading direction"
+          },
+          {
+            "title": "Rotate wide pages to fit",
+            "subtitle": null
+          },
+          {
+            "title": "Flip orientation of rotated wide pages",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Long strip",
+        "items": [
+          {
+            "title": "Tap zones",
+            "subtitle": null
+          },
+          {
+            "title": "Invert tap zones",
+            "subtitle": null
+          },
+          {
+            "title": "Side padding",
+            "subtitle": null
+          },
+          {
+            "title": "Sensitivity for hiding menu on scroll",
+            "subtitle": null
+          },
+          {
+            "title": "Crop borders",
+            "subtitle": null
+          },
+          {
+            "title": "Split wide pages",
+            "subtitle": null
+          },
+          {
+            "title": "Invert split page placement",
+            "subtitle": "If the placement of the split wide pages don\\'t match reading direction"
+          },
+          {
+            "title": "Rotate wide pages to fit",
+            "subtitle": null
+          },
+          {
+            "title": "Flip orientation of rotated wide pages",
+            "subtitle": null
+          },
+          {
+            "title": "Double tap to zoom",
+            "subtitle": null
+          },
+          {
+            "title": "Disable zoom out",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Navigation",
+        "items": [
+          {
+            "title": "Volume keys",
+            "subtitle": null
+          },
+          {
+            "title": "Invert volume keys",
+            "subtitle": null
+          },
+          {
+            "title": "Use vertical chapter navigator in",
+            "subtitle": null
+          },
+          {
+            "title": "Place vertical navigator on the left side",
+            "subtitle": null
+          },
+          {
+            "title": "Vertical navigator height",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Actions",
+        "items": [
+          {
+            "title": "Show actions on long tap",
+            "subtitle": null
+          },
+          {
+            "title": "Save pages into separate folders",
+            "subtitle": "Creates folders according to entries\\' title"
+          }
+        ]
+      }
+    ],
+    "topItems": [
+      {
+        "title": "Default reading mode",
+        "subtitle": null
+      },
+      {
+        "title": "Double tap animation speed",
+        "subtitle": null
+      },
+      {
+        "title": "Show reading mode",
+        "subtitle": "Briefly show current mode when reader is opened"
+      },
+      {
+        "title": "Show tap zones overlay",
+        "subtitle": "Briefly show when reader is opened"
+      },
+      {
+        "title": "Animate page transitions",
+        "subtitle": null
+      },
+      {
+        "title": "Load ahead only on Wi-Fi",
+        "subtitle": "Saves mobile data by loading only the pages near the one you\\'re reading"
+      }
+    ],
+    "ordered": [
+      {
+        "kind": "item",
+        "title": "Default reading mode",
+        "subtitle": null,
+        "group": null,
+        "start": 1254
+      },
+      {
+        "kind": "item",
+        "title": "Double tap animation speed",
+        "subtitle": null,
+        "group": null,
+        "start": 1587
+      },
+      {
+        "kind": "item",
+        "title": "Show reading mode",
+        "subtitle": "Briefly show current mode when reader is opened",
+        "group": null,
+        "start": 2090
+      },
+      {
+        "kind": "item",
+        "title": "Show tap zones overlay",
+        "subtitle": "Briefly show when reader is opened",
+        "group": null,
+        "start": 2379
+      },
+      {
+        "kind": "item",
+        "title": "Animate page transitions",
+        "subtitle": null,
+        "group": null,
+        "start": 2687
+      },
+      {
+        "kind": "item",
+        "title": "Load ahead only on Wi-Fi",
+        "subtitle": "Saves mobile data by loading only the pages near the one you\\'re reading",
+        "group": null,
+        "start": 2889
+      },
+      {
+        "kind": "group",
+        "title": "Display",
+        "start": 3833
+      },
+      {
+        "kind": "item",
+        "title": "Default rotation",
+        "subtitle": null,
+        "group": "Display",
+        "start": 3985
+      },
+      {
+        "kind": "item",
+        "title": "Background color",
+        "subtitle": null,
+        "group": "Display",
+        "start": 4361
+      },
+      {
+        "kind": "item",
+        "title": "Fullscreen",
+        "subtitle": null,
+        "group": "Display",
+        "start": 4935
+      },
+      {
+        "kind": "item",
+        "title": "Show content in cutout area",
+        "subtitle": null,
+        "group": "Display",
+        "start": 5149
+      },
+      {
+        "kind": "item",
+        "title": "Keep screen on",
+        "subtitle": null,
+        "group": "Display",
+        "start": 5452
+      },
+      {
+        "kind": "item",
+        "title": "Show page number",
+        "subtitle": null,
+        "group": "Display",
+        "start": 5672
+      },
+      {
+        "kind": "group",
+        "title": "E-Ink",
+        "start": 6183
+      },
+      {
+        "kind": "item",
+        "title": "Flash on page change",
+        "subtitle": "Reduces ghosting on e-ink displays",
+        "group": "E-Ink",
+        "start": 6294
+      },
+      {
+        "kind": "item",
+        "title": "Flash duration",
+        "subtitle": null,
+        "group": "E-Ink",
+        "start": 6595
+      },
+      {
+        "kind": "item",
+        "title": "Flash every",
+        "subtitle": null,
+        "group": "E-Ink",
+        "start": 7061
+      },
+      {
+        "kind": "item",
+        "title": "Flash with",
+        "subtitle": null,
+        "group": "E-Ink",
+        "start": 7466
+      },
+      {
+        "kind": "group",
+        "title": "Reading",
+        "start": 8296
+      },
+      {
+        "kind": "item",
+        "title": "Skip chapters marked read",
+        "subtitle": null,
+        "group": "Reading",
+        "start": 8448
+      },
+      {
+        "kind": "item",
+        "title": "Skip filtered chapters",
+        "subtitle": null,
+        "group": "Reading",
+        "start": 8668
+      },
+      {
+        "kind": "item",
+        "title": "Skip duplicate chapters",
+        "subtitle": null,
+        "group": "Reading",
+        "start": 8896
+      },
+      {
+        "kind": "item",
+        "title": "Always show chapter transition",
+        "subtitle": null,
+        "group": "Reading",
+        "start": 9116
+      },
+      {
+        "kind": "group",
+        "title": "Paged",
+        "start": 10023
+      },
+      {
+        "kind": "item",
+        "title": "Tap zones",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 10166
+      },
+      {
+        "kind": "item",
+        "title": "Invert tap zones",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 10533
+      },
+      {
+        "kind": "item",
+        "title": "Scale type",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 11217
+      },
+      {
+        "kind": "item",
+        "title": "Zoom start position",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 11607
+      },
+      {
+        "kind": "item",
+        "title": "Crop borders",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 11995
+      },
+      {
+        "kind": "item",
+        "title": "Automatically zoom into wide images",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 12212
+      },
+      {
+        "kind": "item",
+        "title": "Pan wide images",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 12484
+      },
+      {
+        "kind": "item",
+        "title": "Split wide pages",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 12747
+      },
+      {
+        "kind": "item",
+        "title": "Invert split page placement",
+        "subtitle": "If the placement of the split wide pages don\\'t match reading direction",
+        "group": "Paged",
+        "start": 13097
+      },
+      {
+        "kind": "item",
+        "title": "Rotate wide pages to fit",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 13460
+      },
+      {
+        "kind": "item",
+        "title": "Flip orientation of rotated wide pages",
+        "subtitle": null,
+        "group": "Paged",
+        "start": 13806
+      },
+      {
+        "kind": "group",
+        "title": "Long strip",
+        "start": 14698
+      },
+      {
+        "kind": "item",
+        "title": "Tap zones",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 14843
+      },
+      {
+        "kind": "item",
+        "title": "Invert tap zones",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 15210
+      },
+      {
+        "kind": "item",
+        "title": "Side padding",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 15896
+      },
+      {
+        "kind": "item",
+        "title": "Sensitivity for hiding menu on scroll",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 16347
+      },
+      {
+        "kind": "item",
+        "title": "Crop borders",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 17072
+      },
+      {
+        "kind": "item",
+        "title": "Split wide pages",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 17296
+      },
+      {
+        "kind": "item",
+        "title": "Invert split page placement",
+        "subtitle": "If the placement of the split wide pages don\\'t match reading direction",
+        "group": "Long strip",
+        "start": 17646
+      },
+      {
+        "kind": "item",
+        "title": "Rotate wide pages to fit",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 18011
+      },
+      {
+        "kind": "item",
+        "title": "Flip orientation of rotated wide pages",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 18357
+      },
+      {
+        "kind": "item",
+        "title": "Double tap to zoom",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 18644
+      },
+      {
+        "kind": "item",
+        "title": "Disable zoom out",
+        "subtitle": null,
+        "group": "Long strip",
+        "start": 18880
+      },
+      {
+        "kind": "group",
+        "title": "Navigation",
+        "start": 19505
+      },
+      {
+        "kind": "item",
+        "title": "Volume keys",
+        "subtitle": null,
+        "group": "Navigation",
+        "start": 19658
+      },
+      {
+        "kind": "item",
+        "title": "Invert volume keys",
+        "subtitle": null,
+        "group": "Navigation",
+        "start": 19877
+      },
+      {
+        "kind": "item",
+        "title": "Use vertical chapter navigator in",
+        "subtitle": null,
+        "group": "Navigation",
+        "start": 20177
+      },
+      {
+        "kind": "item",
+        "title": "Place vertical navigator on the left side",
+        "subtitle": null,
+        "group": "Navigation",
+        "start": 20577
+      },
+      {
+        "kind": "item",
+        "title": "Vertical navigator height",
+        "subtitle": null,
+        "group": "Navigation",
+        "start": 20890
+      },
+      {
+        "kind": "group",
+        "title": "Actions",
+        "start": 21414
+      },
+      {
+        "kind": "item",
+        "title": "Show actions on long tap",
+        "subtitle": null,
+        "group": "Actions",
+        "start": 21564
+      },
+      {
+        "kind": "item",
+        "title": "Save pages into separate folders",
+        "subtitle": "Creates folders according to entries\\' title",
+        "group": "Actions",
+        "start": 21791
+      }
+    ]
+  },
+  {
+    "key": "downloads",
+    "title": "Downloads",
+    "groups": [
+      {
+        "title": "Delete chapters",
+        "items": [
+          {
+            "title": "After manually marked as read",
+            "subtitle": null
+          },
+          {
+            "title": "After reading automatically delete",
+            "subtitle": null
+          },
+          {
+            "title": "Allow deleting bookmarked chapters",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Auto-download",
+        "items": [
+          {
+            "title": "Download new chapters",
+            "subtitle": null
+          },
+          {
+            "title": "Skip downloading duplicate read chapters",
+            "subtitle": null
+          },
+          {
+            "title": "Categories",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Download ahead",
+        "items": [
+          {
+            "title": "Auto download while reading",
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [
+      {
+        "title": "Only on Wi-Fi",
+        "subtitle": null
+      },
+      {
+        "title": "Save as CBZ archive",
+        "subtitle": null
+      },
+      {
+        "title": "Concurrent source downloads",
+        "subtitle": null
+      },
+      {
+        "title": "Concurrent page downloads",
+        "subtitle": "Pages downloaded simultaneously per source"
+      },
+      {
+        "title": "Excluded categories",
+        "subtitle": null
+      }
+    ],
+    "ordered": [
+      {
+        "kind": "item",
+        "title": "Only on Wi-Fi",
+        "subtitle": null,
+        "group": null,
+        "start": 1582
+      },
+      {
+        "kind": "item",
+        "title": "Save as CBZ archive",
+        "subtitle": null,
+        "group": null,
+        "start": 1794
+      },
+      {
+        "kind": "item",
+        "title": "Concurrent source downloads",
+        "subtitle": null,
+        "group": null,
+        "start": 2005
+      },
+      {
+        "kind": "item",
+        "title": "Concurrent page downloads",
+        "subtitle": "Pages downloaded simultaneously per source",
+        "group": null,
+        "start": 2267
+      },
+      {
+        "kind": "group",
+        "title": "Delete chapters",
+        "start": 3204
+      },
+      {
+        "kind": "item",
+        "title": "After manually marked as read",
+        "subtitle": null,
+        "group": "Delete chapters",
+        "start": 3364
+      },
+      {
+        "kind": "item",
+        "title": "After reading automatically delete",
+        "subtitle": null,
+        "group": "Delete chapters",
+        "start": 3610
+      },
+      {
+        "kind": "item",
+        "title": "Allow deleting bookmarked chapters",
+        "subtitle": null,
+        "group": "Delete chapters",
+        "start": 4329
+      },
+      {
+        "kind": "item",
+        "title": "Excluded categories",
+        "subtitle": null,
+        "group": null,
+        "start": 5012
+      },
+      {
+        "kind": "group",
+        "title": "Auto-download",
+        "start": 7155
+      },
+      {
+        "kind": "item",
+        "title": "Download new chapters",
+        "subtitle": null,
+        "group": "Auto-download",
+        "start": 7313
+      },
+      {
+        "kind": "item",
+        "title": "Skip downloading duplicate read chapters",
+        "subtitle": null,
+        "group": "Auto-download",
+        "start": 7524
+      },
+      {
+        "kind": "item",
+        "title": "Categories",
+        "subtitle": null,
+        "group": "Auto-download",
+        "start": 7817
+      },
+      {
+        "kind": "group",
+        "title": "Download ahead",
+        "start": 8456
+      },
+      {
+        "kind": "item",
+        "title": "Auto download while reading",
+        "subtitle": null,
+        "group": "Download ahead",
+        "start": 8601
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Download ahead",
+        "start": 9242
+      }
+    ]
+  },
+  {
+    "key": "tracking",
+    "title": "Tracking",
+    "groups": [
+      {
+        "title": "Trackers",
+        "items": [
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Enhanced trackers",
+        "items": [
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [
+      {
+        "title": "Update progress after reading",
+        "subtitle": null
+      },
+      {
+        "title": "Update progress when marked as read",
+        "subtitle": null
+      }
+    ],
+    "ordered": [
+      {
+        "kind": "item",
+        "title": "Update progress after reading",
+        "subtitle": null,
+        "group": null,
+        "start": 5664
+      },
+      {
+        "kind": "item",
+        "title": "Update progress when marked as read",
+        "subtitle": null,
+        "group": null,
+        "start": 5878
+      },
+      {
+        "kind": "group",
+        "title": "Trackers",
+        "start": 6225
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 6376
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 6721
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 7072
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 7411
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 7735
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 8083
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 8428
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 8767
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 9100
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Trackers",
+        "start": 9436
+      },
+      {
+        "kind": "group",
+        "title": "Enhanced trackers",
+        "start": 9566
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Enhanced trackers",
+        "start": 9813
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Enhanced trackers",
+        "start": 10118
+      }
+    ]
+  },
+  {
+    "key": "browse",
+    "title": "Browse",
+    "groups": [
+      {
+        "title": "Sources",
+        "items": [
+          {
+            "title": "Hide entries already in library",
+            "subtitle": null
+          },
+          {
+            "title": "Extension stores",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Extensions",
+        "items": [
+          {
+            "title": "Allowed content warnings",
+            "subtitle": null
+          },
+          {
+            "title": "Also apply to installed extensions",
+            "subtitle": "When off, extensions you already installed keep loading and updating regardless of their warning"
+          },
+          {
+            "title": null,
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [],
+    "ordered": [
+      {
+        "kind": "group",
+        "title": "Sources",
+        "start": 1557
+      },
+      {
+        "kind": "item",
+        "title": "Hide entries already in library",
+        "subtitle": null,
+        "group": "Sources",
+        "start": 1713
+      },
+      {
+        "kind": "item",
+        "title": "Extension stores",
+        "subtitle": null,
+        "group": "Sources",
+        "start": 1962
+      },
+      {
+        "kind": "group",
+        "title": "Extensions",
+        "start": 2391
+      },
+      {
+        "kind": "item",
+        "title": "Allowed content warnings",
+        "subtitle": null,
+        "group": "Extensions",
+        "start": 2558
+      },
+      {
+        "kind": "item",
+        "title": "Also apply to installed extensions",
+        "subtitle": "When off, extensions you already installed keep loading and updating regardless of their warning",
+        "group": "Extensions",
+        "start": 4176
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Extensions",
+        "start": 5104
+      }
+    ]
+  },
+  {
+    "key": "data",
+    "title": "Data and storage",
+    "groups": [
+      {
+        "title": "Backup and restore",
+        "items": [
+          {
+            "title": null,
+            "subtitle": null
+          },
+          {
+            "title": "Automatic backup frequency",
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Storage usage",
+        "items": [
+          {
+            "title": "Storage usage",
+            "subtitle": null
+          },
+          {
+            "title": "Clear chapter cache",
+            "subtitle": null
+          },
+          {
+            "title": "Clear chapter cache on app launch",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Export",
+        "items": [
+          {
+            "title": "Library List",
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [
+      {
+        "title": null,
+        "subtitle": null
+      },
+      {
+        "title": "Storage location",
+        "subtitle": null
+      }
+    ],
+    "ordered": [
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": null,
+        "start": 4702
+      },
+      {
+        "kind": "item",
+        "title": "Storage location",
+        "subtitle": null,
+        "group": null,
+        "start": 7320
+      },
+      {
+        "kind": "group",
+        "title": "Backup and restore",
+        "start": 8818
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Backup and restore",
+        "start": 8995
+      },
+      {
+        "kind": "item",
+        "title": "Automatic backup frequency",
+        "subtitle": null,
+        "group": "Backup and restore",
+        "start": 11493
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Backup and restore",
+        "start": 12351
+      },
+      {
+        "kind": "group",
+        "title": "Storage usage",
+        "start": 13196
+      },
+      {
+        "kind": "item",
+        "title": "Storage usage",
+        "subtitle": null,
+        "group": "Storage usage",
+        "start": 13345
+      },
+      {
+        "kind": "item",
+        "title": "Clear chapter cache",
+        "subtitle": null,
+        "group": "Storage usage",
+        "start": 13821
+      },
+      {
+        "kind": "item",
+        "title": "Clear chapter cache on app launch",
+        "subtitle": null,
+        "group": "Storage usage",
+        "start": 14785
+      },
+      {
+        "kind": "group",
+        "title": "Export",
+        "start": 16882
+      },
+      {
+        "kind": "item",
+        "title": "Library List",
+        "subtitle": null,
+        "group": "Export",
+        "start": 17019
+      }
+    ]
+  },
+  {
+    "key": "security",
+    "title": "Security and privacy",
+    "groups": [
+      {
+        "title": "Security",
+        "items": [
+          {
+            "title": "Require unlock",
+            "subtitle": null
+          },
+          {
+            "title": "Lock when idle",
+            "subtitle": null
+          },
+          {
+            "title": "Hide notification content",
+            "subtitle": null
+          },
+          {
+            "title": "Secure screen",
+            "subtitle": null
+          },
+          {
+            "title": null,
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Analytics and Crash logs",
+        "items": [
+          {
+            "title": "Send crash logs",
+            "subtitle": "Send anonymized crash logs to the developers."
+          },
+          {
+            "title": "Allow analytics",
+            "subtitle": "Send anonymized usage data to improve app features."
+          },
+          {
+            "title": null,
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [],
+    "ordered": [
+      {
+        "kind": "group",
+        "title": "Security",
+        "start": 2022
+      },
+      {
+        "kind": "item",
+        "title": "Require unlock",
+        "subtitle": null,
+        "group": "Security",
+        "start": 2166
+      },
+      {
+        "kind": "item",
+        "title": "Lock when idle",
+        "subtitle": null,
+        "group": "Security",
+        "start": 2662
+      },
+      {
+        "kind": "item",
+        "title": "Hide notification content",
+        "subtitle": null,
+        "group": "Security",
+        "start": 3618
+      },
+      {
+        "kind": "item",
+        "title": "Secure screen",
+        "subtitle": null,
+        "group": "Security",
+        "start": 3857
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Security",
+        "start": 4218
+      },
+      {
+        "kind": "group",
+        "title": "Analytics and Crash logs",
+        "start": 4491
+      },
+      {
+        "kind": "item",
+        "title": "Send crash logs",
+        "subtitle": "Send anonymized crash logs to the developers.",
+        "group": "Analytics and Crash logs",
+        "start": 4635
+      },
+      {
+        "kind": "item",
+        "title": "Allow analytics",
+        "subtitle": "Send anonymized usage data to improve app features.",
+        "group": "Analytics and Crash logs",
+        "start": 4974
+      },
+      {
+        "kind": "item",
+        "title": null,
+        "subtitle": null,
+        "group": "Analytics and Crash logs",
+        "start": 5307
+      }
+    ]
+  },
+  {
+    "key": "advanced",
+    "title": "Advanced",
+    "groups": [
+      {
+        "title": "Background activity",
+        "items": [
+          {
+            "title": "Disable battery optimization",
+            "subtitle": "Helps with background library updates and backups"
+          },
+          {
+            "title": "Some manufacturers have additional app restrictions that kill background services. This website has more info on how to fix it.",
+            "subtitle": "Some manufacturers have additional app restrictions that kill background services. This website has more info on how to fix it."
+          }
+        ]
+      },
+      {
+        "title": "Data",
+        "items": [
+          {
+            "title": "Reindex downloads",
+            "subtitle": "Force app to recheck downloaded chapters"
+          },
+          {
+            "title": "Clear database",
+            "subtitle": "Delete history for entries that are not saved in your library"
+          }
+        ]
+      },
+      {
+        "title": "Networking",
+        "items": [
+          {
+            "title": "Clear cookies",
+            "subtitle": null
+          },
+          {
+            "title": "Clear WebView data",
+            "subtitle": null
+          },
+          {
+            "title": "DNS over HTTPS (DoH)",
+            "subtitle": null
+          },
+          {
+            "title": "Default user agent string",
+            "subtitle": null
+          },
+          {
+            "title": "Reset default user agent string",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Library",
+        "items": [
+          {
+            "title": "Refresh library covers",
+            "subtitle": null
+          },
+          {
+            "title": "Reset per-series reader settings",
+            "subtitle": "Resets reading mode and orientation of all series"
+          },
+          {
+            "title": "Update library manga titles to match source",
+            "subtitle": "Warning: if a manga is renamed, it will be removed from the download queue (if present)."
+          },
+          {
+            "title": "Disallow non-ASCII filenames",
+            "subtitle": "Ensures compatibility with certain storage media that don't support Unicode. When this is enabled, you'll need to manually rename source and manga folders by replacing non-ASCII characters with their lowercase UTF-8 hexadecimal representations. Chapter files don't need to be renamed."
+          },
+          {
+            "title": "Enable chapter name hash suffix",
+            "subtitle": "Ensures a unique hash suffix is added to chapter names to prevent naming conflicts. If disabled, chapters with identical names cannot be downloaded."
+          }
+        ]
+      },
+      {
+        "title": "Reader",
+        "items": [
+          {
+            "title": "Use high quality renderer",
+            "subtitle": null
+          }
+        ]
+      },
+      {
+        "title": "Extensions",
+        "items": [
+          {
+            "title": "Installer",
+            "subtitle": null
+          },
+          {
+            "title": "Revoke trusted unknown extensions",
+            "subtitle": null
+          }
+        ]
+      }
+    ],
+    "topItems": [
+      {
+        "title": "Share crash logs",
+        "subtitle": "Saves error logs to a file for sharing with the developers"
+      },
+      {
+        "title": "Verbose logging",
+        "subtitle": "Print verbose logs to system log (reduces app performance)"
+      },
+      {
+        "title": "Redact sensitive headers",
+        "subtitle": "Redacts certain sensitive values in the logs. Keep enabled for your security when sharing logs with other people."
+      },
+      {
+        "title": "Debug info",
+        "subtitle": null
+      },
+      {
+        "title": "Onboarding guide",
+        "subtitle": null
+      },
+      {
+        "title": "Manage notifications",
+        "subtitle": null
+      }
+    ],
+    "ordered": [
+      {
+        "kind": "item",
+        "title": "Share crash logs",
+        "subtitle": "Saves error logs to a file for sharing with the developers",
+        "group": null,
+        "start": 3546
+      },
+      {
+        "kind": "item",
+        "title": "Verbose logging",
+        "subtitle": "Print verbose logs to system log (reduces app performance)",
+        "group": null,
+        "start": 3924
+      },
+      {
+        "kind": "item",
+        "title": "Redact sensitive headers",
+        "subtitle": "Redacts certain sensitive values in the logs. Keep enabled for your security when sharing logs with other people.",
+        "group": null,
+        "start": 4362
+      },
+      {
+        "kind": "item",
+        "title": "Debug info",
+        "subtitle": null,
+        "group": null,
+        "start": 4826
+      },
+      {
+        "kind": "item",
+        "title": "Onboarding guide",
+        "subtitle": null,
+        "group": null,
+        "start": 5028
+      },
+      {
+        "kind": "item",
+        "title": "Manage notifications",
+        "subtitle": null,
+        "group": null,
+        "start": 5237
+      },
+      {
+        "kind": "group",
+        "title": "Background activity",
+        "start": 6220
+      },
+      {
+        "kind": "item",
+        "title": "Disable battery optimization",
+        "subtitle": "Helps with background library updates and backups",
+        "group": "Background activity",
+        "start": 6376
+      },
+      {
+        "kind": "item",
+        "title": "Some manufacturers have additional app restrictions that kill background services. This website has more info on how to fix it.",
+        "subtitle": "Some manufacturers have additional app restrictions that kill background services. This website has more info on how to fix it.",
+        "group": "Background activity",
+        "start": 7715
+      },
+      {
+        "kind": "group",
+        "title": "Data",
+        "start": 8214
+      },
+      {
+        "kind": "item",
+        "title": "Reindex downloads",
+        "subtitle": "Force app to recheck downloaded chapters",
+        "group": "Data",
+        "start": 8355
+      },
+      {
+        "kind": "item",
+        "title": "Clear database",
+        "subtitle": "Delete history for entries that are not saved in your library",
+        "group": "Data",
+        "start": 8822
+      },
+      {
+        "kind": "group",
+        "title": "Networking",
+        "start": 9581
+      },
+      {
+        "kind": "item",
+        "title": "Clear cookies",
+        "subtitle": null,
+        "group": "Networking",
+        "start": 9725
+      },
+      {
+        "kind": "item",
+        "title": "Clear WebView data",
+        "subtitle": null,
+        "group": "Networking",
+        "start": 10058
+      },
+      {
+        "kind": "item",
+        "title": "DNS over HTTPS (DoH)",
+        "subtitle": null,
+        "group": "Networking",
+        "start": 11227
+      },
+      {
+        "kind": "item",
+        "title": "Default user agent string",
+        "subtitle": null,
+        "group": "Networking",
+        "start": 12382
+      },
+      {
+        "kind": "item",
+        "title": "Reset default user agent string",
+        "subtitle": null,
+        "group": "Networking",
+        "start": 13163
+      },
+      {
+        "kind": "group",
+        "title": "Library",
+        "start": 13848
+      },
+      {
+        "kind": "item",
+        "title": "Refresh library covers",
+        "subtitle": null,
+        "group": "Library",
+        "start": 13992
+      },
+      {
+        "kind": "item",
+        "title": "Reset per-series reader settings",
+        "subtitle": "Resets reading mode and orientation of all series",
+        "group": "Library",
+        "start": 14256
+      },
+      {
+        "kind": "item",
+        "title": "Update library manga titles to match source",
+        "subtitle": "Warning: if a manga is renamed, it will be removed from the download queue (if present).",
+        "group": "Library",
+        "start": 15031
+      },
+      {
+        "kind": "item",
+        "title": "Disallow non-ASCII filenames",
+        "subtitle": "Ensures compatibility with certain storage media that don't support Unicode. When this is enabled, you'll need to manually rename source and manga folders by replacing non-ASCII characters with their lowercase UTF-8 hexadecimal representations. Chapter files don't need to be renamed.",
+        "group": "Library",
+        "start": 15370
+      },
+      {
+        "kind": "item",
+        "title": "Enable chapter name hash suffix",
+        "subtitle": "Ensures a unique hash suffix is added to chapter names to prevent naming conflicts. If disabled, chapters with identical names cannot be downloaded.",
+        "group": "Library",
+        "start": 15719
+      },
+      {
+        "kind": "group",
+        "title": "Reader",
+        "start": 16256
+      },
+      {
+        "kind": "item",
+        "title": "Use high quality renderer",
+        "subtitle": null,
+        "group": "Reader",
+        "start": 16407
+      },
+      {
+        "kind": "group",
+        "title": "Extensions",
+        "start": 18084
+      },
+      {
+        "kind": "item",
+        "title": "Installer",
+        "subtitle": null,
+        "group": "Extensions",
+        "start": 18231
+      },
+      {
+        "kind": "item",
+        "title": "Revoke trusted unknown extensions",
+        "subtitle": null,
+        "group": "Extensions",
+        "start": 19389
+      }
+    ]
+  }
+]

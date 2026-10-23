@@ -53,7 +53,11 @@ export const useReaderStore = defineStore('reader', () => {
       if (!sent || request !== generation) return false
       // Only a successful server response updates the visible confirmation.
       if (patch.lastPageRead !== undefined) lastSavedPage.value = patch.lastPageRead
-      if (patch.bookmarked !== undefined) notice.value = patch.bookmarked ? 'Bookmark added on server' : 'Bookmark removed on server'
+      if (patch.bookmarked !== undefined) {
+        notice.value = patch.bookmarked ? 'Bookmark added on server' : 'Bookmark removed on server'
+        // Mirror the confirmed server state so the reader top bar icon updates.
+        if (chapter.value) chapter.value = { ...chapter.value, bookmarked: patch.bookmarked }
+      }
       return true
     } catch (e) {
       if (request === generation) saveError.value = `${apiErrorMessage(e)} The write may have reached the server. Automatic saving is paused; verify server state before trying again.`

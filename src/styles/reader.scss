@@ -1,12 +1,15 @@
 @layer app-components {
 .reader {
   position: fixed; inset: 0; z-index: 100; color: #f4f2f6; background: #000; overflow: hidden;
-  --reader-chrome: #202024;
-  &.reader-background-gray { background: #202024; }
+  /* ReaderAppBars.kt: surfaceColorAtElevation(3.dp) of the dark scheme, i.e.
+     surfaceContainerHigh #292730, at 0.9 alpha in dark theme. */
+  --reader-chrome: rgba(42, 45, 56, .9);
+  &.reader-background-black { background: #000000; }
+  &.reader-background-gray { background: #202125; }
   &.reader-background-paper { background: #f1ede5; }
-  .reader-topbar { position: absolute; inset: 0 0 auto; z-index: 3; display: flex; align-items: center; gap: 4px; min-height: 72px; padding: max(8px, env(safe-area-inset-top)) 8px 16px; background: linear-gradient(#16161af2, #16161ae8 75%, #16161a00); }
-  .reader-heading { flex: 1; min-width: 0; }
-  .reader-heading p { color: #d0ced5; }
+  &.reader-background-white { background: #ffffff; }
+  /* The bar geometry lives in src/components/reader/ReaderTopBar.vue; the wrapper in
+     ReaderView.vue only positions it and reserves the status-bar inset. */
   .reader-viewport { height: 100%; overflow: auto; overscroll-behavior: contain; }
   .reader-page-surface { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; min-height: 100%; border: 0; color: inherit; cursor: pointer; touch-action: pan-y pinch-zoom; }
   .reader-page { display: block; max-width: 100%; width: 100%; height: 100dvh; object-fit: contain; }
@@ -14,16 +17,51 @@
   .reader-message { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 100px 24px 160px; text-align: center; background: #16161a; }
   .reader-message p { max-width: 440px; color: #d0ced5; }
   .reader-image-loading { position: absolute; inset: 50% 0 auto; text-align: center; background: #202024; padding: 12px; }
-  .reader-bottom { position: absolute; inset: auto 0 0; z-index: 3; padding: 24px 16px max(12px, env(safe-area-inset-bottom)); background: linear-gradient(#16161a00, #16161af2 20%, #16161a); }
-  .reader-bottom > * { max-width: 720px; margin-inline: auto; }
+  /* ReaderAppBars.kt: the bottom area is a Column with
+     `Arrangement.spacedBy(MaterialTheme.padding.small)` (8.dp) that holds the
+     ChapterNavigator and the ReaderBottomBar. The bar itself paints
+     `surfaceColorAtElevation(3.dp)` at 0.9 alpha in dark theme and applies
+     `padding(horizontal = 8.dp)` plus the navigation-bar inset, so the coloured
+     surface reaches the screen edges. */
+  .reader-bottom {
+    position: absolute; inset: auto 0 0; z-index: 3;
+    display: flex; flex-direction: column; gap: 8px;
+    animation: reader-bottom-in 200ms cubic-bezier(.2, 0, 0, 1);
+  }
+  .reader-extra-controls { padding: 16px; background: rgba(42, 45, 56, .9); }
+  /* The top bar wrapper carries the same chrome colour so the status-bar inset
+     strip is not transparent (TopAppBar paints its surface under the status bar). */
+  .reader-bars--top { background: var(--reader-chrome); }
+  .reader-extra-controls > * { max-width: 720px; margin-inline: auto; }
+  /* ReaderAppBars.kt:103-139 - the vertical chapter navigator lives in its own row that fills
+     the height, with an 8.dp gap in front of it; the navigator itself is aligned to the bottom
+     and only takes `verticalNavigatorHeight` percent of the height. */
+  .reader-vertical-navigator {
+    position: absolute; inset: 0 0 0 auto; z-index: 3;
+    display: flex; align-items: flex-end; justify-content: flex-start;
+    padding: 8px; pointer-events: none;
+  }
+  .reader-vertical-navigator--left { inset: 0 auto 0 0; justify-content: flex-end; }
+  .reader-vertical-navigator > * { pointer-events: auto; }
   .reader-save-status { text-align: center; color: #d0ced5; }
-  .reader-page-indicator { position: absolute; z-index: 2; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 4px 12px; border-radius: 16px; background: #16161a; color: #f4f2f6; pointer-events: none; }
-  .reader-bottom ~ .reader-page-indicator { display: none; }
+  /* ReaderPageIndicator.kt: the composable paints no background and no padding; the
+     component `src/components/reader/ReaderPageIndicator.vue` owns its own geometry
+     (Mihon aligns it BottomCenter and applies `navigationBarsPadding()`), so nothing
+     about the indicator is styled here. */
   .reader-strip { max-width: 900px; margin: auto; }
   .reader-strip-page { min-height: 180px; }
   .reader-strip img { width: 100%; display: block; min-height: 180px; cursor: pointer; }
   .reader-inline-error { min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #202024; color: #f4f2f6; padding: 24px; }
   .reader-show-controls { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 4; }
+  /* DisplayRefreshHost.kt: the flash is a Canvas that fills the whole screen and draws a solid
+     rectangle over the page (black or white) for half of the configured duration. */
+  .reader-flash { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+  .reader-flash--black { background: #000; }
+  .reader-flash--white { background: #fff; }
+  /* ReaderPreferences.pageTransitions: the Android pager slides the pages; the web reader fades
+     the new page in, which is the closest CSS equivalent. */
+  .reader-page-surface--animated .reader-page { animation: reader-page-fade 200ms ease; }
+  @keyframes reader-page-fade { from { opacity: 0; } to { opacity: 1; } }
   .v-btn { color: #f4f2f6; }
   .v-btn.bg-primary, .v-btn.text-primary { color: rgb(var(--v-theme-on-primary)); }
   .v-slider { flex: 1; }

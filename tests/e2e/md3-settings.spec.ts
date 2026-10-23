@@ -20,7 +20,7 @@ test('ten native sections plus server; preference dialogs and tablet mode persis
   await expect(page.locator('.settings-two-pane')).toHaveCount(0);await page.goto('/library');await expect(page.locator('.mihon-navigation')).toBeVisible()
   await page.reload();await expect(page.locator('.mihon-navigation')).toBeVisible()
   await page.goto('/settings/appearance');await page.getByText('Tablet UI',{exact:true}).click();await page.getByRole('radio',{name:'Always',exact:true}).click()
-  await expect(page.locator('.settings-two-pane')).toHaveCount(page.viewportSize()!.width >= 600 ? 1 : 0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  await expect(page.locator('.settings-two-pane')).toHaveCount(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
   await page.goto('/library');await expect(page.locator('.mihon-rail')).toBeVisible()
 })
 test('server drafts do not autosave; explicit confirmation sends only changed allowed fields', async ({page}) => {

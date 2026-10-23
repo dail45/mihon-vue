@@ -7,10 +7,16 @@ import re
 from fontTools import subset
 from fontTools.ttLib import TTFont
 root = Path(__file__).resolve().parent.parent
-texts = '\n'.join(p.read_text() for p in (root / 'src').rglob('*') if p.suffix in {'.vue', '.ts'})
+texts = '\n'.join(p.read_text(encoding='utf-8') for p in (root / 'src').rglob('*') if p.suffix in {'.vue', '.ts'})
 # Icon names in attributes and TS constants plus all Vuetify MD aliases.
-aliases = (root / 'node_modules/vuetify/lib/iconsets/md.js').read_text()
+aliases = (root / 'node_modules/vuetify/lib/iconsets/md.js').read_text(encoding='utf-8')
+# Icon names in attributes and TS constants plus all Vuetify MD aliases.
+# Quoted names cover v-icon="..." and TS string constants; the unquoted snake_case
+# scan covers the <span class="material-symbols-rounded">name</span> ligature markup.
 names = set(re.findall(r"['\"]([a-z]+(?:_[a-z]+)*)['\"]", texts + aliases))
+# The ligature markup <span class="material-symbols-rounded">name</span> carries the icon
+# name as element text, so it is picked up from the span body directly.
+names |= set(re.findall(r"<span[^>]*material-symbols[^>]*>\s*([a-z0-9_]+)\s*</span>", texts))
 font = TTFont(root / 'node_modules/material-symbols/material-symbols-rounded.woff2')
 cmap = font.getBestCmap()
 sequences = {tuple(cmap[ord(c)] for c in name) for name in names if all(ord(c) in cmap for c in name)}
