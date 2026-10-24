@@ -25,12 +25,32 @@ import '@fontsource/roboto/600.css'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { formatRecentMangaTime, formatReadAt, type HistoryEntry } from '@/core/utils/history'
 
-const props = defineProps<{ entry: HistoryEntry }>()
+const props = withDefaults(
+  defineProps<{
+    entry: HistoryEntry & {
+      hasUnread?: boolean
+      readProgress?: string | null
+      read?: boolean
+      lastPageRead?: number
+    }
+    selected?: boolean
+    selectionMode?: boolean
+    wideCover?: boolean
+  }>(),
+  {
+    selected: false,
+    selectionMode: false,
+    wideCover: false,
+  },
+)
+
 const emit = defineEmits<{
   (event: 'cover', mangaId: number): void
   (event: 'resume', mangaId: number, chapterId: number): void
   (event: 'favorite', mangaId: number): void
   (event: 'delete', entry: HistoryEntry): void
+  (event: 'select', entry: HistoryEntry): void
+  (event: 'longpress', entry: HistoryEntry): void
 }>()
 
 const server = useSuwayomiStore()
@@ -45,6 +65,46 @@ const subtitle = computed(() => formatRecentMangaTime(props.entry.chapterNumber,
 const showFavorite = computed(() => !props.entry.inLibrary)
 const coverUrl = computed(() => server.thumbnailUrl(props.entry.mangaId))
 
+let pressTimer: ReturnType<typeof setTimeout> | null = null
+
+function onPointerDown(e: PointerEvent) {
+  if (e.button !== 0 && e.pointerType === 'mouse') return
+  pressTimer = setTimeout(() => {
+    emit('longpress', props.entry)
+    pressTimer = null
+  }, 500)
+}
+
+function onPointerMove() {
+  if (pressTimer) {
+    clearTimeout(pressTimer)
+    pressTimer = null
+  }
+}
+
+function onPointerUp() {
+  if (pressTimer) {
+    clearTimeout(pressTimer)
+    pressTimer = null
+  }
+}
+
+function onPointerCancel() {
+  if (pressTimer) {
+    clearTimeout(pressTimer)
+    pressTimer = null
+  }
+}
+
+function onRowClick(event: MouseEvent) {
+  if (props.selectionMode) {
+    event.stopPropagation()
+    emit('select', props.entry)
+    return
+  }
+  onResume(event)
+}
+
 function onCover(event: MouseEvent) { event.stopPropagation(); emit('cover', props.entry.mangaId) }
 function onResume(event?: MouseEvent) { event?.stopPropagation(); emit('resume', props.entry.mangaId, props.entry.chapterId) }
 function onFavorite(event: MouseEvent) { event.stopPropagation(); emit('favorite', props.entry.mangaId) }
@@ -53,8 +113,35 @@ function onCoverError() { coverBroken.value = true }
 </script>
 
 <template>
-  <div class="history-item" @click="onResume">
-    <button type="button" class="history-item__cover" :aria-label="`Open ${entry.title}`" @click="onCover">
+  <div
+    class="history-item"
+    :class="{ 'is-selected': selected }"
+    @click="onRowClick"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointercancel="onPointerCancel"
+    @contextmenu.prevent="emit('longpress', props.entry)"
+  >
+    <!-- Selection checkbox in selection mode -->
+    <div v-if="selectionMode" class="history-item__checkbox" @click.stop>
+      <v-checkbox
+        :model-value="selected"
+        color="primary"
+        density="compact"
+        hide-details
+        aria-label="Select history entry"
+        @update:model-value="emit('select', props.entry)"
+      />
+    </div>
+
+    <button
+      type="button"
+      class="history-item__cover"
+      :class="{ 'history-item__cover--wide': wideCover }"
+      :aria-label="`Open ${entry.title}`"
+      @click="onCover"
+    >
       <img v-if="!coverBroken" class="history-item__cover-image" :src="coverUrl" alt="" @error="onCoverError" />
       <span v-else class="history-item__cover-fallback">
         <!-- Mihon's cover_error drawable: 24dp vector painted with @color/cover_placeholder (#1F888888). -->
@@ -65,7 +152,11 @@ function onCoverError() { coverBroken.value = true }
     </button>
     <div class="history-item__body">
       <span class="history-item__title">{{ entry.title }}</span>
-      <span class="history-item__subtitle">{{ subtitle }}</span>
+      <span class="history-item__subtitle">
+        <span v-if="entry.hasUnread" class="history-item__unread-dot" aria-hidden="true" />
+        <span>{{ subtitle }}</span>
+        <span v-if="entry.readProgress" class="history-item__progress">&nbsp;• {{ entry.readProgress }}</span>
+      </span>
     </div>
     <button
       v-if="showFavorite"
@@ -111,6 +202,14 @@ function onCoverError() { coverBroken.value = true }
 .history-item > * { position: relative; z-index: 1; }
 .history-item:hover::after { opacity: 0.08; }
 .history-item:active::after { opacity: 0.12; }
+.history-item.is-selected {
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 12%, transparent);
+}
+
+.history-item__checkbox {
+  flex: 0 0 auto;
+  margin-right: 8px;
+}
 
 /* MangaCover.Book: fillMaxHeight (96 - 8 - 8 = 80dp) + aspectRatio(2f / 3f) + shapes.extraSmall (4dp). */
 .history-item__cover {
@@ -123,6 +222,9 @@ function onCoverError() { coverBroken.value = true }
   overflow: hidden;
   background: #8888881f;
   cursor: pointer;
+}
+.history-item__cover.history-item__cover--wide {
+  width: 142.2222px;
 }
 .history-item__cover-image {
   display: block;
@@ -173,6 +275,21 @@ function onCoverError() { coverBroken.value = true }
 }
 /* Text(modifier = Modifier.padding(top = 4.dp)) */
 .history-item__subtitle { margin-top: 4px; }
+.history-item__unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-primary));
+  margin-right: 6px;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+.history-item__progress {
+  color: inherit;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
 .history-item__body span {
   overflow: hidden;
   text-overflow: ellipsis;

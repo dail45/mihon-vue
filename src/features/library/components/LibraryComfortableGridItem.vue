@@ -47,7 +47,8 @@ const props = withDefaults(defineProps<{
   nextUnread?: number | null
   selected?: boolean
   selectionMode?: boolean
-}>(), { nextUnread: null, selected: false, selectionMode: false })
+  panorama?: boolean
+}>(), { nextUnread: null, selected: false, selectionMode: false, panorama: false })
 
 const emit = defineEmits<{
   (event: 'toggle', id: number): void
@@ -57,6 +58,7 @@ const emit = defineEmits<{
 
 const server = useSuwayomiStore()
 const prefs = usePreferencesStore()
+const isPanorama = computed(() => props.panorama || prefs.libraryDisplay === 'comfortable-panorama')
 const broken = ref(false)
 watch(() => [server.apiUrl, props.manga.id], () => { broken.value = false })
 
@@ -175,7 +177,7 @@ onBeforeUnmount(onPointerUp)
       v-ripple
     >
       <!-- Column { MangaGridCover(...), GridItemTitle(...) } -->
-      <div class="comfortable-cover">
+      <div class="comfortable-cover" :class="{ 'comfortable-cover-panorama': isPanorama }">
         <!--
           `MangaCover.Book(modifier = Modifier.fillMaxWidth().alpha(if (isSelected)
           GRID_SELECTED_COVER_ALPHA else coverAlpha), data = coverData)` - the alpha covers
@@ -223,7 +225,7 @@ onBeforeUnmount(onPointerUp)
       The anchor mirrors the cover geometry (4dp inset, 2:3 ratio) so the button sits exactly
       on the cover plate and does not overlap the title below.
     -->
-    <div v-if="showContinue" class="comfortable-cover-anchor">
+    <div v-if="showContinue" class="comfortable-cover-anchor" :class="{ 'comfortable-cover-panorama': isPanorama }">
       <router-link
         v-if="continueHref"
         :to="continueHref"
@@ -294,7 +296,7 @@ onBeforeUnmount(onPointerUp)
   color: rgb(var(--v-theme-on-secondary));
 }
 
-/* MangaGridCover: fillMaxWidth + aspectRatio(MangaCover.Book.ratio) = 2/3. */
+/* MangaGridCover: fillMaxWidth + aspectRatio(MangaCover.Book.ratio) = 2/3. In panorama: 16/9. */
 .comfortable-cover {
   position: relative;
   width: 100%;
@@ -302,6 +304,10 @@ onBeforeUnmount(onPointerUp)
   border-radius: 4px;
   overflow: hidden;
   background: #8888881f;
+}
+
+.comfortable-cover.comfortable-cover-panorama {
+  aspect-ratio: 16 / 9;
 }
 
 /* The cover plate carries the selected alpha (GRID_SELECTED_COVER_ALPHA = 0.76). */
@@ -313,6 +319,11 @@ onBeforeUnmount(onPointerUp)
 .comfortable-cover-image {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+}
+
+.comfortable-cover-image :deep(img) {
+  object-fit: cover;
 }
 
 /* GRID_SELECTED_COVER_ALPHA = 0.76. */
@@ -380,6 +391,10 @@ onBeforeUnmount(onPointerUp)
   right: 4px;
   aspect-ratio: 2 / 3;
   pointer-events: none;
+}
+
+.comfortable-cover-anchor.comfortable-cover-panorama {
+  aspect-ratio: 16 / 9;
 }
 
 /*

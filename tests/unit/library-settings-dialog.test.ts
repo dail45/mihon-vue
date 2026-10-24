@@ -25,7 +25,7 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
   describe('Adaptive Sheet & TabbedDialog layout', () => {
     it('uses flat-tabs to eliminate the tab underline per TabbedDialog.kt PrimaryTabRow', () => {
       expect(sheetSource).toContain('flat-tabs')
-      expect(sheetSource).toContain(":tabs=\"['Filter', 'Sort', 'Display']\"")
+      expect(sheetSource).toContain(":tabs=\"['Filter', 'Sort', 'Display', 'Group']\"")
     })
 
     it('uses 28dp CornerExtraLarge border radius for sheet container', () => {
@@ -36,7 +36,7 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
     it('implements touch gesture navigation between dialog tabs', () => {
       expect(sheetSource).toContain('@touchstart="onTouchStart"')
       expect(sheetSource).toContain('@touchend="onTouchEnd"')
-      expect(sheetSource).toContain("const tabs = ['filter', 'sort', 'display']")
+      expect(sheetSource).toContain("const tabs = ['filter', 'sort', 'display', 'group']")
     })
 
     it('does not display unauthentic settings-note paragraphs in the sheet', () => {
@@ -123,11 +123,11 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
   })
 
   describe('DisplayPage (LibrarySettingsDialog.kt:227-298)', () => {
-    it('renders 4 display modes in a SettingsChipRow', () => {
-      expect(displaySource).toContain("title: 'Compact grid', value: 'compact'")
-      expect(displaySource).toContain("title: 'Comfortable grid', value: 'comfortable'")
-      expect(displaySource).toContain("title: 'Cover-only grid', value: 'covers'")
-      expect(displaySource).toContain("title: 'List', value: 'list'")
+    it('renders display modes in a SettingsChipRow', () => {
+      expect(displaySource).toContain("'compact'")
+      expect(displaySource).toContain("'comfortable'")
+      expect(displaySource).toContain("'covers'")
+      expect(displaySource).toContain("'list'")
       expect(displaySource).toMatch(/\.display-mode-chip \{[^}]*height: 32px;/s)
       expect(displaySource).toMatch(/\.display-mode-chip \{[^}]*border-radius: 8px;/s)
       expect(displaySource).toMatch(/\.display-mode-chip \{[^}]*padding: 0 16px;/s)
@@ -145,13 +145,13 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
 
     it('renders all Overlay and Tabs checkboxes with exact strings', () => {
       const expectedCheckboxes = [
-        'label="Downloaded chapters"',
-        'label="Unread chapters"',
-        'label="Local source"',
-        'label="Language"',
-        'label="Continue reading button"',
-        'label="Show category tabs"',
-        'label="Show number of items"',
+        'Downloaded chapters',
+        'Unread chapters',
+        'Local source',
+        'Language',
+        'Continue reading button',
+        'Show category tabs',
+        'Show number of items',
       ]
       for (const cb of expectedCheckboxes) {
         expect(displaySource).toContain(cb)

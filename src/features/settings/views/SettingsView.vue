@@ -45,6 +45,7 @@ import SettingsAdvancedView from './SettingsAdvancedView.vue'
 import SettingsAppearanceView from './SettingsAppearanceView.vue'
 import SettingsLibraryView from './SettingsLibraryView.vue'
 import CategoriesView from '@/features/library/views/CategoriesView.vue'
+import SortTagView from './SortTagView.vue'
 import ExtensionStoresView from '@/features/browse/views/ExtensionStoresView.vue'
 import CreateBackupView from './CreateBackupView.vue'
 import RestoreBackupView from './RestoreBackupView.vue'
@@ -159,6 +160,10 @@ const currentDetailTitle = computed(() => {
   if (subSection.value === 'licenses') {
     const val = t(MR.strings.licenses)
     return (val && val !== 'licenses') ? val : 'Open source licenses'
+  }
+  if (subSection.value === 'sort-tags') {
+    const val = t('pref_tag_sorting')
+    return (val && val !== 'pref_tag_sorting') ? val : 'Tag sorting'
   }
   if (section.value === 'connection') return 'Server connection'
   if (selectedItem.value) return getItemTitle(selectedItem.value)
@@ -305,6 +310,7 @@ watch([section, subSection], () => {
 
         <!-- SettingsLibraryScreen.kt: full library preference tree -->
         <CategoriesView v-if="section === 'library' && subSection === 'categories'" embedded />
+        <SortTagView v-else-if="section === 'library' && subSection === 'sort-tags'" embedded />
         <SettingsLibraryView v-else-if="section === 'library'" />
 
         <!-- SettingsReaderScreen.kt (Mihon 446f6df): full reader preference tree -->

@@ -1,15 +1,13 @@
 import type { Category } from '../api/types'
 
-/** Mihon: tachiyomi.core.common.preference.CheckboxState.State (two-state). */
-export type CategoryStateSelection = { kind: 'state'; category: Category; checked: boolean }
-/** Mihon: tachiyomi.core.common.preference.CheckboxState.TriState (three-state). */
-export type CategoryTriSelection = { kind: 'tri'; category: Category; state: 'include' | 'exclude' | 'none' }
+export type CategorySelectionKind = 'state' | 'tri'
+export interface CategoryStateSelection { kind: 'state'; category: Category; checked: boolean }
+export interface CategoryTriSelection { kind: 'tri'; category: Category; state: 'include' | 'exclude' | 'none' }
 export type CategorySelection = CategoryStateSelection | CategoryTriSelection
 
-export const stateSelection = (category: Category, checked: boolean): CategoryStateSelection => ({ kind: 'state', category, checked })
-export const triSelection = (category: Category, state: 'include' | 'exclude' | 'none'): CategoryTriSelection => ({ kind: 'tri', category, state })
+export const stateSelection = (category: Category, checked = false): CategoryStateSelection => ({ kind: 'state', category, checked })
+export const triSelection = (category: Category, state: 'include' | 'exclude' | 'none' = 'none'): CategoryTriSelection => ({ kind: 'tri', category, state })
 
-/** Mihon: CheckboxState.next() — State: Checked <-> None; TriState: Include -> Exclude -> None -> Include. */
 export function nextCategorySelection(selection: CategorySelection): CategorySelection {
   if (selection.kind === 'state') return { kind: 'state', category: selection.category, checked: !selection.checked }
   const state = selection.state === 'include' ? 'exclude' : selection.state === 'exclude' ? 'none' : 'include'
@@ -17,8 +15,9 @@ export function nextCategorySelection(selection: CategorySelection): CategorySel
 }
 
 /** Mihon: eu.kanade.presentation.category.visualName — the system category is labelled "Default". */
-export function categoryVisualName(category: Category): string {
-  const isSystem = category.id === 0 || category.isDefaultCategory === true || category.default === true || category.name === 'Default'
+export function categoryVisualName(category: Category | { id: number; name: string; isVirtual?: boolean }): string {
+  if ('isVirtual' in category && category.isVirtual) return category.name
+  const isSystem = category.id === 0 || (category as Category).isDefaultCategory === true || (category as Category).default === true || category.name === 'Default'
   return isSystem ? 'Default' : category.name
 }
 

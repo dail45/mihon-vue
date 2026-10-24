@@ -9,6 +9,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
+import { usePreferencesStore } from '@/features/settings/stores/preferences'
 import { createSuwayomiApi } from '@/core/api/client'
 import { reorderCategory } from '@/core/api/categoryReorder'
 import type { Category } from '@/core/api/types'
@@ -21,6 +22,7 @@ import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'
 import Md3CircularProgress from '@/core/components/Md3CircularProgress.vue'
 
 const server = useSuwayomiStore()
+const preferences = usePreferencesStore()
 
 /** Mihon hides its system (uncategorized) category; Suwayomi keeps the default category at id 0. */
 const SYSTEM_CATEGORY_ID = 0
@@ -237,9 +239,12 @@ defineExpose({
         >
           <CategoryListItem
             :name="category.name"
+            :category="category"
+            :hidden="preferences.hiddenCategories.includes(category.id)"
             :dragging="draggingId === category.id"
             @rename="openRename(category)"
             @delete="openDelete(category)"
+            @hide="preferences.toggleHiddenCategory(category.id)"
             @dragstart="onDragStart(category, $event)"
             @dragend="onDragEnd"
             @move-up="moveCategory(index, index - 1)"

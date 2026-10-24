@@ -498,13 +498,13 @@ To maintain code cleanliness, security, and web feasibility, the following items
   - **Status Categories**: Ongoing, Completed, Cancelled, On Hiatus, Publishing Finished, Unknown.
   - **Backend Feasibility**: 100% Client-Side. Derived from cached `server.library`, `server.sources`, and track records.
 - **Acceptance Criteria**:
-  - [ ] `LibrarySettingsSheet` displays 4 tabs: Filter, Sort, Display, Group.
-  - [ ] Selecting "By Source" groups library manga into tabs sorted alphabetically by source name.
-  - [ ] Selecting "By Status" groups manga into tabs by publication status (Ongoing, Completed, etc.).
-  - [ ] Selecting "By Track Status" groups manga by reading progress status across bound trackers.
-  - [ ] Selecting "Ungrouped" displays all library manga inside a single "Ungrouped" tab.
-  - [ ] Selecting "Default" restores the user's Suwayomi category tabs.
-  - [ ] Grouping selection persists across page reloads.
+  - [x] `LibrarySettingsSheet` displays 4 tabs: Filter, Sort, Display, Group.
+  - [x] Selecting "By Source" groups library manga into tabs sorted alphabetically by source name.
+  - [x] Selecting "By Status" groups manga into tabs by publication status (Ongoing, Completed, etc.).
+  - [x] Selecting "By Track Status" groups manga by reading progress status across bound trackers.
+  - [x] Selecting "Ungrouped" displays all library manga inside a single "Ungrouped" tab.
+  - [x] Selecting "Default" restores the user's Suwayomi category tabs.
+  - [x] Grouping selection persists across page reloads.
 
 ---
 
@@ -525,10 +525,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
   - **Storage Key**: `localStorage['mihon.library.sortTags']` (JSON string array, e.g. `["Action", "Romance", "Comedy"]`)
   - **Algorithm**: For each manga, find lowest index of `manga.genre` matching any entry in `sortTags`. Lower index ranks first. Breaks ties alphabetically by title.
 - **Acceptance Criteria**:
-  - [ ] Settings > Library displays "Tag sorting" item showing count of configured tags and linking to `/settings/library/sort-tags`.
-  - [ ] In `SortTagView.vue`, users can add tags via dialog, drag or click to reorder priority, and delete tags.
-  - [ ] When 1+ tags exist, "Tag sorting" appears in Library Sort options.
-  - [ ] Selecting "Tag sorting" orders manga by their highest priority matching genre tag.
+  - [x] Settings > Library displays "Tag sorting" item showing count of configured tags and linking to `/settings/library/sort-tags`.
+  - [x] In `SortTagView.vue`, users can add tags via dialog, drag or click to reorder priority, and delete tags.
+  - [x] When 1+ tags exist, "Tag sorting" appears in Library Sort options.
+  - [x] Selecting "Tag sorting" orders manga by their highest priority matching genre tag.
 
 ---
 
@@ -548,10 +548,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - `mihon.library.hiddenCategories`: JSON array of category IDs (`number[]`)
     - `mihon.library.showHiddenCategories`: boolean (`'true' | 'false'`, default `'false'`)
 - **Acceptance Criteria**:
-  - [ ] In "Edit categories" screen, each category row displays an eye visibility toggle button.
-  - [ ] Toggling a category to hidden applies 60% opacity and strikethrough text styling.
-  - [ ] Hidden categories are excluded from library category tabs and pager by default.
-  - [ ] Enabling "Show hidden categories" in Library settings restores hidden tabs to the library view.
+  - [x] In "Edit categories" screen, each category row displays an eye visibility toggle button.
+  - [x] Toggling a category to hidden applies 60% opacity and strikethrough text styling.
+  - [x] Hidden categories are excluded from library category tabs and pager by default.
+  - [x] Enabling "Show hidden categories" in Library settings restores hidden tabs to the library view.
 
 ---
 
@@ -567,9 +567,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - **Storage Key**: `mihon.library.showEmptyCategoriesSearch` (boolean, default: `false`)
 - **Acceptance Criteria**:
-  - [ ] Searching in library with preference disabled hides tabs that have 0 matching results.
-  - [ ] Searching in library with preference enabled retains all category tabs.
-  - [ ] Clicking an empty tab during search displays the empty search placeholder without crashing.
+  - [x] Searching in library with preference disabled hides tabs that have 0 matching results.
+  - [x] Searching in library with preference enabled retains all category tabs.
+  - [x] Clicking an empty tab during search displays the empty search placeholder without crashing.
 
 ---
 
@@ -590,10 +590,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - `mihon.library.filterCategoriesInclude`: JSON array of IDs (`number[]`)
     - `mihon.library.filterCategoriesExclude`: JSON array of IDs (`number[]`)
 - **Acceptance Criteria**:
-  - [ ] Checking "Categories" in Filter tab enables category filtering.
-  - [ ] Clicking "Edit" opens `TriStateListDialog` listing all categories.
-  - [ ] Tapping a category cycles: None -> Include (check) -> Exclude (crossed box) -> None.
-  - [ ] Excluded categories hide all manga belonging to them; included categories restrict library to entries belonging to those categories.
+  - [x] Checking "Categories" in Filter tab enables category filtering.
+  - [x] Clicking "Edit" opens `TriStateListDialog` listing all categories.
+  - [x] Tapping a category cycles: None -> Include (check) -> Exclude (crossed box) -> None.
+  - [x] Excluded categories hide all manga belonging to them; included categories restrict library to entries belonging to those categories.
 
 ---
 
@@ -610,9 +610,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - **Storage Key**: `mihon.library.display` (`'comfortable-panorama'`)
 - **Acceptance Criteria**:
-  - [ ] User can select "Comfortable grid (panorama)" in Display tab.
-  - [ ] Library cards render 16:9 landscape aspect ratio covers with titles below.
-  - [ ] Grid column tracks expand to prevent horizontal squishing.
+  - [x] User can select "Comfortable grid (panorama)" in Display tab.
+  - [x] Library cards render 16:9 landscape aspect ratio covers with titles below.
+  - [x] Grid column tracks expand to prevent horizontal squishing.
 
 ---
 
@@ -630,8 +630,8 @@ To maintain code cleanliness, security, and web feasibility, the following items
   - **Storage Keys**: `mihon.library.useLangIcon` (boolean), `mihon.library.sourceBadge` (boolean)
   - **Favicon Endpoint**: `GET /api/v1/source/{sourceId}/icon`
 - **Acceptance Criteria**:
-  - [ ] When "Show language flag icon" is enabled, language badges render national flag SVGs instead of plain text ("EN", "JA").
-  - [ ] When "Show source icon badge" is enabled, source favicon appears in the badge cluster.
+  - [x] When "Show language flag icon" is enabled, language badges render national flag SVGs instead of plain text ("EN", "JA").
+  - [x] When "Show source icon badge" is enabled, source favicon appears in the badge cluster.
 
 ---
 
@@ -662,10 +662,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     }
     ```
 - **Acceptance Criteria**:
-  - [ ] Active library update displays a top banner: "Updating library (X%)" with a circular spinner.
-  - [ ] Failed manga checks during updates are recorded in `libraryUpdateErrors` store.
-  - [ ] More view displays "Library update errors" row with error count badge.
-  - [ ] Opening `LibraryUpdateErrorView.vue` groups failures by reason, allowing individual retries, batch clear, or multi-migration handoff.
+  - [x] Active library update displays a top banner: "Updating library (X%)" with a circular spinner.
+  - [x] Failed manga checks during updates are recorded in `libraryUpdateErrors` store.
+  - [x] More view displays "Library update errors" row with error count badge.
+  - [x] Opening `LibraryUpdateErrorView.vue` groups failures by reason, allowing individual retries, batch clear, or multi-migration handoff.
 
 ---
 
@@ -680,9 +680,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - **State**: `const isShowingUpdatingMangas = ref(false)`
 - **Acceptance Criteria**:
-  - [ ] Upcoming toolbar contains a toggle action button with `new_releases` icon.
-  - [ ] Clicking toggles title between "Upcoming" (predicted chapter releases) and "To be updated" (manga due for check).
-  - [ ] "To be updated" queue lists manga whose next scheduled update timestamp is in the past.
+  - [x] Upcoming toolbar contains a toggle action button with `new_releases` icon.
+  - [x] Clicking toggles title between "Upcoming" (predicted chapter releases) and "To be updated" (manga due for check).
+  - [x] "To be updated" queue lists manga whose next scheduled update timestamp is in the past.
 
 ---
 
@@ -703,11 +703,11 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - `mihon.history.filterNonLibrary`: TriState (`'all' | 'include' | 'exclude'`)
     - `mihon.history.wideCover`: boolean (`'true' | 'false'`)
 - **Acceptance Criteria**:
-  - [ ] History toolbar features a filter icon opening `HistoryFilterDialog.vue`.
-  - [ ] Unfinished manga filter hides entries whose chapters are fully read.
-  - [ ] Unfinished chapter filter retains only entries where `lastPageRead > 0 && !isRead`.
-  - [ ] History rows render a primary dot if unread chapters remain, and display page progress ("• Page X").
-  - [ ] Long-pressing any row enters multi-selection mode with Select All, Invert, and batch delete confirmation.
+  - [x] History toolbar features a filter icon opening `HistoryFilterDialog.vue`.
+  - [x] Unfinished manga filter hides entries whose chapters are fully read.
+  - [x] Unfinished chapter filter retains only entries where `lastPageRead > 0 && !isRead`.
+  - [x] History rows render a primary dot if unread chapters remain, and display page progress ("• Page X").
+  - [x] Long-pressing any row enters multi-selection mode with Select All, Invert, and batch delete confirmation.
 
 ---
 

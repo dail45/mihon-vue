@@ -19,12 +19,14 @@ import { resolveDeepLink } from '@/core/utils/deepLinks'
 import DonationCampaignSheet from '@/core/components/DonationCampaignSheet.vue'
 import OnboardingView from '@/features/onboarding/views/OnboardingView.vue'
 import { useAppearancePreferences } from '@/features/settings/composables/useAppearancePreferences'
+import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
 import { DefaultLayout, ReaderLayout, FullscreenLayout } from '@/layouts'
 
 // Primary navigation destinations: '/library', '/updates', '/history', '/browse', '/more'
 // Routed back handler integration: route.path === '/stats'
 
 const route = useRoute(), router = useRouter(), preferences = usePreferencesStore(), server = useSuwayomiStore()
+const updateErrors = useLibraryUpdateErrorsStore()
 const theme = useTheme()
 const { applyCurrentTheme } = useAppearancePreferences()
 const media = window.matchMedia('(prefers-color-scheme: dark)'), systemDark = ref(media.matches)
@@ -48,6 +50,7 @@ watch(dark, value => {
 const indexing = ref(false)
 const bannerColor = computed(() => {
   const colors = theme.global.current.value.colors
+  if (updateErrors.updating) return colors.tertiary
   if (indexing.value) return colors.secondary
   if (preferences.downloadedOnly) return colors.tertiary
   if (preferences.incognitoMode) return colors.primary

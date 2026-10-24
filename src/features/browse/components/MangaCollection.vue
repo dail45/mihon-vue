@@ -63,6 +63,8 @@ const gridStyle = computed(() => {
   const style: Record<string, string> = {}
   if (columns.value) {
     style.gridTemplateColumns = `repeat(${columns.value}, minmax(0, 1fr))`
+  } else if (activeDisplay.value === 'comfortable-panorama') {
+    style.gridTemplateColumns = 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))'
   }
   if (props.contentPaddingBottom) {
     style.paddingBottom = typeof props.contentPaddingBottom === 'number'
@@ -320,7 +322,7 @@ onBeforeUnmount(() => {
       <div v-if="fastScrollVisible" class="fast-scroll-thumb" :style="{ top: `${fastScrollTop}px`, right: `${fastScrollRight}px` }" aria-hidden="true" @pointerdown="startFastScrollDrag" />
     </Transition>
   </div>
-  <div v-else ref="gridRef" class="library-grid" :class="{ 'library-grid-compact': libraryCompact }" :style="gridStyle" :aria-label="`${activeDisplay} manga grid`">
+  <div v-else ref="gridRef" class="library-grid" :class="{ 'library-grid-compact': libraryCompact, 'library-grid-panorama': activeDisplay === 'comfortable-panorama' }" :style="gridStyle" :aria-label="`${activeDisplay} manga grid`">
     <!--
       `LazyLibraryGrid.kt`: `globalSearchItem` spans the whole line (`GridItemSpan(maxLineSpan)`)
       and keeps the content width of the button at the start of the row.
@@ -342,12 +344,13 @@ onBeforeUnmount(() => {
       />
       <div v-if="bottomSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${bottomSpacerHeight}px` }" aria-hidden="true" />
     </template>
-    <template v-else-if="libraryComfortable">
+    <template v-else-if="libraryComfortable || activeDisplay === 'comfortable-panorama'">
       <div v-if="topSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${topSpacerHeight}px` }" aria-hidden="true" />
       <LibraryComfortableGridItem
         v-for="item in (isVirtualActive ? visibleItems : items)"
         :key="item.id"
         :manga="item"
+        :panorama="activeDisplay === 'comfortable-panorama'"
         :next-unread="summaries?.[item.id]?.nextUnread"
         :selected="isSelected(item.id)"
         :selection-mode="selectionActive"

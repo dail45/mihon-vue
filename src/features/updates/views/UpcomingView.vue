@@ -34,6 +34,8 @@ import { useTabletUi } from '@/core/composables/useTabletUi'
 import { readPreference, writePreference } from '@/features/settings/stores/preferences'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { estimateSchedule, fromEpochDay, nextCheck, toEpochDay } from '@/core/utils/releaseSchedule'
+import { isUpdateDue } from '@/core/utils/upcoming'
+import { stringResource, MR } from '@/core/i18n'
 import AdaptiveSettingsSheet from '@/features/settings/components/AdaptiveSettingsSheet.vue'
 import Md3CircularProgress from '@/core/components/Md3CircularProgress.vue'
 import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'
@@ -150,17 +152,26 @@ async function load() {
 
 watch(() => server.apiUrl, () => { void load() }, { immediate: true })
 
+const isShowingUpdatingMangas = ref(false)
+
 /**
  * The category filters of `getUpcomingManga` (manga.sq): a title in an excluded category is
  * dropped, and with included categories only the titles in one of them are kept.
+ * When `isShowingUpdatingMangas` is active, displays the "To be updated" queue of entries
+ * whose scheduled update timestamp is in the past (overdue).
  */
 const visibleReleases = computed<Release[]>(() => {
   const included = new Set(includedIds.value)
   const excluded = new Set(excludedIds.value)
+  const todayDay = toEpochDay(new Date())
+
   return (releases.value ?? []).filter(release => {
     if (release.categories.some(category => excluded.has(category))) return false
     if (included.size && !release.categories.some(category => included.has(category))) return false
-    return true
+    if (isShowingUpdatingMangas.value) {
+      return isUpdateDue(release.day, todayDay)
+    }
+    return release.day >= todayDay
   })
 })
 
@@ -431,7 +442,18 @@ onBeforeUnmount(() => {
     <!-- UpcomingToolbar.kt: AppBar(title = "Upcoming", navigateUp, actions = FilterList, Help). -->
     <header class="upcoming-toolbar">
       <v-btn icon="arrow_back" variant="text" class="upcoming-icon-btn" aria-label="Navigate up" title="Navigate up" @click="router.back()" />
-      <h1 class="upcoming-toolbar-title">Upcoming</h1>
+      <h1 class="upcoming-toolbar-title">
+        {{ isShowingUpdatingMangas ? (stringResource(MR.strings.label_to_be_updated) || 'To be updated') : (stringResource(MR.strings.label_upcoming) || 'Upcoming') }}
+      </h1>
+      <v-btn
+        icon="new_releases"
+        variant="text"
+        class="upcoming-icon-btn"
+        :style="isShowingUpdatingMangas ? { color: 'rgb(var(--v-theme-primary))' } : undefined"
+        :aria-label="isShowingUpdatingMangas ? 'Show upcoming releases' : 'Show manga to be updated'"
+        :title="isShowingUpdatingMangas ? 'Show upcoming releases' : 'Show manga to be updated'"
+        @click="isShowingUpdatingMangas = !isShowingUpdatingMangas"
+      />
       <v-btn
         icon="filter_list"
         variant="text"
@@ -542,6 +564,7 @@ onBeforeUnmount(() => {
         </template>
 
         <MihonEmptyScreen v-else-if="errorMessage" :message="errorMessage" />
+        <MihonEmptyScreen v-else-if="isShowingUpdatingMangas" :message="stringResource(MR.strings.no_manga_to_be_updated) || 'No entries to be updated'" />
         <MihonEmptyScreen v-else message="No upcoming releases" />
       </section>
     </div>

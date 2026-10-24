@@ -10,6 +10,7 @@ export const router = createRouter({
     { path: '/manga/:id(\\d+)/notes', component: () => import('@/features/manga/views/MangaNotesView.vue'), meta: { title: 'Notes', detail: true, manga: true, ownToolbar: true } },
     { path: '/manga/:id(\\d+)/read/:chapterIndex(\\d+)', component: () => import('@/features/reader/views/ReaderView.vue'), meta: { title: 'Reader', detail: true, reader: true } },
     { path: '/updates', component: () => import('@/features/updates/views/UpdatesView.vue'), meta: { title: 'Updates', icon: 'update' } },
+    { path: '/updates/errors', component: () => import('@/features/updates/views/LibraryUpdateErrorView.vue'), meta: { title: 'option_label_library_update_errors', detail: true, ownToolbar: true } },
     { path: '/upcoming', component: () => import('@/features/updates/views/UpcomingView.vue'), meta: { title: 'Upcoming', detail: true, ownToolbar: true } },
     { path: '/history', component: () => import('@/features/history/views/HistoryView.vue'), meta: { title: 'History', icon: 'history', ownToolbar: true } },
     { path: '/browse', component: () => import('@/features/browse/views/BrowseView.vue'), meta: { title: 'Browse' } },
@@ -70,6 +71,18 @@ export const router = createRouter({
         detail: true,
         settingsSection: 'library',
         subSection: 'categories',
+        ownToolbar: true,
+      },
+    },
+    // TachiyomiSY `SortTagScreen` (Library -> Tag sorting)
+    {
+      path: '/settings/library/sort-tags',
+      component: () => import('@/features/settings/views/SettingsView.vue'),
+      meta: {
+        title: 'Tag sorting',
+        detail: true,
+        settingsSection: 'library',
+        subSection: 'sort-tags',
         ownToolbar: true,
       },
     },

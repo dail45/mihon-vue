@@ -2,16 +2,32 @@
 import { computed, ref, watch } from 'vue'
 import { usePreferencesStore } from '@/features/settings/stores/preferences'
 import { useSuwayomiStore } from '../stores/suwayomi'
-import { librarySortOptions, type LibrarySortType, type TriState } from '@/core/utils/library'
+import { librarySortOptions, LIBRARY_GROUP, type LibraryGroupMode, type LibrarySortType, type TriState } from '@/core/utils/library'
 import { listTrackers, type Tracker } from '@/core/api/trackers'
 import AdaptiveSettingsSheet from '@/features/settings/components/AdaptiveSettingsSheet.vue'
 import LibraryDisplaySettings from './LibraryDisplaySettings.vue'
 import TriStateRow from '@/features/settings/components/TriStateRow.vue'
+import TriStateListDialog from '@/core/components/TriStateListDialog.vue'
+import type { Category } from '@/core/api/types'
 
 const open = defineModel<boolean>({ required: true })
 const tab = ref('filter')
 const prefs = usePreferencesStore()
 const server = useSuwayomiStore()
+
+const categoriesDialogOpen = ref(false)
+const filterCategoriesList = computed<Category[]>(() => [...server.categories].sort((a, b) => a.order - b.order))
+const filterCategoriesIncludedList = computed<Category[]>(() =>
+  filterCategoriesList.value.filter(c => prefs.filterCategoriesInclude.includes(c.id)),
+)
+const filterCategoriesExcludedList = computed<Category[]>(() =>
+  filterCategoriesList.value.filter(c => prefs.filterCategoriesExclude.includes(c.id)),
+)
+
+function onCategoryFiltersChanged(included: unknown[], excluded: unknown[]) {
+  prefs.filterCategoriesInclude = (included as Category[]).map(c => c.id)
+  prefs.filterCategoriesExclude = (excluded as Category[]).map(c => c.id)
+}
 
 const sort = computed(() => prefs.getLibrarySort(server.apiUrl, server.activeCategoryId))
 const downloaded = computed({
@@ -64,6 +80,9 @@ const singleTrackerFilter = computed<TriState>({
 
 const sortOptions = computed(() => {
   const options = [...librarySortOptions]
+  if (prefs.sortTags && prefs.sortTags.length > 0) {
+    options.push({ value: 'tagList', label: 'Tag sorting' })
+  }
   if (loggedInTrackers.value.length > 0) {
     const randomIndex = options.findIndex(o => o.value === 'random')
     if (randomIndex >= 0) {
@@ -77,6 +96,18 @@ const sortOptions = computed(() => {
 
 function onSelectSort(mode: LibrarySortType) {
   prefs.chooseLibrarySort(server.apiUrl, server.activeCategoryId, mode)
+}
+
+const groupOptions = [
+  { value: LIBRARY_GROUP.BY_DEFAULT, label: 'Default' },
+  { value: LIBRARY_GROUP.BY_SOURCE, label: 'By Source' },
+  { value: LIBRARY_GROUP.BY_STATUS, label: 'By Status' },
+  { value: LIBRARY_GROUP.BY_TRACK_STATUS, label: 'By Track Status' },
+  { value: LIBRARY_GROUP.UNGROUPED, label: 'Ungrouped' },
+] as const
+
+function onSelectGroup(mode: LibraryGroupMode) {
+  prefs.groupMode = mode
 }
 
 const touchStartX = ref<number | null>(null)
@@ -97,7 +128,7 @@ function onTouchEnd(e: TouchEvent) {
   touchStartY.value = null
 
   if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-    const tabs = ['filter', 'sort', 'display']
+    const tabs = ['filter', 'sort', 'display', 'group']
     const currentIndex = tabs.indexOf(tab.value)
     if (dx < 0 && currentIndex < tabs.length - 1) {
       tab.value = tabs[currentIndex + 1]!
@@ -113,7 +144,7 @@ function onTouchEnd(e: TouchEvent) {
     v-model="open"
     v-model:tab="tab"
     title="Library settings"
-    :tabs="['Filter', 'Sort', 'Display']"
+    :tabs="['Filter', 'Sort', 'Display', 'Group']"
     flat-tabs
   >
     <div
@@ -144,6 +175,34 @@ function onTouchEnd(e: TouchEvent) {
           v-model="prefs.filters.completed"
           label="Completed"
         />
+
+        <!-- Categories filter row (Komikku LibrarySettingsDialog.kt:184, 470-520) -->
+        <div class="settings-row categories-filter-row" @click="prefs.filterCategories = !prefs.filterCategories">
+          <span class="settings-icon-slot">
+            <v-checkbox v-model="prefs.filterCategories" density="compact" hide-details />
+          </span>
+          <span class="settings-row-label">Categories</span>
+          <v-btn
+            variant="text"
+            color="primary"
+            density="comfortable"
+            @click.stop="categoriesDialogOpen = true"
+          >
+            Edit
+          </v-btn>
+        </div>
+
+        <div class="settings-row categories-hidden-row" @click="prefs.showHiddenCategories = !prefs.showHiddenCategories">
+          <span class="settings-icon-slot">
+            <v-switch
+              v-model="prefs.showHiddenCategories"
+              color="primary"
+              density="compact"
+              hide-details
+            />
+          </span>
+          <span class="settings-row-label">Show hidden categories</span>
+        </div>
 
         <template v-if="loggedInTrackers.length === 1">
           <TriStateRow
@@ -188,15 +247,73 @@ function onTouchEnd(e: TouchEvent) {
       </div>
 
       <!-- DisplayPage (LibrarySettingsDialog.kt:227-298) -->
-      <div v-else class="library-settings-page">
+      <div v-else-if="tab === 'display'" class="library-settings-page">
         <LibraryDisplaySettings />
+      </div>
+
+      <!-- GroupPage (TachiyomiSY LibrarySettingsDialog.kt:392-429) -->
+      <div v-else-if="tab === 'group'" class="library-settings-page">
+        <button
+          v-for="option in groupOptions"
+          :key="option.value"
+          type="button"
+          class="settings-row"
+          :data-group="option.value"
+          :aria-label="option.label"
+          :aria-pressed="prefs.groupMode === option.value"
+          @click="onSelectGroup(option.value)"
+        >
+          <span class="settings-icon-slot">
+            <v-icon
+              :icon="prefs.groupMode === option.value ? 'radio_button_checked' : 'radio_button_unchecked'"
+              :color="prefs.groupMode === option.value ? 'primary' : undefined"
+              size="24"
+            />
+          </span>
+          <span class="settings-row-label">{{ option.label }}</span>
+        </button>
       </div>
     </div>
   </AdaptiveSettingsSheet>
+
+  <TriStateListDialog
+    v-if="categoriesDialogOpen"
+    v-model="categoriesDialogOpen"
+    title="Categories"
+    message="Entries in excluded categories will not be shown even if they are also in included categories."
+    :items="filterCategoriesList"
+    :initial-checked="filterCategoriesIncludedList"
+    :initial-inversed="filterCategoriesExcludedList"
+    :item-label="(c: any) => c.name"
+    :item-key="(c: any) => c.id"
+    @value-changed="onCategoryFiltersChanged"
+  />
 </template>
 
 <style scoped>
 @layer app-components {
+.categories-filter-row {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 44px;
+  padding: 10px 24px;
+}
+.categories-filter-row:hover {
+  background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 8%, transparent);
+}
+.categories-hidden-row {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 44px;
+  padding: 10px 24px;
+}
+.categories-hidden-row:hover {
+  background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 8%, transparent);
+}
 .library-settings-page-container {
   display: flex;
   flex-direction: column;

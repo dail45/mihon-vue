@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
+import { useI18n } from 'vue-i18n'
 import { usePreferencesStore } from '@/features/settings/stores/preferences'
 import Md3Slider from '@/core/components/Md3Slider.vue'
 import PreferenceCheckbox from '@/features/settings/components/PreferenceCheckbox.vue'
 
+const { t } = useI18n()
 const prefs = usePreferencesStore(), display = useDisplay()
 
 /**
@@ -19,18 +21,19 @@ const columns = computed({
 })
 
 /** `displayModes` in DisplayPage.kt. */
-const modes = [
-  { title: 'Compact grid', value: 'compact' },
-  { title: 'Comfortable grid', value: 'comfortable' },
-  { title: 'Cover-only grid', value: 'covers' },
-  { title: 'List', value: 'list' },
-] as const
+const modes = computed(() => [
+  { title: t('action_display_grid', 'Compact grid'), value: 'compact' as const },
+  { title: t('action_display_comfortable_grid', 'Comfortable grid'), value: 'comfortable' as const },
+  { title: t('action_display_comfortable_grid_panorama', 'Comfortable grid (panorama)'), value: 'comfortable-panorama' as const },
+  { title: t('action_display_cover_only_grid', 'Cover-only grid'), value: 'covers' as const },
+  { title: t('action_display_list', 'List'), value: 'list' as const },
+])
 </script>
 
 <template>
   <!-- SettingsChipRow(MR.strings.action_display_mode): heading + FlowRow of FilterChips. -->
-  <h3 class="settings-heading">Display mode</h3>
-  <div class="display-mode-chips" role="group" aria-label="Display mode">
+  <h3 class="settings-heading">{{ t('action_display_mode', 'Display mode') }}</h3>
+  <div class="display-mode-chips" role="group" :aria-label="t('action_display_mode', 'Display mode')">
     <button
       v-for="mode in modes"
       :key="mode.value"
@@ -45,22 +48,25 @@ const modes = [
   <!-- SliderItem(pref_library_columns): title + Pill on the right, slider below. -->
   <div v-if="prefs.libraryDisplay !== 'list'" class="settings-slider-item">
     <div class="settings-slider-item-head">
-      <span class="settings-slider-item-title">Items per row</span>
-      <span class="columns-pill">{{ columns ? columns : 'Auto' }}</span>
+      <span class="settings-slider-item-title">{{ t('pref_library_columns', 'Items per row') }}</span>
+      <span class="columns-pill">{{ columns ? columns : t('label_auto', 'Auto') }}</span>
     </div>
-    <Md3Slider v-model="columns" label="Items per row" :max="10" :value-text="columns ? String(columns) : 'Auto'" />
+    <Md3Slider v-model="columns" :label="t('pref_library_columns', 'Items per row')" :max="10" :value-text="columns ? String(columns) : t('label_auto', 'Auto')" />
   </div>
 
-  <h3 class="settings-heading">Overlay</h3>
-  <PreferenceCheckbox v-model="prefs.downloadBadge" label="Downloaded chapters" />
-  <PreferenceCheckbox v-model="prefs.unreadBadge" label="Unread chapters" />
-  <PreferenceCheckbox v-model="prefs.localBadge" label="Local source" />
-  <PreferenceCheckbox v-model="prefs.languageBadge" label="Language" />
-  <PreferenceCheckbox v-model="prefs.showContinue" label="Continue reading button" />
+  <h3 class="settings-heading">{{ t('badges_header', 'Badges') }}</h3>
+  <PreferenceCheckbox v-model="prefs.downloadBadge" :label="t('action_display_download_badge', 'Downloaded chapters')" />
+  <PreferenceCheckbox v-model="prefs.unreadBadge" :label="t('action_display_unread_badge', 'Unread chapters')" />
+  <PreferenceCheckbox v-model="prefs.localBadge" :label="t('action_display_local_badge', 'Local source')" />
+  <PreferenceCheckbox v-model="prefs.languageBadge" :label="t('action_display_language_badge', 'Language')" />
+  <PreferenceCheckbox v-model="prefs.useLangIcon" :label="t('action_display_language_icon', 'Show language flag icon')" />
+  <PreferenceCheckbox v-model="prefs.sourceBadge" :label="t('action_display_source_badge', 'Show source icon badge')" />
+  <PreferenceCheckbox v-model="prefs.showContinue" :label="t('action_display_show_continue_reading_button', 'Continue reading button')" />
 
-  <h3 class="settings-heading">Tabs</h3>
-  <PreferenceCheckbox v-model="prefs.categoryTabs" label="Show category tabs" />
-  <PreferenceCheckbox v-model="prefs.categoryCounts" label="Show number of items" />
+  <h3 class="settings-heading">{{ t('tabs_header', 'Tabs') }}</h3>
+  <PreferenceCheckbox v-model="prefs.categoryTabs" :label="t('action_display_show_tabs', 'Show category tabs')" />
+  <PreferenceCheckbox v-model="prefs.showHiddenCategories" :label="t('action_show_hidden_categories', 'Show hidden categories')" />
+  <PreferenceCheckbox v-model="prefs.categoryCounts" :label="t('action_display_show_number_of_items', 'Show number of items')" />
 </template>
 
 <style scoped>

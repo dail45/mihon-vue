@@ -36,19 +36,27 @@ import { computed } from 'vue'
 interface CategoryLike {
   id?: number | string
   name: string
+  hidden?: boolean
   [key: string]: unknown
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   name?: string
   category?: CategoryLike
+  hidden?: boolean
   /** True while this row is being dragged by its handle. */
   dragging?: boolean
-}>()
+}>(), {
+  name: undefined,
+  category: undefined,
+  hidden: false,
+  dragging: false,
+})
 
 const emit = defineEmits<{
   (event: 'rename'): void
   (event: 'delete'): void
+  (event: 'hide'): void
   (event: 'dragstart', dragEvent: DragEvent): void
   (event: 'dragend'): void
   (event: 'move-up'): void
@@ -60,6 +68,7 @@ const emit = defineEmits<{
 }>()
 
 const displayName = computed(() => props.category?.name ?? props.name ?? '')
+const isHidden = computed(() => Boolean(props.hidden || props.category?.hidden))
 
 function onCardClick(event: MouseEvent) {
   const target = event.target as HTMLElement | null
@@ -87,7 +96,7 @@ function onCardKeyDown(event: KeyboardEvent) {
 <template>
   <div
     class="category-list-item"
-    :class="{ 'is-dragging': props.dragging }"
+    :class="{ 'is-dragging': props.dragging, 'is-hidden': isHidden }"
     role="button"
     tabindex="0"
     :aria-label="`Rename category ${displayName}`"
@@ -112,7 +121,10 @@ function onCardKeyDown(event: KeyboardEvent) {
       <span class="material-symbols-rounded category-list-item__handle-icon" aria-hidden="true">drag_handle</span>
     </span>
 
-    <span class="category-list-item__name">{{ displayName }}</span>
+    <span
+      class="category-list-item__name"
+      :class="{ 'is-hidden': isHidden }"
+    >{{ displayName }}</span>
 
     <button
       type="button"
@@ -123,6 +135,17 @@ function onCardKeyDown(event: KeyboardEvent) {
       @keydown.stop
     >
       <span class="material-symbols-rounded category-list-item__action-icon" aria-hidden="true">edit</span>
+    </button>
+
+    <button
+      type="button"
+      class="category-list-item__action category-list-item__action--hide"
+      :aria-label="isHidden ? 'Unhide category' : 'Hide category'"
+      :title="isHidden ? 'Unhide category' : 'Hide category'"
+      @click.stop="emit('hide')"
+      @keydown.stop
+    >
+      <span class="material-symbols-rounded category-list-item__action-icon" aria-hidden="true">{{ isHidden ? 'visibility' : 'visibility_off' }}</span>
     </button>
 
     <button
@@ -222,6 +245,13 @@ function onCardKeyDown(event: KeyboardEvent) {
   font-weight: 400;
   letter-spacing: 0.03125em;
   color: rgb(var(--v-theme-on-surface));
+}
+
+/* Hidden category styling: 60% opacity and strikethrough (Komikku CategoryListItem.kt:60-64) */
+.category-list-item.is-hidden .category-list-item__name,
+.category-list-item__name.is-hidden {
+  opacity: 0.6;
+  text-decoration: line-through;
 }
 
 /* MD3 IconButton: the state layer is 40dp with a 48dp interactive touch target.

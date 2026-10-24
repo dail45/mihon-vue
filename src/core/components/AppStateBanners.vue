@@ -4,16 +4,18 @@
  *   mihon/app/src/main/java/eu/kanade/presentation/components/Banners.kt
  *
  * Reference (Banners.kt:62-187):
- *   - `AppStateBanners(downloadedOnlyMode, incognitoMode, indexing)` stacks three banners with
+ *   - `AppStateBanners(downloadedOnlyMode, incognitoMode, indexing)` stacks banners with
  *     `AnimatedVisibility(expandVertically / shrinkVertically)`:
  *       1. `IndexingDownloadBanner`  — `secondary` background, `onSecondary` text
  *          "Checking downloads" (`download_notifier_cache_renewal`), a `CircularProgressIndicator`
  *          sized like the text with `strokeWidth = textHeight / 8` and an 8dp gap.
- *       2. `DownloadedOnlyModeBanner` — `tertiary` background, `onTertiary` text
+ *       2. `UpdatingBanner` (Komikku / Banners.kt:109-125) — `tertiary` background, `onTertiary` text
+ *          "Updating library (X%)" (`notification_updating_progress`) or "Updating library" (`updating_library`).
+ *       3. `DownloadedOnlyModeBanner` — `tertiary` background, `onTertiary` text
  *          "Downloaded only" (`label_downloaded_only`), 4dp padding, centered.
- *       3. `IncognitoModeBanner` — `primary` background, `onPrimary` text
+ *       4. `IncognitoModeBanner` — `primary` background, `onPrimary` text
  *          "Incognito mode" (`pref_incognito_mode`), 4dp padding, centered.
- *   - The order is fixed by the `SubcomposeLayout` of the reference: indexing, downloaded only,
+ *   - The order is fixed by the `SubcomposeLayout` of the reference: indexing/updating, downloaded only,
  *     incognito.
  *
  * `labelMedium` = 12sp / 16sp, weight 500, letterSpacing 0.5sp.
@@ -22,14 +24,35 @@
  * sit above the screen content and above the screen's own app bar. The web shell therefore renders
  * them pinned to the top of the window and offsets the app bar / content by their height.
  */
-defineProps<{
+import { computed } from 'vue'
+import { stringResource, MR } from '@/core/i18n'
+import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
+
+const props = defineProps<{
   /** `downloadedOnlyMode`: the "Downloaded only" preference of the More tab. */
   downloadedOnly?: boolean
   /** `incognitoMode`: the "Incognito mode" preference of the More tab. */
   incognito?: boolean
   /** `indexing`: the download cache is being renewed ("Checking downloads"). */
   indexing?: boolean
+  /** `updating`: an active library update is in progress. */
+  updating?: boolean
+  /** `progress`: library update progress (0..100). */
+  progress?: number | null
 }>()
+
+const updateStore = useLibraryUpdateErrorsStore()
+
+const isUpdating = computed(() => props.updating ?? updateStore.updating)
+const currentProgress = computed(() => (props.progress !== undefined ? props.progress : updateStore.progress))
+
+const updatingLabel = computed(() => {
+  if (currentProgress.value !== null && currentProgress.value !== undefined) {
+    const pct = `${Math.round(currentProgress.value)}%`
+    return stringResource(MR.strings.notification_updating_progress, pct) || `Updating library (${pct})`
+  }
+  return stringResource(MR.strings.updating_library) || 'Updating library'
+})
 </script>
 
 <template>
@@ -38,6 +61,12 @@ defineProps<{
     <div v-if="indexing" class="banner banner--indexing">
       <span class="banner__spinner" aria-hidden="true" />
       <span class="banner__text">Checking downloads</span>
+    </div>
+
+    <!-- UpdatingDownloadBanner: Row(background = tertiary, padding 8dp) with the spinner. -->
+    <div v-if="isUpdating" class="banner banner--updating">
+      <span class="banner__spinner" aria-hidden="true" />
+      <span class="banner__text">{{ updatingLabel }}</span>
     </div>
 
     <!-- DownloadedOnlyModeBanner: Text(background = tertiary, padding 4dp, labelMedium). -->
@@ -94,6 +123,17 @@ defineProps<{
     padding: 8px;
     background: rgb(var(--v-theme-secondary));
     color: rgb(var(--v-theme-on-secondary));
+  }
+
+  /* UpdatingDownloadBanner: `Row(background = tertiary, padding 8dp)` centred with circular spinner. */
+  .banner--updating {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgb(var(--v-theme-tertiary));
+    color: rgb(var(--v-theme-on-tertiary));
   }
 
   /*

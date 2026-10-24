@@ -136,6 +136,10 @@ body {
     width: 0;
     height: 0;
   }
+
+  &.library-grid-panorama {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  }
 }
 // `GridItemSpan(maxLineSpan)`: the loading row of the catalogue grid spans the whole line.
 .library-grid-loading { grid-column: 1 / -1; }

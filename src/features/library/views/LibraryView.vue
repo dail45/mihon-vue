@@ -2,9 +2,10 @@
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useSuwayomiStore, type BatchDownloadAction } from '../stores/suwayomi'
-import type { Manga } from '@/core/api/types'
+import type { Manga, Category } from '@/core/api/types'
 import { useLibraryDetails } from '../stores/libraryDetails'
-import { isLocal, matchesLibrary, sortLibrary } from '@/core/utils/library'
+import { isLocal, matchesLibrary, sortLibrary, deriveVirtualCategories, type VirtualCategory } from '@/core/utils/library'
+import { t } from '@/core/i18n'
 import { categoryVisualName, stateSelection, triSelection, type CategorySelection } from '@/core/utils/categorySelection'
 import LibraryToolbar from '../components/LibraryToolbar.vue'
 import LibraryCategoryTabs from '../components/LibraryCategoryTabs.vue'
@@ -18,6 +19,8 @@ import DeleteLibraryMangaDialog from '../components/DeleteLibraryMangaDialog.vue
 import ChangeCategoryDialog from '../components/ChangeCategoryDialog.vue'
 import Md3CircularProgress from '@/core/components/Md3CircularProgress.vue'
 import { useBottomNavVisibility } from '@/core/composables/useBottomNavVisibility'
+import { createSuwayomiApi, apiErrorMessage } from '@/core/api/client'
+import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
 
 /**
  * Pixel-parity port of Mihon's `ui/library/LibraryTab.kt`
@@ -78,12 +81,45 @@ const snackbarText = ref('')
 const details = useLibraryDetails()
 const sort = computed(() => preferences.getLibrarySort(server.apiUrl, server.activeCategoryId))
 const requiresDetails = computed(() => preferences.filters.bookmarked !== 'all' || preferences.showContinue || ['latestChapter', 'chapterFetched'].includes(sort.value.type) || (sort.value.type === 'lastRead' && server.library.some(m => m.lastReadAt == null)))
-const matches = (m: Manga) => m.title.toLocaleLowerCase().includes(search.value.toLocaleLowerCase()) && matchesLibrary(m, preferences.filters, preferences.downloadedOnly, details.summaries[m.id], server.sources)
-const visibleManga = computed(() => sortLibrary(server.library.filter(matches), sort.value, details.summaries))
-const hasFilters = computed(() => preferences.downloadedOnly || Object.values(preferences.filters).some(v => v !== 'all'))
+
+const mangaCategoriesMap = computed(() => {
+  const map = new Map<number, number[]>()
+  for (const [catIdStr, mangas] of Object.entries(server.libraryByCategory)) {
+    const catId = Number(catIdStr)
+    for (const m of mangas) {
+      const list = map.get(m.id)
+      if (list) list.push(catId)
+      else map.set(m.id, [catId])
+    }
+  }
+  return map
+})
+
+const matches = (m: Manga) =>
+  m.title.toLocaleLowerCase().includes(search.value.toLocaleLowerCase()) &&
+  matchesLibrary(
+    m,
+    {
+      ...preferences.filters,
+      filterCategories: preferences.filterCategories,
+      filterCategoriesInclude: preferences.filterCategoriesInclude,
+      filterCategoriesExclude: preferences.filterCategoriesExclude,
+    },
+    preferences.downloadedOnly,
+    details.summaries[m.id],
+    server.sources,
+    mangaCategoriesMap.value.get(m.id) ?? [],
+  )
+const visibleManga = computed(() => sortLibrary(server.library.filter(matches), sort.value, details.summaries, preferences.sortTags))
+const hasFilters = computed(
+  () =>
+    preferences.downloadedOnly ||
+    preferences.filterCategories ||
+    Object.values(preferences.filters).some(v => v !== 'all'),
+)
 const detailsIncomplete = computed(() => requiresDetails.value && server.library.some(m => !details.summaries[m.id]))
 /** `LibraryViewModel.selectedManga`: the entries of the current selection. */
-const selectedManga = computed(() => Object.values(server.libraryByCategory).flat().filter(m => selection.value.includes(m.id)))
+const selectedManga = computed(() => server.library.filter(m => selection.value.includes(m.id)))
 /** `containsLocalManga = dialog.manga.any(Manga::isLocal)`. */
 const containsLocalManga = computed(() => selectedManga.value.some(m => isLocal(m, server.sources)))
 /** `LibraryBottomActionMenu(visible = state.selectionMode, onDeleteClicked = viewModel::openDeleteMangaDialog)`. */
@@ -116,10 +152,44 @@ function openGettingStartedGuide() {
  * `LibraryViewModel.applyGrouping` keeps the system category (id 0, "Default") only when
  * a library entry belongs to it (`showSystemCategory = favorites.any { it.libraryManga.categories.contains(0) }`).
  */
-const categories = computed(() => server.categories.filter(category => {
-  if (category.id !== 0) return true
-  return (server.libraryByCategory[category.id] || []).length > 0
-}))
+const virtualData = computed(() => {
+  if (preferences.groupMode === 0) return null
+  return deriveVirtualCategories(server.library, preferences.groupMode, {
+    sources: server.sources,
+    t: (key: string) => t(key),
+  })
+})
+
+const categories = computed(() => {
+  let list: (Category | VirtualCategory)[] = []
+  if (virtualData.value) {
+    list = virtualData.value.categories
+  } else {
+    list = server.categories.filter(category => {
+      if (category.id !== 0) return true
+      return (server.libraryByCategory[category.id] || []).length > 0
+    })
+
+    // 3.3 Hidden Categories Feature: filter out hidden categories from tabs unless showHiddenCategories is true
+    if (!preferences.showHiddenCategories) {
+      list = list.filter(category => !preferences.hiddenCategories.includes(category.id))
+    }
+  }
+
+  // 3.4 Empty Categories During Search Preference: retain empty categories during search if showEmptyCategoriesSearch is true
+  if (search.value.trim().length > 0 && !preferences.showEmptyCategoriesSearch) {
+    const matching = list.filter(category => {
+      const rawItems = virtualData.value
+        ? (virtualData.value.itemsByCategory[category.id] || [])
+        : (server.libraryByCategory[category.id] || [])
+      const items = rawItems.filter(matches)
+      return items.length > 0
+    })
+    list = matching.length > 0 ? matching : (list.length > 0 ? [list[0]!] : [])
+  }
+
+  return list
+})
 /** `state.coercedActiveCategoryIndex` — the index of the active page. */
 const currentPage = computed(() => {
   const index = categories.value.findIndex(category => category.id === server.activeCategoryId)
@@ -129,8 +199,11 @@ const currentPage = computed(() => {
 const itemsByCategory = computed(() => {
   const result: Record<number, Manga[]> = {}
   for (const category of categories.value) {
-    const items = (server.libraryByCategory[category.id] || []).filter(matches)
-    result[category.id] = sortLibrary(items, sort.value, details.summaries)
+    const rawItems = virtualData.value
+      ? (virtualData.value.itemsByCategory[category.id] || [])
+      : (server.libraryByCategory[category.id] || [])
+    const items = rawItems.filter(matches)
+    result[category.id] = sortLibrary(items, sort.value, details.summaries, preferences.sortTags)
   }
   return result
 })
@@ -178,7 +251,9 @@ watch(categories, newCategories => {
  */
 function getItemCountForCategory(id: number): number | null {
   if (!preferences.categoryCounts && !search.value) return null
-  const items = server.libraryByCategory[id] || []
+  const items = virtualData.value
+    ? (virtualData.value.itemsByCategory[id] || [])
+    : (server.libraryByCategory[id] || [])
   return items.filter(matches).length
 }
 
@@ -395,18 +470,95 @@ const pullIndicatorStyle = computed(() => {
 /* ------------------------------------------------------------------ *
  * Overflow actions
  * ------------------------------------------------------------------ */
+const updateErrorsStore = useLibraryUpdateErrorsStore()
+
 /**
  * `onClickGlobalUpdate` / `onClickRefresh` — Mihon asks the sources to fetch the
- * library again. Suwayomi's REST surface exposes no library-update trigger, so the
- * action reloads the library from the server and says so.
+ * library again. Updates each entry online with progress reporting and logs failures.
  */
 async function onUpdateLibrary() {
   await reload()
-  notify('Library reloaded from the server (the server API exposes no library-update trigger).')
+  const mangaList = Object.values(server.libraryByCategory).flat()
+  const uniqueManga = Array.from(new Map(mangaList.map(m => [m.id, m])).values())
+  if (!uniqueManga.length) {
+    notify('The library is empty.')
+    return
+  }
+
+  updateErrorsStore.setUpdating(true, 0)
+  const api = createSuwayomiApi(server.apiUrl)
+  let completed = 0
+  const total = uniqueManga.length
+
+  const BATCH_SIZE = 4
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    const batch = uniqueManga.slice(i, i + BATCH_SIZE)
+    await Promise.all(
+      batch.map(async manga => {
+        try {
+          await api.chapters(manga.id, true)
+        } catch (err: any) {
+          updateErrorsStore.addError({
+            mangaId: manga.id,
+            title: manga.title,
+            sourceId: String(manga.sourceId || ''),
+            sourceName: typeof manga.source === 'string' ? manga.source : manga.source?.name || 'Unknown source',
+            message: apiErrorMessage(err),
+          })
+        } finally {
+          completed++
+          updateErrorsStore.updateProgress(Math.round((completed / total) * 100))
+        }
+      })
+    )
+  }
+
+  await reload()
+  updateErrorsStore.setUpdating(false, null)
+  notify('Library update completed.')
 }
+
 async function onUpdateCategory() {
   await reload()
-  notify('Category reloaded from the server (the server API exposes no category-update trigger).')
+  const list = server.activeCategoryId != null
+    ? (itemsByCategory.value[server.activeCategoryId] || [])
+    : []
+  if (!list.length) {
+    notify('The category is empty.')
+    return
+  }
+
+  updateErrorsStore.setUpdating(true, 0)
+  const api = createSuwayomiApi(server.apiUrl)
+  let completed = 0
+  const total = list.length
+
+  const BATCH_SIZE = 4
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    const batch = list.slice(i, i + BATCH_SIZE)
+    await Promise.all(
+      batch.map(async manga => {
+        try {
+          await api.chapters(manga.id, true)
+        } catch (err: any) {
+          updateErrorsStore.addError({
+            mangaId: manga.id,
+            title: manga.title,
+            sourceId: String(manga.sourceId || ''),
+            sourceName: typeof manga.source === 'string' ? manga.source : manga.source?.name || 'Unknown source',
+            message: apiErrorMessage(err),
+          })
+        } finally {
+          completed++
+          updateErrorsStore.updateProgress(Math.round((completed / total) * 100))
+        }
+      })
+    )
+  }
+
+  await reload()
+  updateErrorsStore.setUpdating(false, null)
+  notify('Category update completed.')
 }
 /** `onClickOpenRandomManga` — a random entry of the library is opened. */
 function onOpenRandom() {

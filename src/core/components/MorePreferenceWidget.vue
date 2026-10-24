@@ -25,6 +25,7 @@ const TITLE_I18N_MAP: Record<string, string> = {
   'Download queue': 'label_download_queue',
   'Categories': 'categories',
   'Statistics': 'label_stats',
+  'Library update errors': 'option_label_library_update_errors',
   'Data and storage': 'label_data_storage',
   'Settings': 'label_settings',
   'Support Us': 'label_support_us',
@@ -47,6 +48,8 @@ const props = withDefaults(
     iconPath?: string
     /** Optional badge count or text shown on the icon. */
     badge?: number | string | null
+    /** Color of the badge (default primary). */
+    badgeColor?: string
     /** Renders the trailing MD3 switch (non-interactive, like `onCheckedChange = null`). */
     switch?: boolean
     /** State of the trailing MD3 switch. */
@@ -54,7 +57,7 @@ const props = withDefaults(
     /** Renders the trailing widget slot content. */
     disabled?: boolean
   }>(),
-  { subtitle: null, icon: undefined, iconPath: undefined, badge: undefined, switch: false, checked: false, disabled: false },
+  { subtitle: null, icon: undefined, iconPath: undefined, badge: undefined, badgeColor: 'primary', switch: false, checked: false, disabled: false },
 )
 
 const localizedTitle = computed(() => {
@@ -95,7 +98,7 @@ const emit = defineEmits<{ (event: 'click'): void }>()
       <v-badge
         v-if="badge != null && badge !== '' && badge !== 0"
         :content="badge"
-        color="primary"
+        :color="badgeColor || 'primary'"
         offset-x="-2"
         offset-y="-2"
       >

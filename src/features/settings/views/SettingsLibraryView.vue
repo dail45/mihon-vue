@@ -81,6 +81,7 @@ onMounted(async () => {
 const userCategories = computed(() => categories.value.filter(c => !(c.id === 0 || c.isDefaultCategory === true || c.default === true)))
 /** Mihon: pluralStringResource(MR.plurals.num_categories, count) */
 const categoriesCountLabel = computed(() => `${userCategories.value.length} ${userCategories.value.length === 1 ? 'category' : 'categories'}`)
+const sortTagsCountLabel = computed(() => `${preferences.sortTags.length} ${preferences.sortTags.length === 1 ? 'tag' : 'tags'}`)
 
 // Entries --------------------------------------------------------------------
 const defaultCategoryEntries = computed(() => [
@@ -234,6 +235,12 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
         <div class="pref-subtitle">{{ defaultCategoryLabel }}</div>
       </div>
     </div>
+    <div class="pref-item" role="button" tabindex="0" @click="router.push('/settings/library/sort-tags')" @keydown.enter="router.push('/settings/library/sort-tags')">
+      <div class="pref-text">
+        <div class="pref-title">Tag sorting</div>
+        <div class="pref-subtitle">{{ sortTagsCountLabel }}</div>
+      </div>
+    </div>
     <div class="pref-item" role="switch" :aria-checked="preferences.categorizedSort" tabindex="0" @click="preferences.categorizedSort = !preferences.categorizedSort" @keydown.enter="preferences.categorizedSort = !preferences.categorizedSort">
       <div class="pref-text">
         <div class="pref-title">Per-category settings for sort</div>
@@ -311,6 +318,13 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
         <div class="pref-title">Hide missing chapter indicators</div>
       </div>
       <Md3Switch :model-value="hideMissingChapters" class="pref-switch" label="Hide missing chapter indicators" />
+    </div>
+    <!-- 3.4 Empty Categories During Search (Komikku SettingsLibraryScreen.kt:290-294) -->
+    <div class="pref-item" role="switch" :aria-checked="preferences.showEmptyCategoriesSearch" tabindex="0" @click="preferences.showEmptyCategoriesSearch = !preferences.showEmptyCategoriesSearch" @keydown.enter="preferences.showEmptyCategoriesSearch = !preferences.showEmptyCategoriesSearch">
+      <div class="pref-text">
+        <div class="pref-title">Show empty categories during search</div>
+      </div>
+      <Md3Switch :model-value="preferences.showEmptyCategoriesSearch" class="pref-switch" label="Show empty categories during search" />
     </div>
 
     <!-- Notices: honest statements about what the web client cannot do. -->

@@ -22,10 +22,15 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTheme } from 'vuetify'
 import { createSuwayomiApi } from '@/core/api/client'
 import type { Chapter, Manga } from '@/core/api/types'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
+import { readPreference, writePreference } from '@/features/settings/stores/preferences'
+import type { TriState } from '@/core/utils/library'
+import { stringResource, MR } from '@/core/i18n'
 import HistoryItem from '../components/HistoryItem.vue'
+import HistoryFilterDialog from '../components/HistoryFilterDialog.vue'
 import HistoryDeleteDialog from '../components/HistoryDeleteDialog.vue'
 import HistoryDeleteAllDialog from '../components/HistoryDeleteAllDialog.vue'
 import DuplicateMangaDialog from '@/features/library/components/DuplicateMangaDialog.vue'
@@ -43,6 +48,12 @@ interface Entry extends Omit<HistoryEntry, 'readAt'> {
   readAt: number
   /** Whether the last read chapter was marked fully read. */
   read: boolean
+  /** Last page read of the chapter. */
+  lastPageRead: number
+  /** Whether unread chapters remain in the manga. */
+  hasUnread: boolean
+  /** Page progress label ("Page X"). */
+  readProgress?: string | null
 }
 
 interface HistoryGroup {
@@ -57,6 +68,75 @@ const THUMB_LENGTH = 48
 
 const server = useSuwayomiStore()
 const router = useRouter()
+const theme = useTheme()
+
+const activeColor = computed(() => (theme.global.current.value.dark ? '#FFEB3B' : '#FFC107'))
+
+/* ------------------------------------------------------------------ filter state -- */
+const filterOpen = ref(false)
+const filterUnfinishedManga = ref<TriState>(
+  (readPreference('mihon.history.filterUnfinishedManga') as TriState) || 'all',
+)
+watch(filterUnfinishedManga, v => writePreference('mihon.history.filterUnfinishedManga', v))
+
+const filterUnfinishedChapter = ref<TriState>(
+  (readPreference('mihon.history.filterUnfinishedChapter') as TriState) || 'all',
+)
+watch(filterUnfinishedChapter, v => writePreference('mihon.history.filterUnfinishedChapter', v))
+
+const filterNonLibrary = ref<TriState>(
+  (readPreference('mihon.history.filterNonLibrary') as TriState) || 'all',
+)
+watch(filterNonLibrary, v => writePreference('mihon.history.filterNonLibrary', v))
+
+const wideCover = ref<boolean>(readPreference('mihon.history.wideCover') === 'true')
+watch(wideCover, v => writePreference('mihon.history.wideCover', String(v)))
+
+const hasActiveFilters = computed(
+  () =>
+    filterUnfinishedManga.value !== 'all' ||
+    filterUnfinishedChapter.value !== 'all' ||
+    filterNonLibrary.value !== 'all',
+)
+
+/* ----------------------------------------------------------------- selection state -- */
+const inSelectionMode = ref(false)
+const selectedMangaIds = ref<number[]>([])
+const selectionMode = computed(() => selectedMangaIds.value.length > 0 || inSelectionMode.value)
+const selectedCount = computed(() => selectedMangaIds.value.length)
+const batchDeleteOpen = ref(false)
+const batchDeleting = ref(false)
+
+function toggleSelection(mangaId: number) {
+  if (selectedMangaIds.value.includes(mangaId)) {
+    selectedMangaIds.value = selectedMangaIds.value.filter(id => id !== mangaId)
+  } else {
+    selectedMangaIds.value.push(mangaId)
+  }
+}
+
+function onLongPress(mangaId: number) {
+  if (!selectionMode.value) {
+    inSelectionMode.value = true
+    selectedMangaIds.value = [mangaId]
+  } else {
+    toggleSelection(mangaId)
+  }
+}
+
+function selectAll() {
+  selectedMangaIds.value = visible.value.map(e => e.mangaId)
+}
+
+function invertSelection() {
+  const current = new Set(selectedMangaIds.value)
+  selectedMangaIds.value = visible.value.filter(e => !current.has(e.mangaId)).map(e => e.mangaId)
+}
+
+function clearSelection() {
+  selectedMangaIds.value = []
+  inSelectionMode.value = false
+}
 
 const searchQuery = ref<string | null>(null)
 const searchOpen = computed(() => searchQuery.value !== null)
@@ -131,22 +211,32 @@ async function load() {
       if (!last || (chapter.lastReadAt || 0) > (last.lastReadAt || 0)) last = chapter
     }
     const readAt = (last?.lastReadAt || 0) || (manga.lastReadAt || 0)
-    return { manga, last, readAt }
+    const hasUnread = manga.unreadCount != null && manga.unreadCount > 0 ? true : chapters.some(c => !c.read)
+    return { manga, last, readAt, hasUnread }
   }))
   if (token !== generation) return
   entries.value = details
     .filter(detail => detail.readAt > 0 && detail.last !== null)
-    .map(detail => ({
-      id: detail.last!.id,
-      mangaId: detail.manga.id,
-      chapterId: detail.last!.id,
-      title: detail.manga.title,
-      chapterNumber: detail.last!.chapterNumber,
-      readAt: detail.readAt,
-      inLibrary: detail.manga.inLibrary,
-      chapterIndex: detail.last!.index,
-      read: detail.last!.read,
-    }))
+    .map(detail => {
+      const lastPageRead = detail.last!.lastPageRead || 0
+      const isUnfinishedChapter = !detail.last!.read && lastPageRead > 0
+      const readProgress = isUnfinishedChapter ? `Page ${lastPageRead + 1}` : null
+
+      return {
+        id: detail.last!.id,
+        mangaId: detail.manga.id,
+        chapterId: detail.last!.id,
+        title: detail.manga.title,
+        chapterNumber: detail.last!.chapterNumber,
+        readAt: detail.readAt,
+        inLibrary: detail.manga.inLibrary,
+        chapterIndex: detail.last!.index,
+        read: detail.last!.read,
+        lastPageRead,
+        hasUnread: detail.hasUnread,
+        readProgress,
+      }
+    })
     .sort((a, b) => b.readAt - a.readAt)
   loading.value = false
 }
@@ -154,9 +244,35 @@ async function load() {
 watch(() => server.apiUrl, () => { void load() }, { immediate: true })
 
 const visible = computed<Entry[]>(() => {
+  let list = entries.value ?? []
+
   const needle = searchQuery.value?.trim().toLocaleLowerCase()
-  if (!needle) return entries.value ?? []
-  return (entries.value ?? []).filter(entry => entry.title.toLocaleLowerCase().includes(needle))
+  if (needle) {
+    list = list.filter(entry => entry.title.toLocaleLowerCase().includes(needle))
+  }
+
+  // Unfinished manga filter: hides entries whose chapters are fully read
+  if (filterUnfinishedManga.value === 'include') {
+    list = list.filter(entry => entry.hasUnread)
+  } else if (filterUnfinishedManga.value === 'exclude') {
+    list = list.filter(entry => !entry.hasUnread)
+  }
+
+  // Unfinished chapter filter: retains only entries where lastPageRead > 0 && !read
+  if (filterUnfinishedChapter.value === 'include') {
+    list = list.filter(entry => entry.lastPageRead > 0 && !entry.read)
+  } else if (filterUnfinishedChapter.value === 'exclude') {
+    list = list.filter(entry => !(entry.lastPageRead > 0 && !entry.read))
+  }
+
+  // Non-library entries filter
+  if (filterNonLibrary.value === 'include') {
+    list = list.filter(entry => !entry.inLibrary)
+  } else if (filterNonLibrary.value === 'exclude') {
+    list = list.filter(entry => entry.inLibrary)
+  }
+
+  return list
 })
 
 function dayKey(milliseconds: number) {
@@ -272,6 +388,29 @@ async function onDeleted() {
   deleteTarget.value = null
   await server.loadLibrary()
   await load()
+}
+
+async function confirmBatchDelete() {
+  if (!selectedMangaIds.value.length) return
+  batchDeleting.value = true
+  try {
+    const api = createSuwayomiApi(server.apiUrl)
+    const targets = entries.value?.filter(e => selectedMangaIds.value.includes(e.mangaId)) ?? []
+    for (const item of targets) {
+      try {
+        await api.modifyChapter(item.mangaId, item.chapterIndex, { read: false, lastPageRead: 0 })
+      } catch {
+        // Continue with others
+      }
+    }
+    clearSelection()
+    await server.loadLibrary()
+    await load()
+    showSnackbar('Selected entries removed from history')
+  } finally {
+    batchDeleting.value = false
+    batchDeleteOpen.value = false
+  }
 }
 
 /**
@@ -398,84 +537,161 @@ onBeforeUnmount(() => {
       - In regular mode: title "History" (titleLarge 22/28 w400), actions: Search, Clear history.
       - In search mode: UpIcon (ArrowBack), BasicTextField (titleMedium 18/24 w400), actions: Reset (if non-empty), Clear history.
     -->
-    <header class="history-toolbar">
-      <!-- Search Mode Navigation Icon (AppBar.kt: UpIcon -> ArrowBack) -->
-      <div v-if="searchOpen" class="history-toolbar-nav-wrap">
-        <button
-          type="button"
-          class="history-toolbar-action history-toolbar-action--nav"
-          aria-label="Navigate up"
-          title="Navigate up"
-          @click="closeSearch"
-        >
-          <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">arrow_back</span>
-        </button>
-        <span class="history-plain-tooltip" role="tooltip">Navigate up</span>
-      </div>
-
-      <!-- Regular Title: AppBarTitle(stringResource(MR.strings.history)) -->
-      <h1 v-if="!searchOpen" class="history-toolbar-title">History</h1>
-
-      <!-- Search Mode: BasicTextField in title slot (titleMedium 18sp w400, "Search…", secondaryItemAlpha 0.78) -->
-      <form v-else class="history-search-form" role="search" @submit.prevent="onSearchSubmit">
-        <input
-          ref="searchInput"
-          :value="searchQuery ?? ''"
-          type="search"
-          class="history-search-input"
-          placeholder="Search…"
-          aria-label="Search history"
-          autocomplete="off"
-          enterkeyhint="search"
-          @input="searchQuery = ($event.target as HTMLInputElement).value"
-          @keydown.esc="closeSearch"
-        >
-      </form>
-
-      <!-- Actions slot -->
-      <div class="history-toolbar-actions">
-        <!-- Search action (only when search is closed) -->
-        <div v-if="!searchOpen" class="history-toolbar-action-wrap">
+    <header class="history-toolbar" :class="{ 'is-selection': selectionMode }">
+      <!-- Selection Mode Toolbar (HistorySelectionToolbar) -->
+      <template v-if="selectionMode">
+        <div class="history-toolbar-nav-wrap">
           <button
             type="button"
-            class="history-toolbar-action"
-            aria-label="Search"
-            title="Search"
-            @click="openSearch"
-          >
-            <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">search</span>
-          </button>
-          <span class="history-plain-tooltip" role="tooltip">Search</span>
-        </div>
-
-        <!-- Reset action (only when search is open and query is not empty) -->
-        <div v-else-if="searchQuery" class="history-toolbar-action-wrap">
-          <button
-            type="button"
-            class="history-toolbar-action"
-            aria-label="Reset"
-            title="Reset"
-            @click="resetSearch"
+            class="history-toolbar-action history-toolbar-action--nav"
+            aria-label="Cancel selection"
+            title="Cancel selection"
+            @click="clearSelection"
           >
             <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">close</span>
           </button>
-          <span class="history-plain-tooltip" role="tooltip">Reset</span>
+          <span class="history-plain-tooltip" role="tooltip">Cancel selection</span>
         </div>
 
-        <!-- Clear history action (always visible) -->
-        <div class="history-toolbar-action-wrap">
+        <h1 class="history-toolbar-title">{{ selectedCount }}</h1>
+
+        <div class="history-toolbar-actions">
+          <div class="history-toolbar-action-wrap">
+            <button
+              type="button"
+              class="history-toolbar-action"
+              aria-label="Select all"
+              title="Select all"
+              @click="selectAll"
+            >
+              <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">select_all</span>
+            </button>
+            <span class="history-plain-tooltip" role="tooltip">Select all</span>
+          </div>
+
+          <div class="history-toolbar-action-wrap">
+            <button
+              type="button"
+              class="history-toolbar-action"
+              aria-label="Invert selection"
+              title="Invert selection"
+              @click="invertSelection"
+            >
+              <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">flip_to_back</span>
+            </button>
+            <span class="history-plain-tooltip" role="tooltip">Invert selection</span>
+          </div>
+
+          <div class="history-toolbar-action-wrap">
+            <button
+              type="button"
+              class="history-toolbar-action"
+              aria-label="Delete selected"
+              title="Delete selected"
+              @click="batchDeleteOpen = true"
+            >
+              <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">delete</span>
+            </button>
+            <span class="history-plain-tooltip" role="tooltip">Delete selected</span>
+          </div>
+        </div>
+      </template>
+
+      <!-- Regular / Search Mode Toolbar -->
+      <template v-else>
+        <!-- Search Mode Navigation Icon (AppBar.kt: UpIcon -> ArrowBack) -->
+        <div v-if="searchOpen" class="history-toolbar-nav-wrap">
           <button
             type="button"
-            class="history-toolbar-action"
-            aria-label="Clear history"
-            title="Clear history"
-            @click="deleteAllOpen = true"
+            class="history-toolbar-action history-toolbar-action--nav"
+            aria-label="Navigate up"
+            title="Navigate up"
+            @click="closeSearch"
           >
-            <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">delete_sweep</span>
+            <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">arrow_back</span>
           </button>
-          <span class="history-plain-tooltip" role="tooltip">Clear history</span>
+          <span class="history-plain-tooltip" role="tooltip">Navigate up</span>
         </div>
-      </div>
+
+        <!-- Regular Title: AppBarTitle(stringResource(MR.strings.history)) -->
+        <h1 v-if="!searchOpen" class="history-toolbar-title">History</h1>
+
+        <!-- Search Mode: BasicTextField in title slot (titleMedium 18sp w400, "Search…", secondaryItemAlpha 0.78) -->
+        <form v-else class="history-search-form" role="search" @submit.prevent="onSearchSubmit">
+          <input
+            ref="searchInput"
+            :value="searchQuery ?? ''"
+            type="search"
+            class="history-search-input"
+            placeholder="Search…"
+            aria-label="Search history"
+            autocomplete="off"
+            enterkeyhint="search"
+            @input="searchQuery = ($event.target as HTMLInputElement).value"
+            @keydown.esc="closeSearch"
+          >
+        </form>
+
+        <!-- Actions slot -->
+        <div class="history-toolbar-actions">
+          <!-- Search action (only when search is closed) -->
+          <div v-if="!searchOpen" class="history-toolbar-action-wrap">
+            <button
+              type="button"
+              class="history-toolbar-action"
+              aria-label="Search"
+              title="Search"
+              @click="openSearch"
+            >
+              <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">search</span>
+            </button>
+            <span class="history-plain-tooltip" role="tooltip">Search</span>
+          </div>
+
+          <!-- Reset action (only when search is open and query is not empty) -->
+          <div v-else-if="searchQuery" class="history-toolbar-action-wrap">
+            <button
+              type="button"
+              class="history-toolbar-action"
+              aria-label="Reset"
+              title="Reset"
+              @click="resetSearch"
+            >
+              <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">close</span>
+            </button>
+            <span class="history-plain-tooltip" role="tooltip">Reset</span>
+          </div>
+
+          <!-- Filter action (opens HistoryFilterDialog) -->
+          <div class="history-toolbar-action-wrap">
+            <button
+              type="button"
+              class="history-toolbar-action"
+              :style="hasActiveFilters ? { color: activeColor } : undefined"
+              aria-label="Filter"
+              title="Filter"
+              @click="filterOpen = true"
+            >
+              <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">filter_list</span>
+            </button>
+            <span class="history-plain-tooltip" role="tooltip">Filter</span>
+          </div>
+
+          <!-- Clear history action (always visible) -->
+          <div class="history-toolbar-action-wrap">
+            <button
+              type="button"
+              class="history-toolbar-action"
+              aria-label="Clear history"
+              title="Clear history"
+              @click="deleteAllOpen = true"
+            >
+              <span class="material-symbols-rounded history-toolbar-action-icon" aria-hidden="true">delete_sweep</span>
+            </button>
+            <span class="history-plain-tooltip" role="tooltip">Clear history</span>
+          </div>
+        </div>
+      </template>
     </header>
 
     <!-- LoadingScreen.kt: Box(fillMaxSize, contentAlignment = Center) { CircularProgressIndicator() } -->
@@ -497,10 +713,15 @@ onBeforeUnmount(() => {
           v-for="entry in group.items"
           :key="`${entry.mangaId}:${entry.chapterId}`"
           :entry="entry"
+          :selected="selectedMangaIds.includes(entry.mangaId)"
+          :selection-mode="selectionMode"
+          :wide-cover="wideCover"
           @cover="openManga"
           @resume="resume"
           @favorite="requestFavorite"
           @delete="askDelete"
+          @select="toggleSelection(entry.mangaId)"
+          @longpress="onLongPress(entry.mangaId)"
         />
       </section>
     </div>
@@ -539,6 +760,35 @@ onBeforeUnmount(() => {
       @open-manga="manga => openManga(manga.id)"
       @migrate="manga => openManga(manga.id)"
     />
+
+    <!-- HistoryFilterDialog (Section 3.10) -->
+    <HistoryFilterDialog
+      v-model:opened="filterOpen"
+      v-model:filter-unfinished-manga="filterUnfinishedManga"
+      v-model:filter-unfinished-chapter="filterUnfinishedChapter"
+      v-model:filter-non-library="filterNonLibrary"
+      v-model:wide-cover="wideCover"
+    />
+
+    <!-- Batch Delete Confirmation Dialog (Section 3.10) -->
+    <v-dialog v-model="batchDeleteOpen" max-width="360">
+      <v-card rounded="xl" color="surface-container-high" class="pa-4">
+        <v-card-title class="text-headline-small px-2 pt-2">
+          {{ stringResource(MR.strings.history_delete_selected) || 'Delete selected' }}
+        </v-card-title>
+        <v-card-text class="text-body-medium px-2 py-3 text-medium-emphasis">
+          {{ stringResource(MR.strings.history_delete_selected_confirmation) || 'Are you sure you want to remove the selected entries from history?' }}
+        </v-card-text>
+        <v-card-actions class="px-2 pb-2 justify-end">
+          <v-btn variant="text" :disabled="batchDeleting" @click="batchDeleteOpen = false">
+            {{ stringResource(MR.strings.action_cancel) || 'Cancel' }}
+          </v-btn>
+          <v-btn color="error" variant="text" :loading="batchDeleting" @click="confirmBatchDelete">
+            {{ stringResource(MR.strings.action_remove) || 'Remove' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- SnackbarHost.kt: Material 3 Snackbar -->
     <Transition name="history-snackbar-fade">
@@ -590,6 +840,10 @@ onBeforeUnmount(() => {
   padding: 0 4px;
   background: rgb(var(--v-theme-surface));
   color: rgb(var(--v-theme-on-surface));
+}
+
+.history-toolbar.is-selection {
+  background: rgb(var(--v-theme-surface-container-high));
 }
 
 /* Nav button wrapper */

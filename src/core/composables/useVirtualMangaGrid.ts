@@ -29,28 +29,34 @@ export function useVirtualMangaGrid(options: UseVirtualMangaGridOptions) {
   // 1. Display mode flags
   const isList = computed(() => displayMode.value === 'list')
   const isComfortable = computed(() => displayMode.value === 'comfortable')
+  const isPanorama = computed(() => displayMode.value === 'comfortable-panorama')
 
   // 2. Dynamic column count
-  // Fixed columns if columnsPreference > 0; otherwise auto 128px adaptive layout matching .library-grid
+  // Fixed columns if columnsPreference > 0; otherwise auto adaptive layout matching .library-grid
   const columnsCount = computed(() => {
     if (isList.value) return 1
     const pref = columnsPreference.value
     if (pref && pref > 0) return pref
     // Adaptive: gap is 4px, padding is 8px on left and right (16px total)
-    // grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr))
+    // grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)) for panorama, 128px for regular
+    const minColWidth = isPanorama.value ? 240 : 128
     const availableWidth = Math.max(0, containerWidth.value - 16)
-    return Math.max(1, Math.floor((availableWidth + 4) / (128 + 4)))
+    return Math.max(1, Math.floor((availableWidth + 4) / (minColWidth + 4)))
   })
 
   // 3. Row height calculation matching authentic Mihon geometries
   // - List: 56px fixed (LibraryListItem)
   // - Compact / Covers: tileWidth * 1.5 + 4px (gap)
   // - Comfortable: tileWidth * 1.5 + 44px (title box) + 4px (gap)
+  // - Comfortable Panorama: tileWidth * (9 / 16) + 44px (title box) + 4px (gap)
   const rowHeight = computed(() => {
     if (isList.value) return 56
     const cols = columnsCount.value
     const totalGaps = (cols - 1) * 4
     const tileWidth = Math.max(10, (containerWidth.value - 16 - totalGaps) / cols)
+    if (isPanorama.value) {
+      return Math.round(tileWidth * (9 / 16) + 44 + 4)
+    }
     if (isComfortable.value) {
       return Math.round(tileWidth * 1.5 + 44 + 4)
     }

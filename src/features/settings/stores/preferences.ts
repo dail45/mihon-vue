@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { defaultFilters, defaultSort, librarySortOptions, type LibraryFilters, type LibrarySort, type LibrarySortType } from '@/core/utils/library'
-export type DisplayMode = 'compact' | 'comfortable' | 'covers' | 'list'
+import { defaultFilters, defaultSort, librarySortOptions, type LibraryFilters, type LibrarySort, type LibrarySortType, type LibraryGroupMode } from '@/core/utils/library'
+export type DisplayMode = 'compact' | 'comfortable' | 'comfortable-panorama' | 'covers' | 'list'
 export type TabletUiMode = 'automatic' | 'always' | 'landscape' | 'never'
 export type ThemeMode = 'system' | 'light' | 'dark'
 // Only harmless UI preferences are stored; no manga database or credentials.
@@ -19,9 +19,9 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const themeMode = ref<ThemeMode>(savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : 'system')
   watch(themeMode, value => writePreference('mihon.theme', value))
   const savedDisplay = readPreference('mihon.library.display')
-  const libraryDisplay = ref<DisplayMode>(['comfortable', 'covers', 'list'].includes(savedDisplay || '') ? savedDisplay as DisplayMode : 'compact')
+  const libraryDisplay = ref<DisplayMode>(['comfortable', 'comfortable-panorama', 'covers', 'list'].includes(savedDisplay || '') ? savedDisplay as DisplayMode : 'compact')
   const savedCatalogueDisplay = readPreference('mihon.catalogue.display')
-  const catalogueDisplay = ref<DisplayMode>(['comfortable', 'covers', 'list'].includes(savedCatalogueDisplay || '') ? savedCatalogueDisplay as DisplayMode : 'compact')
+  const catalogueDisplay = ref<DisplayMode>(['comfortable', 'comfortable-panorama', 'covers', 'list'].includes(savedCatalogueDisplay || '') ? savedCatalogueDisplay as DisplayMode : 'compact')
   watch(catalogueDisplay, v => writePreference('mihon.catalogue.display', v))
   const downloadedOnly = ref(readPreference('mihon.library.downloadedOnly') === 'true')
   // Mihon: `preferences.incognitoMode` (MoreScreen.kt:64 "Incognito mode" / "Pauses reading history").
@@ -66,6 +66,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const downloadBadge = bool('mihon.library.downloadBadge', oldBadges === 'true')
   const unreadBadge = bool('mihon.library.unreadBadge', oldBadges !== 'false')
   const localBadge = bool('mihon.library.localBadge', true), languageBadge = bool('mihon.library.languageBadge', false)
+  const useLangIcon = bool('mihon.library.useLangIcon', true), sourceBadge = bool('mihon.library.sourceBadge', false)
   const showContinue = bool('mihon.library.continue', false)
   const categoryTabs = bool('mihon.library.tabs', true), categoryCounts = bool('mihon.library.counts', false)
   const portraitColumns = columns('mihon.library.columns.portrait'), landscapeColumns = columns('mihon.library.columns.landscape')
@@ -73,12 +74,54 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const filters = ref<LibraryFilters>(defaultFilters()), rawFilters = json('mihon.library.filters')
   if (rawFilters && typeof rawFilters === 'object') for (const key of Object.keys(filters.value) as (keyof LibraryFilters)[]) {
     const v = (rawFilters as Record<string, unknown>)[key]
-    if (key !== 'tracking' && (v === 'all' || v === 'include' || v === 'exclude')) filters.value[key] = v
+    if (key !== 'tracking' && (v === 'all' || v === 'include' || v === 'exclude')) (filters.value as Record<string, unknown>)[key] = v
   }
+
+  // Dynamic Library Grouping: 0 = Default, 1 = Source, 2 = Status, 3 = Track, 4 = Ungrouped
+  const savedGroupMode = Number(readPreference('mihon.library.groupMode'))
+  const groupMode = ref<LibraryGroupMode>([0, 1, 2, 3, 4].includes(savedGroupMode) ? savedGroupMode as LibraryGroupMode : 0)
+  watch(groupMode, v => writePreference('mihon.library.groupMode', String(v)), { flush: 'sync' })
+
+  // Tag Priority Sorting
+  const rawSortTags = json('mihon.library.sortTags')
+  const sortTags = ref<string[]>(Array.isArray(rawSortTags) ? rawSortTags.filter(t => typeof t === 'string') : [])
+  watch(sortTags, v => writePreference('mihon.library.sortTags', JSON.stringify(v)), { deep: true, flush: 'sync' })
+
+  function numberArray(key: string, fallback: number[] = []) {
+    const raw = json(key)
+    const initial = Array.isArray(raw) ? raw.map(Number).filter(n => Number.isFinite(n)) : fallback
+    const value = ref<number[]>(initial)
+    watch(value, v => writePreference(key, JSON.stringify(v)), { deep: true })
+    return value
+  }
+
+  // 3.3 Hidden Categories Feature
+  const hiddenCategories = numberArray('mihon.library.hiddenCategories', [])
+  const showHiddenCategories = bool('mihon.library.showHiddenCategories', false)
+  function toggleHiddenCategory(id: number) {
+    if (hiddenCategories.value.includes(id)) {
+      hiddenCategories.value = hiddenCategories.value.filter(catId => catId !== id)
+    } else {
+      hiddenCategories.value = [...hiddenCategories.value, id]
+    }
+  }
+
+  // 3.4 Empty Categories During Search Preference
+  const showEmptyCategoriesSearch = bool('mihon.library.showEmptyCategoriesSearch', false)
+
+  // 3.5 Categories Tri-State Filter Dialog
+  const filterCategories = bool('mihon.library.filterCategories', false)
+  const filterCategoriesInclude = numberArray('mihon.library.filterCategoriesInclude', [])
+  const filterCategoriesExclude = numberArray('mihon.library.filterCategoriesExclude', [])
+
   function validSort(raw: unknown): LibrarySort {
     if (!raw || typeof raw !== 'object') return defaultSort()
     const r = raw as Record<string, unknown>
-    return { type: librarySortOptions.some(o => o.value === r.type) ? r.type as LibrarySortType : 'title', descending: r.descending === true, seed: typeof r.seed === 'number' && Number.isFinite(r.seed) ? r.seed : 0 }
+    return {
+      type: (librarySortOptions.some(o => o.value === r.type) || r.type === 'tagList') ? r.type as LibrarySortType : 'title',
+      descending: r.descending === true,
+      seed: typeof r.seed === 'number' && Number.isFinite(r.seed) ? r.seed : 0,
+    }
   }
   const globalSort = ref(validSort(json('mihon.library.sort'))), categorySorts = ref<Record<string, LibrarySort>>({})
   const rawSorts = json('mihon.library.categorySorts')
@@ -96,5 +139,46 @@ export const usePreferencesStore = defineStore('preferences', () => {
   watch(libraryDisplay, v => writePreference('mihon.library.display', v))
   watch(downloadedOnly, v => writePreference('mihon.library.downloadedOnly', String(v)))
   const migrationSmartSearchSingleEntry = bool('mihon.migration.smartSearchSingleEntry', false)
-  return { tabletUiMode, themeMode, libraryDisplay, catalogueDisplay, downloadedOnly, incognitoMode, onboardingShown, setOnboardingShown, donationCampaignShown, setDonationCampaignShown, installTime, downloadBadge, unreadBadge, localBadge, languageBadge, showContinue, categoryTabs, categoryCounts, portraitColumns, landscapeColumns, categorizedSort, filters, globalSort, categorySorts, getLibrarySort, chooseLibrarySort, chapterSwipeStartAction, chapterSwipeEndAction, migrationSmartSearchSingleEntry }
+  return {
+    tabletUiMode,
+    themeMode,
+    libraryDisplay,
+    catalogueDisplay,
+    downloadedOnly,
+    incognitoMode,
+    onboardingShown,
+    setOnboardingShown,
+    donationCampaignShown,
+    setDonationCampaignShown,
+    installTime,
+    downloadBadge,
+    unreadBadge,
+    localBadge,
+    languageBadge,
+    useLangIcon,
+    sourceBadge,
+    showContinue,
+    categoryTabs,
+    categoryCounts,
+    portraitColumns,
+    landscapeColumns,
+    categorizedSort,
+    filters,
+    globalSort,
+    categorySorts,
+    getLibrarySort,
+    chooseLibrarySort,
+    chapterSwipeStartAction,
+    chapterSwipeEndAction,
+    migrationSmartSearchSingleEntry,
+    groupMode,
+    sortTags,
+    hiddenCategories,
+    showHiddenCategories,
+    toggleHiddenCategory,
+    showEmptyCategoriesSearch,
+    filterCategories,
+    filterCategoriesInclude,
+    filterCategoriesExclude,
+  }
 })

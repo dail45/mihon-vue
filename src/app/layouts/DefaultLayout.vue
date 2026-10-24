@@ -67,7 +67,7 @@ function back() {
   if (route.path.startsWith('/settings/debug/')) { void router.push('/settings/advanced/debug'); return }
   if (route.path.startsWith('/settings/advanced/')) { void router.push('/settings/advanced'); return }
   if (route.path.startsWith('/settings/')) { void router.push('/settings'); return }
-  if (route.path === '/settings' || route.path === '/about' || route.path === '/categories' || route.path === '/download-queue' || route.path === '/support-us' || route.path === '/stats') { void router.push('/more'); return }
+  if (route.path === '/settings' || route.path === '/about' || route.path === '/categories' || route.path === '/download-queue' || route.path === '/support-us' || route.path === '/stats' || route.path === '/updates/errors') { void router.push('/more'); return }
   if (route.meta.catalogue) { void router.push('/browse'); return }
   if (route.path.startsWith('/browse/extensions')) { void router.push({ path: '/browse', query: { tab: 'extensions' } }); return }
   if (route.path.startsWith('/browse/sources')) { void router.push({ path: '/browse', query: { tab: 'sources' } }); return }

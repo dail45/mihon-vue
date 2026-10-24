@@ -16,6 +16,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePreferencesStore } from '../stores/preferences'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
+import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
 import { readDownloadQueue, type DownloaderState } from '@/core/api/downloads'
 import MorePreferenceWidget from '@/core/components/MorePreferenceWidget.vue'
 import { t, pluralStringResource, MR } from '@/core/i18n'
@@ -24,6 +25,7 @@ import { MORE_SYMBOLS } from '@/core/assets/moreIcons'
 const router = useRouter()
 const preferences = usePreferencesStore()
 const server = useSuwayomiStore()
+const updateErrorsStore = useLibraryUpdateErrorsStore()
 
 /**
  * `pref_incognito_mode` is a Mihon-local reader preference. The Suwayomi REST API has no
@@ -162,6 +164,13 @@ function toggleIncognito() {
     />
     <MorePreferenceWidget title="Categories" icon="label" @click="router.push('/categories')" />
     <MorePreferenceWidget title="Statistics" :icon-path="MORE_SYMBOLS.queryStats" @click="openStatistics" />
+    <MorePreferenceWidget
+      title="Library update errors"
+      :badge="updateErrorsStore.errorCount || undefined"
+      badge-color="error"
+      icon="new_releases"
+      @click="router.push('/updates/errors')"
+    />
     <MorePreferenceWidget title="Data and storage" icon="storage" @click="router.push('/settings/data')" />
 
     <v-divider color="outline-variant" :opacity="1" />

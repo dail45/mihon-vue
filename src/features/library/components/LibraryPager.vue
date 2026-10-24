@@ -404,7 +404,10 @@ const emptyPaddingBottom = computed(() => {
   <div
     ref="container"
     class="library-pager"
-    :class="{ 'library-pager-dragging': dragging }"
+    :class="{
+      'library-pager-dragging': dragging,
+      'library-pager-panorama': display === 'comfortable-panorama'
+    }"
     tabindex="-1"
     @pointerdown="onPointerDown"
     @keydown="onKeyDown"
@@ -481,6 +484,10 @@ const emptyPaddingBottom = computed(() => {
   overflow-y: visible;
   touch-action: pan-y;
   outline: none;
+}
+
+.library-pager-panorama :deep(.library-grid) {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
 }
 
 .library-pager-dragging {
