@@ -44,6 +44,7 @@ const emit = defineEmits<{
   (event: 'search', value: string): void
   (event: 'change-source-filter', value: GlobalSearchPinnedState): void
   (event: 'toggle-results'): void
+  (event: 'toggle-bulk-select'): void
 }>()
 
 const draft = ref(props.searchQuery ?? '')
@@ -187,6 +188,17 @@ function openSearch() {
         @click="clear"
       >
         <span class="material-symbols-rounded gst-icon" aria-hidden="true">close</span>
+      </button>
+
+      <!-- Bulk select action -->
+      <button
+        type="button"
+        class="gst-icon-btn gst-icon-btn--action"
+        :aria-label="stringResource('action_bulk_select') || 'Bulk favorite'"
+        :title="stringResource('action_bulk_select') || 'Bulk favorite'"
+        @click="emit('toggle-bulk-select')"
+      >
+        <span class="material-symbols-rounded gst-icon" aria-hidden="true">checklist</span>
       </button>
 
       <!-- LinearProgressIndicator(progress = { progress / total }) aligned to the bottom start. -->

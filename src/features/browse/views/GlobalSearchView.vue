@@ -8,6 +8,10 @@ import GlobalSearchErrorResultItem from '../components/GlobalSearchErrorResultIt
 import GlobalSearchLoadingResultItem from '../components/GlobalSearchLoadingResultItem.vue'
 import GlobalSearchResultItem from '../components/GlobalSearchResultItems.vue'
 import GlobalSearchToolbar from '../components/GlobalSearchToolbar.vue'
+import BulkSelectionToolbar from '../components/BulkSelectionToolbar.vue'
+import DuplicateMangaDialog from '@/features/library/components/DuplicateMangaDialog.vue'
+import ChangeCategoryDialog from '@/features/library/components/ChangeCategoryDialog.vue'
+import { useBulkFavorite } from '../composables/useBulkFavorite'
 import { readPreference, writePreference } from '@/features/settings/stores/preferences'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { languageName } from '../utils/sourceLanguage'
@@ -111,6 +115,34 @@ watch(globalSearchPinnedState, val => {
 /** Mihon: `preferences.globalSearchFilterState`, persisted between sessions. */
 const onlyShowHasResults = ref(readPreference('mihon.globalSearch.onlyShowHasResults') === 'true')
 const items = ref(new Map<string, SourceResult>())
+const bulkFavorite = useBulkFavorite()
+
+const allGlobalSearchItems = computed<Manga[]>(() => {
+  const list: Manga[] = []
+  for (const entry of items.value.values()) {
+    if (entry.status === 'success') {
+      list.push(...entry.items)
+    }
+  }
+  return list
+})
+
+function onMangaClick(manga: Manga) {
+  if (bulkFavorite.selectionMode.value) {
+    bulkFavorite.toggleSelection(manga)
+  } else {
+    void router.push(`/manga/${manga.id}`)
+  }
+}
+
+function onMangaLongClick(manga: Manga) {
+  try { navigator.vibrate?.(20) } catch { /* optional haptics */ }
+  if (bulkFavorite.selectionMode.value) {
+    bulkFavorite.toggleSelection(manga)
+  } else {
+    bulkFavorite.select(manga)
+  }
+}
 
 /** Guards against a stale response overwriting a newer search. */
 let job = 0
@@ -366,7 +398,18 @@ watch(
   </div>
 
   <div v-else class="global-search">
+    <BulkSelectionToolbar
+      v-if="bulkFavorite.selectionMode.value"
+      :selected-count="bulkFavorite.selectedCount.value"
+      :is-running="bulkFavorite.isRunning.value"
+      @clear-selection="bulkFavorite.clearSelection"
+      @favorite="bulkFavorite.startAddFavorite(allGlobalSearchItems)"
+      @select-all="bulkFavorite.selectAll(allGlobalSearchItems)"
+      @reverse-selection="bulkFavorite.reverseSelection(allGlobalSearchItems)"
+    />
+
     <GlobalSearchToolbar
+      v-else
       :search-query="searchQuery"
       :progress="progress"
       :total="total"
@@ -377,6 +420,7 @@ watch(
       @search="onSearch"
       @change-source-filter="onChangeFilter"
       @toggle-results="onToggleResults"
+      @toggle-bulk-select="bulkFavorite.toggleSelectionMode()"
     />
 
     <TransitionGroup name="gsi" tag="div" class="global-search-list" role="list" aria-label="Global search results">
@@ -388,7 +432,13 @@ watch(
           :subtitle="languageName(entry.source.lang)"
           :to="sourceHref(entry.source)"
         >
-          <GlobalSearchCardRow v-if="entry.result.status === 'success'" :titles="entry.result.items" />
+          <GlobalSearchCardRow v-if="entry.result.status === 'success'"
+            :titles="entry.result.items"
+            :selection="bulkFavorite.selectedIds.value"
+            :selection-mode="bulkFavorite.selectionMode.value"
+            :on-click="onMangaClick"
+            :on-long-click="onMangaLongClick"
+          />
 
           <!-- GlobalSearchLoadingResultItem: a 16dp CircularProgressIndicator (2dp stroke). -->
           <GlobalSearchLoadingResultItem v-else-if="entry.result.status === 'loading'" />
@@ -398,6 +448,21 @@ watch(
         </GlobalSearchResultItem>
       </article>
     </TransitionGroup>
+
+    <!-- Komikku Bulk Favorite duplicate check and category dialogs -->
+    <DuplicateMangaDialog
+      v-model="bulkFavorite.duplicateDialogOpen.value"
+      :manga="bulkFavorite.duplicateManga.value"
+      :duplicates="bulkFavorite.duplicateEntries.value"
+      @confirm="bulkFavorite.confirmDuplicateAndContinue"
+    />
+
+    <ChangeCategoryDialog
+      v-model="bulkFavorite.changeCategoryOpen.value"
+      :initial-selection="bulkFavorite.categorySelection.value"
+      @confirm="bulkFavorite.confirmCategories"
+      @edit-categories="router.push('/categories')"
+    />
   </div>
 </template>
 

@@ -13,6 +13,7 @@ import MangaBottomActionMenu from '../components/MangaBottomActionMenu.vue'
 import { mangaBottomActionFlags } from '@/core/utils/mangaBottomActions'
 import MangaCoverDialog from '../components/MangaCoverDialog.vue'
 import MangaInfoHeader from '../components/MangaInfoHeader.vue'
+import RelatedMangasRow from '../components/RelatedMangasRow.vue'
 import MissingChapterCountListItem from '../components/MissingChapterCountListItem.vue'
 import MangaChapterListItem, { type ChapterSwipeAction } from '../components/MangaChapterListItem.vue'
 import RemoveMangaDialog from '@/features/library/components/RemoveMangaDialog.vue'
@@ -673,6 +674,11 @@ function onTouchEnd() {
           @open-cover="coverOpen = true"
         />
         <v-alert v-if="server.mutationError" type="error" variant="tonal" class="manga-mutation-error">{{ server.mutationError }}</v-alert>
+        <RelatedMangasRow
+          v-if="detail && !isStubSource"
+          :manga="detail"
+          :api-url="server.apiUrl"
+        />
       </section>
 
       <section class="manga-end-pane" aria-label="Chapters" @scroll.passive="onEndPaneScroll">

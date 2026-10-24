@@ -742,10 +742,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     }
     ```
 - **Acceptance Criteria**:
-  - [ ] Save icon in `SourceFilterDialog.vue` header prompts for a search name and captures current query and filter state.
-  - [ ] Saved search chips appear at the top of the filter dialog.
-  - [ ] Left-clicking a chip closes the dialog and applies the query and filters to `SourceView.vue`.
-  - [ ] Right-clicking (or long-pressing on touch) a chip opens a context menu with "Add to Feed" and "Delete".
+  - [x] Save icon in `SourceFilterDialog.vue` header prompts for a search name and captures current query and filter state.
+  - [x] Saved search chips appear at the top of the filter dialog.
+  - [x] Left-clicking a chip closes the dialog and applies the query and filters to `SourceView.vue`.
+  - [x] Right-clicking (or long-pressing on touch) a chip opens a context menu with "Add to Feed" and "Delete".
 
 ---
 
@@ -779,10 +779,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     ```
   - **Endpoints**: `GET /api/v1/source/{sourceId}/latest/1`, `/popular/1`, or `/search`.
 - **Acceptance Criteria**:
-  - [ ] "Feed" tab is accessible in Browse alongside Sources, Extensions, and Migrate.
-  - [ ] Empty state provides an "Add Feed" button opening `FeedAddDialog.vue`.
-  - [ ] Feed lanes render horizontal scrolling cards (`GlobalSearchCardRow.vue`) with title and in-library badge.
-  - [ ] Maximum limit of 20 feeds is strictly enforced with user feedback.
+  - [x] "Feed" tab is accessible in Browse alongside Sources, Extensions, and Migrate.
+  - [x] Empty state provides an "Add Feed" button opening `FeedAddDialog.vue`.
+  - [x] Feed lanes render horizontal scrolling cards (`GlobalSearchCardRow.vue`) with title and in-library badge.
+  - [x] Maximum limit of 20 feeds is strictly enforced with user feedback.
 
 ---
 
@@ -798,10 +798,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - Reorders `order` property in `feedStore.feeds` and persists to `localStorage['mihon.feed_entries']`.
 - **Acceptance Criteria**:
-  - [ ] Clicking Sort icon in Feed toolbar switches to `FeedOrderScreen.vue`.
-  - [ ] Cards display drag handles (`mdi-drag-handle`), feed title, source badge, and delete button.
-  - [ ] Drag-and-drop immediately updates lane sequence in `FeedView.vue`.
-  - [ ] Deleting a feed lane confirms via modal and removes it cleanly.
+  - [x] Clicking Sort icon in Feed toolbar switches to `FeedOrderScreen.vue`.
+  - [x] Cards display drag handles (`mdi-drag-handle`), feed title, source badge, and delete button.
+  - [x] Drag-and-drop immediately updates lane sequence in `FeedView.vue`.
+  - [x] Deleting a feed lane confirms via modal and removes it cleanly.
 
 ---
 
@@ -817,10 +817,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - Concurrency-limited execution calling `POST /api/v1/manga/{id}/library` followed by category assignment.
 - **Acceptance Criteria**:
-  - [ ] Long-pressing any manga card (>500ms) or clicking Bulk Select toolbar icon enters selection mode.
-  - [ ] Top bar switches to `BulkSelectionToolbar.vue` with selected count, Select All, Invert, and Favorite button.
-  - [ ] Selected cards display checkmark overlay and primary selection border.
-  - [ ] Clicking Favorite button executes duplicate check, assigns default category (or opens `ChangeCategoryDialog`), and adds all selected items in the background.
+  - [x] Long-pressing any manga card (>500ms) or clicking Bulk Select toolbar icon enters selection mode.
+  - [x] Top bar switches to `BulkSelectionToolbar.vue` with selected count, Select All, Invert, and Favorite button.
+  - [x] Selected cards display checkmark overlay and primary selection border.
+  - [x] Clicking Favorite button executes duplicate check, assigns default category (or opens `ChangeCategoryDialog`), and adds all selected items in the background.
 
 ---
 
@@ -838,9 +838,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - Queries server suggestions endpoint or AniList GraphQL recommendation engine using title.
 - **Acceptance Criteria**:
-  - [ ] Manga details view renders a horizontal carousel of related manga suggestions.
-  - [ ] Clicking a recommendation navigates to its entry (or executes global search if not in library).
-  - [ ] "See all" header navigates to `RelatedMangasView.vue` rendering the complete grid.
+  - [x] Manga details view renders a horizontal carousel of related manga suggestions.
+  - [x] Clicking a recommendation navigates to its entry (or executes global search if not in library).
+  - [x] "See all" header navigates to `RelatedMangasView.vue` rendering the complete grid.
 
 ---
 

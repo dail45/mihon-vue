@@ -193,6 +193,12 @@ onBeforeUnmount(onPointerUp)
         </div>
         <MangaBadges :manga="manga" :catalogue="catalogue" side="start" class="grid-badges-start" />
         <MangaBadges v-if="!catalogue" :manga="manga" :catalogue="catalogue" side="end" class="grid-badges-end" />
+        <!-- Selection checkmark overlay -->
+        <div v-if="selected" class="selection-overlay" aria-hidden="true">
+          <div class="selection-check-badge">
+            <v-icon icon="check" size="20" color="on-primary" />
+          </div>
+        </div>
       </div>
       <!-- GridItemTitle.kt below the cover: minLines = 2, maxLines = 2, 4dp padding. -->
       <div v-if="display === 'comfortable'" class="manga-title manga-title-below">
@@ -235,3 +241,35 @@ onBeforeUnmount(onPointerUp)
     </div>
   </div>
 </template>
+
+<style scoped>
+.manga-tile-selected {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.selection-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--v-theme-primary), 0.22);
+  border-radius: 4px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.selection-check-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+</style>

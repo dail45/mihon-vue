@@ -13,6 +13,7 @@ import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'
 import Md3PrimaryTabs, { type Md3TabItem } from '@/core/components/Md3PrimaryTabs.vue'
 import ExtensionsView from '@/features/browse/components/BrowseExtensionsTab.vue'
 import MigrateSourceList from '@/features/migration/components/MigrateSourceList.vue'
+import FeedView from './FeedView.vue'
 import { fetchExtensionList, type ExtensionDto } from '@/core/api/extensions'
 import type { Source } from '@/core/api/types'
 
@@ -141,8 +142,9 @@ const groups = computed<Group[]>(() => {
    is cleared when the tab changes. */
 
 
-const VALID_TABS = ['sources', 'extensions', 'migrate'] as const
+const VALID_TABS = ['sources', 'feed', 'extensions', 'migrate'] as const
 type BrowseTab = (typeof VALID_TABS)[number]
+const feedViewRef = ref<InstanceType<typeof FeedView> | null>(null)
 
 const initialTab = computed<BrowseTab>(() => {
   const tab = route.query.tab
@@ -270,6 +272,7 @@ const extensionList = ref<ExtensionDto[]>([])
 const updatesCount = computed(() => extensionList.value.filter(entry => entry.installed && entry.hasUpdate).length)
 const browseTabs = computed<Md3TabItem<string>[]>(() => [
   { value: 'sources', label: 'Sources' },
+  { value: 'feed', label: 'Feed' },
   { value: 'extensions', label: 'Extensions', badge: updatesCount.value || null },
   { value: 'migrate', label: 'Migrate' },
 ])
@@ -408,6 +411,17 @@ onBeforeUnmount(() => {
         <v-btn icon="filter_list" variant="text" title="Filter" aria-label="Filter" @click="openFilter" />
       </template>
 
+      <!-- FeedTab.kt: actions -->
+      <template v-else-if="activeTab === 'feed'">
+        <template v-if="!feedViewRef?.isOrdering">
+          <v-btn icon="add" variant="text" title="Add feed" aria-label="Add feed" @click="feedViewRef?.openAddDialog" />
+          <v-btn icon="swap_vert" variant="text" title="Sort feeds" aria-label="Sort feeds" @click="feedViewRef?.toggleReorder" />
+        </template>
+        <template v-else>
+          <v-btn icon="close" variant="text" title="Done" aria-label="Done" color="primary" @click="feedViewRef?.toggleReorder" />
+        </template>
+      </template>
+
       <!-- ExtensionsTab.kt: OverflowAction("Filter"), OverflowAction("Extension stores") -->
       <v-menu v-else-if="activeTab === 'extensions'">
         <template #activator="{ props }">
@@ -441,6 +455,9 @@ onBeforeUnmount(() => {
     />
 
     <!-- HorizontalPager: the content of the visible tab. -->
+    <div v-show="activeTab === 'feed'" class="browse-pane">
+      <FeedView ref="feedViewRef" embedded />
+    </div>
     <div v-show="activeTab === 'extensions'" class="browse-pane">
       <ExtensionsView embedded v-model:query="searchQuery" />
     </div>

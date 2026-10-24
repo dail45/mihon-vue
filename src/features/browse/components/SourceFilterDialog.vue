@@ -18,11 +18,15 @@
  * `FilterItem` switch (Header / Separator / CheckBox / TriState / Text / Select / Sort / Group)
  * and the presentation-core item components (SettingsItems.kt, CollapsibleBox.kt).
  */
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { VBottomSheet, VDialog } from 'vuetify/components'
 import { useTabletUi } from '@/core/composables/useTabletUi'
 import SourceFilterItems from './SourceFilterItems.vue'
 import type { SourceFilter } from '@/features/browse/utils/sourceFilter'
+import { toRawSourceFilters } from '@/features/browse/utils/sourceFilter'
+import { useSavedSearchesStore, type SavedSearch } from '../stores/savedSearches'
+import { useFeedStore } from '../stores/feed'
 
 const props = defineProps<{
   filters: SourceFilter[]
@@ -33,12 +37,125 @@ const props = defineProps<{
    * When the host cannot supply the defaults, the state the sheet was opened with is used.
    */
   defaults?: SourceFilter[]
+  sourceId?: string
+  searchQuery?: string
 }>()
 const emit = defineEmits<{
   (event: 'update', filters: SourceFilter[]): void
   (event: 'filter'): void
   (event: 'reset'): void
+  (event: 'apply-saved-search', search: SavedSearch): void
 }>()
+
+const { t } = useI18n()
+const savedSearchesStore = useSavedSearchesStore()
+const feedStore = useFeedStore()
+
+const savedSearches = computed(() => {
+  return props.sourceId ? savedSearchesStore.getSearchesForSource(props.sourceId) : []
+})
+
+// Save Search Dialog
+const saveDialogOpen = ref(false)
+const saveSearchName = ref('')
+
+function openSaveSearchDialog() {
+  saveSearchName.value = props.searchQuery?.trim() || ''
+  saveDialogOpen.value = true
+}
+
+function confirmSaveSearch() {
+  if (!props.sourceId || !saveSearchName.value.trim()) return
+  const rawFilters = toRawSourceFilters(props.filters)
+  savedSearchesStore.saveSearch(
+    props.sourceId,
+    saveSearchName.value.trim(),
+    props.searchQuery || null,
+    rawFilters,
+  )
+  saveDialogOpen.value = false
+}
+
+// Rename Dialog
+const renameDialogOpen = ref(false)
+const renameSearchName = ref('')
+const activeSearch = ref<SavedSearch | null>(null)
+
+function openRenameDialog() {
+  if (!activeSearch.value) return
+  renameSearchName.value = activeSearch.value.name
+  renameDialogOpen.value = true
+}
+
+function confirmRename() {
+  if (activeSearch.value && renameSearchName.value.trim()) {
+    savedSearchesStore.renameSearch(activeSearch.value.id, renameSearchName.value.trim())
+    renameDialogOpen.value = false
+  }
+}
+
+// Context Menu (Add to feed, Rename, Delete)
+const contextMenuOpen = ref(false)
+const contextMenuTarget = ref<[number, number]>([0, 0])
+let longPressTimeout: ReturnType<typeof setTimeout> | null = null
+let longPressTriggered = false
+
+function openContextMenu(event: MouseEvent, search: SavedSearch) {
+  activeSearch.value = search
+  contextMenuTarget.value = [event.clientX, event.clientY]
+  contextMenuOpen.value = true
+}
+
+function onChipPointerDown(event: PointerEvent, search: SavedSearch) {
+  if (event.button !== 0) return
+  longPressTriggered = false
+  if (longPressTimeout) clearTimeout(longPressTimeout)
+  longPressTimeout = setTimeout(() => {
+    longPressTriggered = true
+    activeSearch.value = search
+    contextMenuTarget.value = [event.clientX, event.clientY]
+    contextMenuOpen.value = true
+  }, 500)
+}
+
+function onChipPointerUp() {
+  if (longPressTimeout) {
+    clearTimeout(longPressTimeout)
+    longPressTimeout = null
+  }
+}
+
+function onSelectSavedSearch(search: SavedSearch) {
+  if (longPressTriggered) {
+    longPressTriggered = false
+    return
+  }
+  emit('apply-saved-search', search)
+  open.value = false
+}
+
+const snackbar = ref('')
+function onAddToFeed() {
+  if (!activeSearch.value || !props.sourceId) return
+  const res = feedStore.addFeed({
+    sourceId: props.sourceId,
+    savedSearchId: activeSearch.value.id,
+    feedType: 'saved_search',
+    global: true,
+    title: activeSearch.value.name,
+  })
+  if (res.success) {
+    snackbar.value = t('saved_search_added_to_feed', 'Added to feed')
+  } else {
+    snackbar.value = res.error || 'Failed to add feed'
+  }
+}
+
+function onDeleteSavedSearch() {
+  if (!activeSearch.value) return
+  savedSearchesStore.deleteSearch(activeSearch.value.id)
+  activeSearch.value = null
+}
 
 const open = defineModel<boolean>({ required: true })
 const tablet = useTabletUi()
@@ -124,10 +241,42 @@ function onScroll(event: Event) {
             <!-- TextButton(action_reset): MD3 TextButton, label = labelLarge in primary. -->
             <button type="button" class="source-filter-text-button" @click="reset">Reset</button>
             <span class="source-filter-header-spacer" />
+            <button
+              v-if="props.sourceId"
+              type="button"
+              class="source-filter-icon-button"
+              :title="t('save_search', 'Save search')"
+              :aria-label="t('save_search', 'Save search')"
+              @click="openSaveSearchDialog"
+            >
+              <span class="material-symbols-rounded">save</span>
+            </button>
             <!-- Button(action_filter): presentation-core material Button, container = primary. -->
             <button type="button" class="source-filter-filled-button" @click="apply">Filter</button>
           </div>
           <div class="source-filter-header-divider" />
+        </div>
+
+        <!-- Saved Searches chip row -->
+        <div v-if="savedSearches.length > 0" class="source-filter-saved-searches">
+          <div class="source-filter-saved-title">
+            {{ t('saved_searches', 'Saved Searches') }}
+          </div>
+          <div class="source-filter-saved-chips">
+            <button
+              v-for="search in savedSearches"
+              :key="search.id"
+              type="button"
+              class="source-filter-saved-chip"
+              @click="onSelectSavedSearch(search)"
+              @contextmenu.prevent="openContextMenu($event, search)"
+              @pointerdown="onChipPointerDown($event, search)"
+              @pointerup="onChipPointerUp"
+              @pointerleave="onChipPointerUp"
+            >
+              <span class="source-filter-saved-chip-label">{{ search.name }}</span>
+            </button>
+          </div>
         </div>
 
         <!-- items(filters) { FilterItem(it, updateFilters) } -->
@@ -135,6 +284,100 @@ function onScroll(event: Event) {
       </div>
     </v-card>
   </component>
+
+  <!-- Save Search Dialog -->
+  <v-dialog v-model="saveDialogOpen" max-width="360">
+    <v-card rounded="xl" color="surface-container-high" class="pa-4">
+      <v-card-title class="text-title-medium px-2 pt-0 pb-2">
+        {{ t('save_search', 'Save search') }}
+      </v-card-title>
+      <v-card-text class="px-2 py-2">
+        <v-text-field
+          v-model="saveSearchName"
+          :label="t('search_name', 'Search name')"
+          density="compact"
+          variant="outlined"
+          autofocus
+          hide-details
+          @keydown.enter="confirmSaveSearch"
+        />
+      </v-card-text>
+      <v-card-actions class="px-2 pt-3 pb-0">
+        <v-spacer />
+        <v-btn variant="text" @click="saveDialogOpen = false">
+          {{ t('action_cancel', 'Cancel') }}
+        </v-btn>
+        <v-btn color="primary" variant="flat" :disabled="!saveSearchName.trim()" @click="confirmSaveSearch">
+          {{ t('action_save', 'Save') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Rename Search Dialog -->
+  <v-dialog v-model="renameDialogOpen" max-width="360">
+    <v-card rounded="xl" color="surface-container-high" class="pa-4">
+      <v-card-title class="text-title-medium px-2 pt-0 pb-2">
+        {{ t('action_rename', 'Rename') }}
+      </v-card-title>
+      <v-card-text class="px-2 py-2">
+        <v-text-field
+          v-model="renameSearchName"
+          :label="t('search_name', 'Search name')"
+          density="compact"
+          variant="outlined"
+          autofocus
+          hide-details
+          @keydown.enter="confirmRename"
+        />
+      </v-card-text>
+      <v-card-actions class="px-2 pt-3 pb-0">
+        <v-spacer />
+        <v-btn variant="text" @click="renameDialogOpen = false">
+          {{ t('action_cancel', 'Cancel') }}
+        </v-btn>
+        <v-btn color="primary" variant="flat" :disabled="!renameSearchName.trim()" @click="confirmRename">
+          {{ t('action_save', 'Save') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Context Menu -->
+  <v-menu
+    v-model="contextMenuOpen"
+    :target="contextMenuTarget"
+    location="bottom start"
+  >
+    <v-list density="compact" rounded="lg">
+      <v-list-item
+        prepend-icon="rss_feed"
+        :title="t('saved_search_add_to_feed', 'Add to Feed')"
+        @click="onAddToFeed"
+      />
+      <v-list-item
+        prepend-icon="edit"
+        :title="t('action_rename', 'Rename')"
+        @click="openRenameDialog"
+      />
+      <v-list-item
+        prepend-icon="delete"
+        class="text-error"
+        :title="t('action_delete', 'Delete')"
+        @click="onDeleteSavedSearch"
+      />
+    </v-list>
+  </v-menu>
+
+  <!-- Snackbar -->
+  <v-snackbar
+    :model-value="Boolean(snackbar)"
+    timeout="3000"
+    location="bottom"
+    @update:model-value="val => { if (!val) snackbar = '' }"
+  >
+    {{ snackbar }}
+  </v-snackbar>
 </template>
 
 <style>
@@ -262,5 +505,69 @@ function onScroll(event: Event) {
 .source-filter-filled-button:hover::after { opacity: 0.08; }
 .source-filter-filled-button:active::after { opacity: 0.12; }
 .source-filter-filled-button:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
+
+/* Saved search icon button & chip styling */
+.source-filter-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-right: 8px;
+  border: none;
+  border-radius: 20px;
+  background: transparent;
+  color: rgb(var(--v-theme-on-background));
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.source-filter-icon-button:hover {
+  background-color: rgb(var(--v-theme-on-background) / 0.08);
+}
+.source-filter-icon-button:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+.source-filter-saved-searches {
+  padding: 8px 16px;
+  border-bottom: 1px solid rgb(var(--v-theme-outline-variant) / 0.5);
+}
+.source-filter-saved-title {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin-bottom: 6px;
+}
+.source-filter-saved-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.source-filter-saved-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: rgb(var(--v-theme-surface-container));
+  border: 1px solid rgb(var(--v-theme-outline-variant));
+  color: rgb(var(--v-theme-on-surface));
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.source-filter-saved-chip:hover {
+  background: rgb(var(--v-theme-surface-container-highest));
+  border-color: rgb(var(--v-theme-primary));
+}
+.source-filter-saved-chip-label {
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 }
 </style>

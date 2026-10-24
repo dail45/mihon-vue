@@ -7,6 +7,7 @@ export const router = createRouter({
     { path: '/', redirect: '/library' },
     { path: '/library', component: () => import('@/features/library/views/LibraryView.vue'), meta: { title: 'Library' } },
     { path: '/manga/:id(\\d+)', component: () => import('@/features/manga/views/MangaView.vue'), meta: { title: 'Manga', detail: true, manga: true, ownToolbar: true } },
+    { path: '/manga/:id(\\d+)/suggestions', component: () => import('@/features/manga/views/RelatedMangasView.vue'), meta: { title: 'pref_source_related_mangas', detail: true, manga: true, ownToolbar: true } },
     { path: '/manga/:id(\\d+)/notes', component: () => import('@/features/manga/views/MangaNotesView.vue'), meta: { title: 'Notes', detail: true, manga: true, ownToolbar: true } },
     { path: '/manga/:id(\\d+)/read/:chapterIndex(\\d+)', component: () => import('@/features/reader/views/ReaderView.vue'), meta: { title: 'Reader', detail: true, reader: true } },
     { path: '/updates', component: () => import('@/features/updates/views/UpdatesView.vue'), meta: { title: 'Updates', icon: 'update' } },

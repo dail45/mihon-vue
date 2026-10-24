@@ -42,9 +42,15 @@ const props = withDefaults(defineProps<{
   onClick?: (manga: Manga) => void
   /** `GlobalSearchCardRow.kt` -> `onLongClick: (Manga) -> Unit`. */
   onLongClick?: (manga: Manga) => void
+  /** Controlled multi-selection ids. */
+  selection?: number[]
+  /** Selection mode active indicator. */
+  selectionMode?: boolean
 }>(), {
   onClick: undefined,
   onLongClick: undefined,
+  selection: () => [],
+  selectionMode: false,
 })
 
 const server = useSuwayomiStore()
@@ -52,6 +58,10 @@ const router = useRouter()
 
 const broken = ref(new Set<number>())
 watch(() => server.apiUrl, () => { broken.value = new Set<number>() })
+
+function isSelected(id: number): boolean {
+  return props.selection?.includes(id) ?? false
+}
 
 /** Compose `combinedClickable` reports the long click after 500ms as well. */
 const longPressDelay = 500
@@ -84,6 +94,11 @@ function onActivate(event: MouseEvent, manga: Manga) {
     event.preventDefault()
     return
   }
+  if (props.selectionMode) {
+    event.preventDefault()
+    if (props.onClick) props.onClick(manga)
+    return
+  }
   // Leave modified clicks (new tab, new window, download) to the browser.
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
   event.preventDefault()
@@ -105,7 +120,9 @@ onBeforeUnmount(clearLongPress)
       <a
         :href="mangaHref(manga)"
         class="global-search-card"
+        :class="{ 'global-search-card--selected': isSelected(manga.id) }"
         :aria-label="manga.inLibrary ? `${manga.title}, in library` : manga.title"
+        :aria-pressed="isSelected(manga.id) ? 'true' : undefined"
         @pointerdown="onPointerDown($event, manga)"
         @pointerup="clearLongPress"
         @pointerleave="clearLongPress"
@@ -125,6 +142,12 @@ onBeforeUnmount(clearLongPress)
           />
           <div v-else class="global-search-cover-fallback"><v-icon icon="broken_image" size="24" /></div>
           <MangaBadges :manga="manga" catalogue side="start" class="global-search-badges" />
+          <!-- Checkmark overlay when selected -->
+          <div v-if="isSelected(manga.id)" class="selection-overlay" aria-hidden="true">
+            <div class="selection-check-badge">
+              <v-icon icon="check" size="18" color="on-primary" />
+            </div>
+          </div>
         </div>
         <div class="global-search-title"><span class="global-search-title-text">{{ manga.title }}</span></div>
       </a>
@@ -261,5 +284,35 @@ onBeforeUnmount(clearLongPress)
   -webkit-line-clamp: 3;
   overflow: hidden;
   overflow-wrap: anywhere;
+}
+
+.global-search-card--selected {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.selection-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--v-theme-primary), 0.22);
+  border-radius: 4px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.selection-check-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 </style>

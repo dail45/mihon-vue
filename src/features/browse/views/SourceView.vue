@@ -11,14 +11,18 @@ import { fetchExtensionList } from '@/core/api/extensions'
 import { sourceIdentityToString, type SourceIdentity } from '@/core/utils/sourceId'
 import { resolveStubSourceIdentity } from '../utils/sourceIdentity'
 import BrowseSourceLoadingItem from '../components/BrowseSourceLoadingItem.vue'
+import BulkSelectionToolbar from '../components/BulkSelectionToolbar.vue'
 import RemoveMangaDialog from '@/features/library/components/RemoveMangaDialog.vue'
 import DuplicateMangaDialog from '@/features/library/components/DuplicateMangaDialog.vue'
 import ChangeCategoryDialog from '@/features/library/components/ChangeCategoryDialog.vue'
 import MigrateMangaDialog from '@/features/migration/components/MigrateMangaDialog.vue'
 import SourceFilterDialog from '../components/SourceFilterDialog.vue'
-import { findDuplicateManga, type DuplicateManga } from '@/core/utils/duplicates'
+import type { DuplicateManga } from '@/core/utils/duplicates'
 import { cloneSourceFilters, toRawSourceFilters, toSourceFilters, type SourceFilter } from '@/features/browse/utils/sourceFilter'
+import { useSavedSearchesStore, type SavedSearch } from '../stores/savedSearches'
 import { stateSelection, type CategorySelection } from '@/core/utils/categorySelection'
+import { useBulkFavorite } from '../composables/useBulkFavorite'
+import { stringResource } from '@/core/i18n'
 
 /**
  * Mirrors Mihon's `presentation/browse/BrowseSourceScreen.kt`,
@@ -37,6 +41,7 @@ import { stateSelection, type CategorySelection } from '@/core/utils/categorySel
  */
 const preferences = usePreferencesStore()
 const route = useRoute(), router = useRouter(), server = useSuwayomiStore(), catalogue = useSourceCatalogue()
+const bulkFavorite = useBulkFavorite()
 const source = computed(() => server.sources.find(s => s.id === String(route.params.sourceId)))
 const sourceId = computed(() => String(route.params.sourceId ?? ''))
 const mode = computed<CatalogueMode>(() => route.query.mode === 'search' ? 'search' : route.query.mode === 'latest' ? 'latest' : 'popular')
@@ -225,6 +230,31 @@ function onFiltersApply() {
   void catalogue.open(server.apiUrl, sourceId.value, 'search', q, rawFilters)
 }
 
+const savedSearchesStore = useSavedSearchesStore()
+function onApplySavedSearch(saved: SavedSearch) {
+  draft.value = saved.query ?? ''
+  if (saved.filters && saved.filters.length) {
+    sourceFilters.value = toSourceFilters(saved.filters)
+  }
+  searchOpen.value = true
+  const q = draft.value.trim()
+  void router.replace({ query: { mode: 'search', q: q || undefined } })
+  void catalogue.open(server.apiUrl, sourceId.value, 'search', q, saved.filters)
+}
+
+watch(
+  () => [route.query.savedSearch, sourceId.value],
+  ([savedId]) => {
+    if (typeof savedId === 'string' && savedId) {
+      const saved = savedSearchesStore.getSearchById(savedId)
+      if (saved && saved.sourceId === sourceId.value) {
+        onApplySavedSearch(saved)
+      }
+    }
+  },
+  { immediate: true },
+)
+
 function search() {
   const q = draft.value.trim()
   // Mihon `searchAndClearFocus` ignores a blank query.
@@ -374,33 +404,43 @@ function onContextMenu(event: MouseEvent) {
   void onMangaLongPress(id)
 }
 function onClickCapture(event: MouseEvent) {
-  if (!longPressed) return
-  longPressed = false
-  event.preventDefault()
-  event.stopPropagation()
+  if (longPressed) {
+    longPressed = false
+    event.preventDefault()
+    event.stopPropagation()
+    return
+  }
+  if (bulkFavorite.selectionMode.value) {
+    const id = mangaIdFrom(event.target)
+    if (id !== null) {
+      const manga = catalogue.items.find(item => item.id === id)
+      if (manga) {
+        event.preventDefault()
+        event.stopPropagation()
+        bulkFavorite.toggleSelection(manga)
+      }
+    }
+  }
 }
 
 /**
- * `BrowseSourceScreen.kt`: the long press of a library entry opens the removal
- * dialog, the long press of an entry with duplicates in the library opens the
- * duplicate sheet, and everything else is added to the library right away.
+ * Komikku Bulk Favorite: long pressing enters bulk selection mode.
  */
 async function onMangaLongPress(id: number) {
   try { navigator.vibrate?.(20) } catch { /* haptics are optional */ }
   const manga = catalogue.items.find(item => item.id === id)
   if (!manga) return
-  if (manga.inLibrary) { pendingManga.value = manga; removeDialog.value = true; return }
-  // `viewModel.getDuplicateLibraryManga(manga)` -> `Dialog.AddDuplicateManga`.
-  if (!server.loadingLibrary && !server.totalLibraryCount) await server.loadLibrary()
-  const library = [...new Map(Object.values(server.libraryByCategory).flat().map(item => [item.id, item])).values()]
-  const duplicates = findDuplicateManga(manga, library)
-  if (duplicates.length) {
-    duplicateManga.value = manga
-    duplicateEntries.value = duplicates
-    duplicateDialog.value = true
-    return
+  if (bulkFavorite.selectionMode.value) {
+    bulkFavorite.toggleSelection(manga)
+  } else {
+    bulkFavorite.select(manga)
   }
-  await addFavorite(manga)
+}
+
+function onUpdateSelection(ids: number[]) {
+  const selectedMangas = catalogue.items.filter(m => ids.includes(m.id))
+  bulkFavorite.selection.value = selectedMangas
+  bulkFavorite.selectionMode.value = ids.length > 0
 }
 
 /**
@@ -496,7 +536,28 @@ onMounted(() => {
       `AppBar` — the up button and the source name only, without the search
       action, the display-mode action or the overflow menu.
     -->
-    <v-app-bar flat height="64" color="surface" class="source-toolbar" :class="{ 'source-toolbar--missing': missingSource }" extension-height="48" :extended="!!source && !missingSource">
+    <!-- Komikku Bulk Selection Toolbar (replaces top bar in selection mode) -->
+    <BulkSelectionToolbar
+      v-if="bulkFavorite.selectionMode.value"
+      as-app-bar
+      :selected-count="bulkFavorite.selectedCount.value"
+      :is-running="bulkFavorite.isRunning.value"
+      @clear-selection="bulkFavorite.clearSelection"
+      @favorite="bulkFavorite.startAddFavorite(catalogue.items)"
+      @select-all="bulkFavorite.selectAll(catalogue.items)"
+      @reverse-selection="bulkFavorite.reverseSelection(catalogue.items)"
+    />
+
+    <v-app-bar
+      v-else
+      flat
+      height="64"
+      color="surface"
+      class="source-toolbar"
+      :class="{ 'source-toolbar--missing': missingSource }"
+      extension-height="48"
+      :extended="!!source && !missingSource"
+    >
       <!-- `UpIcon`: MaterialSymbols.AutoMirroredRounded.ArrowBack (`action_bar_up_description`). -->
       <div class="toolbar-action-wrap toolbar-action-wrap--nav">
         <v-btn
@@ -595,6 +656,19 @@ onMounted(() => {
             </v-list>
           </v-menu>
           <span class="toolbar-tooltip" role="tooltip">Display mode</span>
+        </div>
+
+        <!-- Bulk select action (`action_bulk_select`): Checklist icon -->
+        <div class="toolbar-action-wrap">
+          <v-btn
+            icon="checklist"
+            variant="text"
+            class="toolbar-action"
+            :aria-label="stringResource('action_bulk_select') || 'Bulk favorite'"
+            :title="stringResource('action_bulk_select') || 'Bulk favorite'"
+            @click="bulkFavorite.toggleSelectionMode()"
+          />
+          <span class="toolbar-tooltip" role="tooltip">{{ stringResource('action_bulk_select') || 'Bulk favorite' }}</span>
         </div>
 
         <!-- Overflow actions (`AppBar.OverflowAction`): text only, no icons. -->
@@ -748,7 +822,14 @@ onMounted(() => {
         as the last row while `loadState.refresh/append is LoadState.Loading`, so the loading
         state is handed to the collection instead of being rendered here.
       -->
-      <MangaCollection :items="catalogue.items" :display="displayMode" catalogue :selection="[]" :loading="catalogue.loading" />
+      <MangaCollection
+        :items="catalogue.items"
+        :display="displayMode"
+        catalogue
+        :selection="bulkFavorite.selectedIds.value"
+        :loading="catalogue.loading"
+        @update:selection="onUpdateSelection"
+      />
       <div v-if="catalogue.items.length" class="catalogue-footer" aria-live="polite">
         <v-btn v-if="catalogue.hasNextPage" color="primary" variant="text" :loading="catalogue.loading" @click="catalogue.loadMore">
           {{ catalogue.error ? 'Retry next page' : 'Load more' }}
@@ -811,9 +892,12 @@ onMounted(() => {
       v-model="filterDialogOpen"
       :filters="sourceFilters"
       :defaults="defaultFilters"
+      :source-id="sourceId"
+      :search-query="draft"
       @update="onFiltersUpdated"
       @reset="onFiltersReset"
       @filter="onFiltersApply"
+      @apply-saved-search="onApplySavedSearch"
     />
 
     <!-- BrowseSourceScreen.kt: `Dialog.Migrate` -> `MigrateMangaDialog` -->
@@ -822,6 +906,21 @@ onMounted(() => {
       :total-count="1"
       :supported="false"
       @migrate="migrateDialogOpen = false"
+    />
+
+    <!-- Komikku Bulk Favorite duplicate check and category dialogs -->
+    <DuplicateMangaDialog
+      v-model="bulkFavorite.duplicateDialogOpen.value"
+      :manga="bulkFavorite.duplicateManga.value"
+      :duplicates="bulkFavorite.duplicateEntries.value"
+      @confirm="bulkFavorite.confirmDuplicateAndContinue"
+    />
+
+    <ChangeCategoryDialog
+      v-model="bulkFavorite.changeCategoryOpen.value"
+      :initial-selection="bulkFavorite.categorySelection.value"
+      @confirm="bulkFavorite.confirmCategories"
+      @edit-categories="router.push('/categories')"
     />
   </div>
 </template>
