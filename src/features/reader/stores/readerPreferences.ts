@@ -2,8 +2,12 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { readPreference, writePreference } from '@/features/settings/stores/preferences'
 
-export type ReadingMode = 'ltr' | 'rtl' | 'webtoon'
+export type ReadingMode = 'ltr' | 'rtl' | 'webtoon' | 'continuous'
 export type ReaderBackground = 'black' | 'paper' | 'gray' | 'white'
+export type PageLayoutMode = 'single' | 'double' | 'auto'
+export type CenterMarginType = 'none' | 'double' | 'wide' | 'double_and_wide'
+export type WebtoonScaleType = 'fit' | '4:3' | '3:2' | '16:9' | '20:9'
+export type LandscapeZoomType = 'fit' | 'double'
 
 function resolveInitialReaderTheme(): number {
   const prefKey = readPreference('pref_reader_theme_key')
@@ -40,7 +44,9 @@ function themeToBackground(theme: number): ReaderBackground {
 
 export const useReaderPreferences = defineStore('readerPreferences', () => {
   const savedMode = readPreference('mihon.reader.mode')
-  const mode = ref<ReadingMode>(savedMode === 'rtl' || savedMode === 'webtoon' ? savedMode : 'ltr')
+  const mode = ref<ReadingMode>(
+    savedMode === 'rtl' || savedMode === 'webtoon' || savedMode === 'continuous' ? savedMode : 'ltr'
+  )
 
   const readerTheme = ref<number>(resolveInitialReaderTheme())
   const background = ref<ReaderBackground>(themeToBackground(readerTheme.value))
@@ -76,6 +82,54 @@ export const useReaderPreferences = defineStore('readerPreferences', () => {
   const verticalNavigatorOnLeft = ref(readPreference('mihon.reader.verticalNavigatorOnLeft') === 'true')
   const verticalNavigatorHeight = ref(Number(readPreference('mihon.reader.verticalNavigatorHeight')) || 65)
 
+  // --- Phase 2 Pro Reader Settings ---
+  // 2.1 Double-Page Spread
+  const savedPageLayout = readPreference('mihon.reader.pageLayout')
+  const pageLayout = ref<PageLayoutMode>(
+    savedPageLayout === 'single' || savedPageLayout === 'double' ? savedPageLayout : 'auto'
+  )
+  const shiftDoublePages = ref(readPreference('mihon.reader.shiftDoublePages') === 'true')
+  const invertDoublePages = ref(readPreference('mihon.reader.invertDoublePages') === 'true')
+  const savedCenterMargin = readPreference('mihon.reader.centerMarginType')
+  const centerMarginType = ref<CenterMarginType>(
+    savedCenterMargin === 'double' || savedCenterMargin === 'wide' || savedCenterMargin === 'double_and_wide'
+      ? savedCenterMargin
+      : 'none'
+  )
+
+  // 2.2 Webtoon Smart Scale
+  const savedWebtoonScale = readPreference('mihon.reader.webtoonScaleType')
+  const webtoonScaleType = ref<WebtoonScaleType>(
+    savedWebtoonScale === '4:3' || savedWebtoonScale === '3:2' || savedWebtoonScale === '16:9' || savedWebtoonScale === '20:9'
+      ? savedWebtoonScale
+      : 'fit'
+  )
+  const longStripGapSmartScale = ref(readPreference('mihon.reader.longStripGapSmartScale') === 'true')
+
+  // 2.3 Auto-Webtoon Heuristic Mode
+  const autoWebtoon = ref(readPreference('mihon.reader.autoWebtoon') !== 'false')
+
+  // 2.4 Continuous Strip Gaps Mode
+  const rawGap = readPreference('mihon.reader.stripGapSize')
+  const stripGapSize = ref<number>(
+    rawGap !== null && Number.isFinite(Number(rawGap)) ? Math.max(0, Math.min(32, Number(rawGap))) : 16
+  )
+
+  // 2.5 Smaller Tap Zones
+  const smallerTapZone = ref(readPreference('mihon.reader.smallerTapZone') === 'true')
+
+  // 2.6 Gesture & Zoom Controls
+  const pagedDisableZoomIn = ref(readPreference('mihon.reader.pagedDisableZoomIn') === 'true')
+  const pagedDoubleTapZoom = ref(readPreference('mihon.reader.pagedDoubleTapZoom') !== 'false')
+  const webtoonPinchToZoom = ref(readPreference('mihon.reader.webtoonPinchToZoom') !== 'false')
+
+  // 2.7 Wide Image 2x Zoom
+  const landscapeZoom = ref(readPreference('mihon.reader.landscapeZoom') !== 'false')
+  const savedLandscapeZoomType = readPreference('mihon.reader.landscapeZoomType')
+  const landscapeZoomType = ref<LandscapeZoomType>(
+    savedLandscapeZoomType === 'double' ? 'double' : 'fit'
+  )
+
   watch(readerTheme, v => {
     writePreference('pref_reader_theme_key', String(v))
     writePreference('mihon.reader.theme', v === 0 ? 'white' : v === 2 ? 'gray' : v === 3 ? 'auto' : 'black')
@@ -110,6 +164,22 @@ export const useReaderPreferences = defineStore('readerPreferences', () => {
   watch(fit, v => writePreference('mihon.reader.fit', v))
   watch(saveProgress, v => writePreference('mihon.reader.saveProgress', String(v)))
 
+  // Phase 2 Watchers
+  watch(pageLayout, v => writePreference('mihon.reader.pageLayout', v))
+  watch(shiftDoublePages, v => writePreference('mihon.reader.shiftDoublePages', String(v)))
+  watch(invertDoublePages, v => writePreference('mihon.reader.invertDoublePages', String(v)))
+  watch(centerMarginType, v => writePreference('mihon.reader.centerMarginType', v))
+  watch(webtoonScaleType, v => writePreference('mihon.reader.webtoonScaleType', v))
+  watch(longStripGapSmartScale, v => writePreference('mihon.reader.longStripGapSmartScale', String(v)))
+  watch(autoWebtoon, v => writePreference('mihon.reader.autoWebtoon', String(v)))
+  watch(stripGapSize, v => writePreference('mihon.reader.stripGapSize', String(v)))
+  watch(smallerTapZone, v => writePreference('mihon.reader.smallerTapZone', String(v)))
+  watch(pagedDisableZoomIn, v => writePreference('mihon.reader.pagedDisableZoomIn', String(v)))
+  watch(pagedDoubleTapZoom, v => writePreference('mihon.reader.pagedDoubleTapZoom', String(v)))
+  watch(webtoonPinchToZoom, v => writePreference('mihon.reader.webtoonPinchToZoom', String(v)))
+  watch(landscapeZoom, v => writePreference('mihon.reader.landscapeZoom', String(v)))
+  watch(landscapeZoomType, v => writePreference('mihon.reader.landscapeZoomType', v))
+
   function getOrientation(mangaId: number): 'default' | 'free' | 'portrait' | 'landscape' | 'locked_portrait' | 'locked_landscape' | 'reverse_portrait' {
     const flag = Number(readPreference(`mihon.reader.orientation.${mangaId}`) ?? '0')
     switch (flag) {
@@ -129,6 +199,25 @@ export const useReaderPreferences = defineStore('readerPreferences', () => {
     showPageNumber.value = readPreference('mihon.reader.showPageNumber') !== 'false'
     readWithLongTap.value = readPreference('mihon.reader.readWithLongTap') !== 'false'
     alwaysShowChapterTransition.value = readPreference('always_show_chapter_transition') !== 'false' && readPreference('mihon.reader.alwaysShowChapterTransition') !== 'false'
+
+    const pl = readPreference('mihon.reader.pageLayout')
+    pageLayout.value = pl === 'single' || pl === 'double' ? pl : 'auto'
+    shiftDoublePages.value = readPreference('mihon.reader.shiftDoublePages') === 'true'
+    invertDoublePages.value = readPreference('mihon.reader.invertDoublePages') === 'true'
+    const cm = readPreference('mihon.reader.centerMarginType')
+    centerMarginType.value = cm === 'double' || cm === 'wide' || cm === 'double_and_wide' ? cm : 'none'
+    const ws = readPreference('mihon.reader.webtoonScaleType')
+    webtoonScaleType.value = ws === '4:3' || ws === '3:2' || ws === '16:9' || ws === '20:9' ? ws : 'fit'
+    longStripGapSmartScale.value = readPreference('mihon.reader.longStripGapSmartScale') === 'true'
+    autoWebtoon.value = readPreference('mihon.reader.autoWebtoon') !== 'false'
+    const rawSg = readPreference('mihon.reader.stripGapSize')
+    stripGapSize.value = rawSg !== null && Number.isFinite(Number(rawSg)) ? Math.max(0, Math.min(32, Number(rawSg))) : 16
+    smallerTapZone.value = readPreference('mihon.reader.smallerTapZone') === 'true'
+    pagedDisableZoomIn.value = readPreference('mihon.reader.pagedDisableZoomIn') === 'true'
+    pagedDoubleTapZoom.value = readPreference('mihon.reader.pagedDoubleTapZoom') !== 'false'
+    webtoonPinchToZoom.value = readPreference('mihon.reader.webtoonPinchToZoom') !== 'false'
+    landscapeZoom.value = readPreference('mihon.reader.landscapeZoom') !== 'false'
+    landscapeZoomType.value = readPreference('mihon.reader.landscapeZoomType') === 'double' ? 'double' : 'fit'
   }
 
   return {
@@ -137,6 +226,10 @@ export const useReaderPreferences = defineStore('readerPreferences', () => {
     fullscreen, keepScreenOn, showPageNumber,
     verticalNavigator, verticalNavigatorOnLeft, verticalNavigatorHeight,
     drawUnderCutout, alwaysShowChapterTransition,
+    pageLayout, shiftDoublePages, invertDoublePages, centerMarginType,
+    webtoonScaleType, longStripGapSmartScale, autoWebtoon, stripGapSize,
+    smallerTapZone, pagedDisableZoomIn, pagedDoubleTapZoom, webtoonPinchToZoom,
+    landscapeZoom, landscapeZoomType,
     getOrientation, refresh,
   }
 })

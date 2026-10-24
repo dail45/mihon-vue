@@ -2,6 +2,44 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { createSuwayomiApi, apiErrorMessage } from '@/core/api/client'
 import type { Chapter, ChapterPatch, Manga } from '@/core/api/types'
+import { useReaderPreferences, type ReadingMode } from './readerPreferences'
+import { isWebtoonManga } from '../utils/autoWebtoon'
+import { readPreference } from '@/features/settings/stores/preferences'
+
+/**
+ * Resolves the effective reading mode for a manga according to:
+ * 1. User per-manga explicit override ('ltr' | 'rtl' | 'webtoon' | 'continuous')
+ * 2. If 'default': Auto-Webtoon heuristic (checks genre for webtoon/manhwa keywords if enabled)
+ * 3. Fallback: Global default reading mode ('mihon.reader.modeChoice' or 'mihon.reader.mode')
+ */
+export function resolveReadingModeForManga(mangaDetail: Manga): ReadingMode {
+  const mangaId = mangaDetail.id
+  const storedMangaMode = readPreference(`mihon.reader.mode.${mangaId}`)
+
+  // 1. Explicit user per-manga override
+  if (
+    storedMangaMode &&
+    storedMangaMode !== 'default' &&
+    (storedMangaMode === 'ltr' || storedMangaMode === 'rtl' || storedMangaMode === 'webtoon' || storedMangaMode === 'continuous')
+  ) {
+    return storedMangaMode as ReadingMode
+  }
+
+  // 2. Mode is 'default' - Auto-Webtoon heuristic check
+  const autoWebtoonPref = readPreference('mihon.reader.autoWebtoon') !== 'false'
+  if (autoWebtoonPref && isWebtoonManga(mangaDetail)) {
+    return 'webtoon'
+  }
+
+  // 3. Fallback to global default reading mode
+  const globalDefault = readPreference('mihon.reader.modeChoice') || readPreference('mihon.reader.mode') || 'ltr'
+  if (globalDefault === 'ltr' || globalDefault === 'rtl' || globalDefault === 'webtoon' || globalDefault === 'continuous') {
+    return globalDefault as ReadingMode
+  }
+
+  return 'ltr'
+}
+
 export const useReaderStore = defineStore('reader', () => {
   const manga = ref<Manga | null>(null), chapter = ref<Chapter | null>(null), chapters = ref<Chapter[]>([])
   const loading = ref(false), error = ref<string | null>(null), pageIndex = ref(0)
@@ -14,6 +52,15 @@ export const useReaderStore = defineStore('reader', () => {
   const chapterPosition = computed(() => orderedChapters.value.findIndex(c => c.index === chapter.value?.index))
   const previousChapter = computed(() => orderedChapters.value[chapterPosition.value - 1] ?? null)
   const nextChapter = computed(() => chapterPosition.value < 0 ? null : orderedChapters.value[chapterPosition.value + 1] ?? null)
+
+  function applyReadingMode(mangaDetail?: Manga | null) {
+    const target = mangaDetail ?? manga.value
+    if (!target) return
+    const resolved = resolveReadingModeForManga(target)
+    const preferences = useReaderPreferences()
+    preferences.mode = resolved
+  }
+
   async function open(apiUrl: string, mangaId: number, chapterIndex: number) {
     const request = ++generation
     queuedPages.clear(); baseUrl = apiUrl; manga.value = null; chapter.value = null; chapters.value = []
@@ -24,6 +71,7 @@ export const useReaderStore = defineStore('reader', () => {
       if (request !== generation) return
       if (selected.mangaId !== mangaId || selected.index !== chapterIndex) throw new Error('Invalid chapter response')
       manga.value = detail; chapters.value = list; chapter.value = selected
+      applyReadingMode(detail)
       const resume = Number.isInteger(selected.lastPageRead) ? selected.lastPageRead : 0
       pageIndex.value = Math.max(0, Math.min(resume, Math.max(0, selected.pageCount - 1)))
     } catch (e) { if (request === generation) error.value = apiErrorMessage(e) }
@@ -77,5 +125,5 @@ export const useReaderStore = defineStore('reader', () => {
   }
   async function bookmark(value: boolean) { if (saveError.value) return false; return write({ bookmarked: value }) }
   return { manga, chapter, chapters, loading, error, pageIndex, pageCount, orderedChapters, previousChapter, nextChapter,
-    saveError, pendingWrites, lastSavedPage, notice, open, close, setPage, pageUrl, savePage, bookmark }
+    saveError, pendingWrites, lastSavedPage, notice, open, close, setPage, pageUrl, savePage, bookmark, applyReadingMode }
 })

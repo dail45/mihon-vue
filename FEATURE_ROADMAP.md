@@ -251,12 +251,12 @@ To maintain code cleanliness, security, and web feasibility, the following items
     }
     ```
 - **Acceptance Criteria**:
-  - [ ] When `pageLayout` is `'double'` (or `'auto'` on landscape viewports `width > height`), reader renders two consecutive portrait pages side-by-side.
-  - [ ] Single pages with landscape aspect ratio (`naturalWidth > naturalHeight`) display solo without pairing.
-  - [ ] Enabling `shiftDoublePages` keeps Page 0 (cover) displayed solo (`[0, null]`), pairing subsequent pages as `[1, 2], [3, 4]`.
-  - [ ] When reading mode is RTL or `invertDoublePages` is true, secondary page renders on the left and primary on the right (Manga reading order).
-  - [ ] Center gutter margin inserts a configurable spine divider (e.g. 8px background gap) between paired pages when `centerMarginType !== 'none'`.
-  - [ ] Page navigation advances by 2 pages in spread mode (or 1 page when traversing a solo cover/landscape page).
+  - [x] When `pageLayout` is `'double'` (or `'auto'` on landscape viewports `width > height`), reader renders two consecutive portrait pages side-by-side.
+  - [x] Single pages with landscape aspect ratio (`naturalWidth > naturalHeight`) display solo without pairing.
+  - [x] Enabling `shiftDoublePages` keeps Page 0 (cover) displayed solo (`[0, null]`), pairing subsequent pages as `[1, 2], [3, 4]`.
+  - [x] When reading mode is RTL or `invertDoublePages` is true, secondary page renders on the left and primary on the right (Manga reading order).
+  - [x] Center gutter margin inserts a configurable spine divider (e.g. 8px background gap) between paired pages when `centerMarginType !== 'none'`.
+  - [x] Page navigation advances by 2 pages in spread mode (or 1 page when traversing a solo cover/landscape page).
 
 ---
 
@@ -286,10 +286,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - `16:9`: ratio `0.5625`
     - `20:9`: ratio `0.45`
 - **Acceptance Criteria**:
-  - [ ] On desktop/tablet displays, selecting 16:9, 4:3, 3:2, or 20:9 constrains the webtoon strip width relative to viewport height.
-  - [ ] On viewports narrower than the calculated max-width (e.g. mobile portrait), strip seamlessly fills 100% width without horizontal scrolling.
-  - [ ] Selecting "Fit" expands strip to 100% width across all screens.
-  - [ ] Scale updates reactively upon selecting a chip in `ReadingModePage.vue` without reloading.
+  - [x] On desktop/tablet displays, selecting 16:9, 4:3, 3:2, or 20:9 constrains the webtoon strip width relative to viewport height.
+  - [x] On viewports narrower than the calculated max-width (e.g. mobile portrait), strip seamlessly fills 100% width without horizontal scrolling.
+  - [x] Selecting "Fit" expands strip to 100% width across all screens.
+  - [x] Scale updates reactively upon selecting a chip in `ReadingModePage.vue` without reloading.
 
 ---
 
@@ -308,9 +308,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
   - **Storage Key**: `mihon.reader.autoWebtoon` (boolean, default: `true`)
   - **Matching Keywords**: Case-insensitive substring check across `manga.genre`: `['webtoon', 'long strip', 'manhwa', 'manhua', 'манхва', 'маньхуа']`.
 - **Acceptance Criteria**:
-  - [ ] Opening a manga with default reading mode whose genre contains "webtoon" or "manhwa" automatically sets reader mode to Webtoon (Long strip).
-  - [ ] Explicit user per-manga reading mode overrides (e.g. forced LTR) are strictly respected and not overridden.
-  - [ ] Disabling `autoWebtoon` in reader settings enforces global `defaultReadingMode` across all titles.
+  - [x] Opening a manga with default reading mode whose genre contains "webtoon" or "manhwa" automatically sets reader mode to Webtoon (Long strip).
+  - [x] Explicit user per-manga reading mode overrides (e.g. forced LTR) are strictly respected and not overridden.
+  - [x] Disabling `autoWebtoon` in reader settings enforces global `defaultReadingMode` across all titles.
 
 ---
 
@@ -338,10 +338,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     }
     ```
 - **Acceptance Criteria**:
-  - [ ] Selecting "Long strip with gaps" in `ReadingModePage` sets `mode = 'continuous'` without showing an unsupported notification.
-  - [ ] Vertical scroll renders distinct visible gap separation between consecutive images.
-  - [ ] Scroll position tracking and active page number calculation function smoothly with gaps present.
-  - [ ] Gap size adjusts from 0px to 32px via slider and persists in `localStorage`.
+  - [x] Selecting "Long strip with gaps" in `ReadingModePage` sets `mode = 'continuous'` without showing an unsupported notification.
+  - [x] Vertical scroll renders distinct visible gap separation between consecutive images.
+  - [x] Scroll position tracking and active page number calculation function smoothly with gaps present.
+  - [x] Gap size adjusts from 0px to 32px via slider and persists in `localStorage`.
 
 ---
 
@@ -360,9 +360,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - Default (`false`): Left 33.3% = Backward, Right 33.3% = Forward, Middle 33.4% = Menu
     - Smaller (`true`): Left 25% = Backward, Right 25% = Forward, Middle 50% = Menu
 - **Acceptance Criteria**:
-  - [ ] When `smallerTapZone` is enabled, tapping anywhere within the middle 50% of the screen toggles top/bottom reader bars.
-  - [ ] Edge navigation triggers strictly on the outer 25% boundaries.
-  - [ ] Preference toggles reactively in `ReadingModePage.vue`.
+  - [x] When `smallerTapZone` is enabled, tapping anywhere within the middle 50% of the screen toggles top/bottom reader bars.
+  - [x] Edge navigation triggers strictly on the outer 25% boundaries.
+  - [x] Preference toggles reactively in `ReadingModePage.vue`.
 
 ---
 
@@ -381,9 +381,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - `mihon.reader.pagedDisableZoomIn`: `boolean` (default: `false`)
     - `mihon.reader.webtoonPinchToZoom`: `boolean` (default: `true`)
 - **Acceptance Criteria**:
-  - [ ] When `webtoonPinchToZoom` is false, two-finger pinching on Webtoon strip is suppressed, preventing jumpy page scaling while scrolling.
-  - [ ] When `pagedDisableZoomIn` is true, double-click/double-tap zoom is disabled in paged mode, preserving fixed framing.
-  - [ ] Preferences persist in `localStorage`.
+  - [x] When `webtoonPinchToZoom` is false, two-finger pinching on Webtoon strip is suppressed, preventing jumpy page scaling while scrolling.
+  - [x] When `pagedDisableZoomIn` is true, double-click/double-tap zoom is disabled in paged mode, preserving fixed framing.
+  - [x] Preferences persist in `localStorage`.
 
 ---
 
@@ -401,9 +401,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - `mihon.reader.landscapeZoom`: `boolean` (default: `true`)
     - `mihon.reader.landscapeZoomType`: `'fit' | 'double'` (default: `'fit'`)
 - **Acceptance Criteria**:
-  - [ ] Viewing a wide landscape page (`naturalWidth > naturalHeight`) in paged mode with `landscapeZoomType === 'double'` scales image to 200% (`scale(2)`) with scroll capability.
-  - [ ] When set to `'fit'`, image scales to fit window height.
-  - [ ] Switching options applies immediately without reload.
+  - [x] Viewing a wide landscape page (`naturalWidth > naturalHeight`) in paged mode with `landscapeZoomType === 'double'` scales image to 200% (`scale(2)`) with scroll capability.
+  - [x] When set to `'fit'`, image scales to fit window height.
+  - [x] Switching options applies immediately without reload.
 
 ---
 
@@ -427,13 +427,13 @@ To maintain code cleanliness, security, and web feasibility, the following items
     ```
   - **Clipboard API**: Writes PNG blob directly via `navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])`.
 - **Acceptance Criteria**:
-  - [ ] Opening page actions on a double-page spread presents:
+  - [x] Opening page actions on a double-page spread presents:
     - First page actions (Copy, Share, Save)
     - Second page actions (Copy, Share, Save)
     - Combined spread actions (Copy combined, Share combined, Save combined)
-  - [ ] Clicking "Copy to clipboard (combined)" loads both image bitmaps, stitches them side-by-side onto an offscreen canvas in correct LTR/RTL reading order, and writes PNG Blob to system clipboard.
-  - [ ] Clicking "Save combined" downloads the stitched image file.
-  - [ ] Snackbar confirms "Combined page copied to clipboard".
+  - [x] Clicking "Copy to clipboard (combined)" loads both image bitmaps, stitches them side-by-side onto an offscreen canvas in correct LTR/RTL reading order, and writes PNG Blob to system clipboard.
+  - [x] Clicking "Save combined" downloads the stitched image file.
+  - [x] Snackbar confirms "Combined page copied to clipboard".
 
 ---
 
@@ -460,9 +460,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
     }
     ```
 - **Acceptance Criteria**:
-  - [ ] When current page index updates in paged mode, preloader instantiates `new Image()` for `index + 1`, `index + 2`, and `index - 1`.
-  - [ ] Preloaded images are kept in memory cache; turning pages forward displays next page with 0ms delay without loading spinner.
-  - [ ] Switching chapters or unmounting reader releases image memory references to prevent leaks.
+  - [x] When current page index updates in paged mode, preloader instantiates `new Image()` for `index + 1`, `index + 2`, and `index - 1`.
+  - [x] Preloaded images are kept in memory cache; turning pages forward displays next page with 0ms delay without loading spinner.
+  - [x] Switching chapters or unmounting reader releases image memory references to prevent leaks.
 
 ---
 

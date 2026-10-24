@@ -31,6 +31,8 @@
  *   - TapZonesItems:
  *     * SettingsChipRow(MR.strings.pref_viewer_nav) -> "Tap zones" (Default, L shaped, Kindle-ish, Edge, Right and Left, Disabled)
  *     * if (selected != 5) SettingsChipRow(MR.strings.pref_read_with_tapping_inverted) -> "Invert tap zones" (None, Horizontal, Vertical, Both)
+ *   - CheckboxItem(KMR.strings.pref_viewer_nav_smaller_tap_zone) -> "Smaller tap zones" (smallerTapZone)
+ *   - SettingsChipRow(KMR.strings.pref_webtoon_scale_type) -> "Smart scale on wide screen" (webtoonScaleType)
  *   - SliderItem(pref_webtoon_side_padding, 0..25, pillColor = surfaceContainerHighest) -> "Side padding", valueString = "%d%%"
  *   - CheckboxItem(pref_crop_borders) -> "Crop borders" (cropBordersWebtoon)
  *   - CheckboxItem(pref_dual_page_split) -> "Split wide pages" (dualPageSplitWebtoon)
@@ -38,6 +40,7 @@
  *   - CheckboxItem(pref_page_rotate) -> "Rotate wide pages to fit" (dualPageRotateToFitWebtoon)
  *   - if (dualPageRotateToFitWebtoon) CheckboxItem(pref_page_rotate_invert) -> "Flip orientation of rotated wide pages" (dualPageRotateToFitInvertWebtoon)
  *   - CheckboxItem(pref_double_tap_zoom) -> "Double tap to zoom" (webtoonDoubleTapZoomEnabled)
+ *   - CheckboxItem(KMR.strings.pref_pinch_to_zoom) -> "Pinch to zoom" (webtoonPinchToZoom)
  *   - CheckboxItem(pref_webtoon_disable_zoom_out) -> "Disable zoom out" (webtoonDisableZoomOut)
  *
  * PagerViewerSettings:
@@ -45,19 +48,33 @@
  *   - TapZonesItems:
  *     * SettingsChipRow(MR.strings.pref_viewer_nav) -> "Tap zones" (Default, L shaped, Kindle-ish, Edge, Right and Left, Disabled)
  *     * if (selected != 5) SettingsChipRow(MR.strings.pref_read_with_tapping_inverted) -> "Invert tap zones" (None, Horizontal, Vertical, Both)
+ *   - CheckboxItem(KMR.strings.pref_viewer_nav_smaller_tap_zone) -> "Smaller tap zones" (smallerTapZone)
  *   - SettingsChipRow(MR.strings.pref_image_scale_type) -> "Scale type" (Fit screen, Stretch, Fit width, Fit height, Original size, Smart fit)
  *   - SettingsChipRow(MR.strings.pref_zoom_start) -> "Zoom start position" (Automatic, Left, Right, Center)
+ *   - SettingsChipRow(SYMR.strings.page_layout) -> "Page layout" (Single page, Double pages, Automatic)
+ *   - if (pageLayout != Single) CheckboxItem(SYMR.strings.shift_double_pages) -> "Shift double pages" (shiftDoublePages)
+ *   - if (pageLayout != Single) CheckboxItem(SYMR.strings.invert_double_pages) -> "Invert double pages" (invertDoublePages)
+ *   - SettingsChipRow(SYMR.strings.pref_center_margin) -> "Center margin" (None, Double pages, Wide pages, Both)
  *   - CheckboxItem(pref_crop_borders) -> "Crop borders" (cropBorders)
  *   - CheckboxItem(pref_landscape_zoom) -> "Automatically zoom into wide images" (landscapeZoom)
+ *   - if (landscapeZoom) SettingsChipRow(KMR.strings.pref_landscape_zoom_type) -> "Wide image zoom mode" (Fit screen, Double 2x)
  *   - CheckboxItem(pref_navigate_pan) -> "Pan wide images" (navigateToPan)
  *   - CheckboxItem(pref_dual_page_split) -> "Split wide pages" (dualPageSplitPaged)
  *   - if (dualPageSplitPaged) CheckboxItem(pref_dual_page_invert) -> "Invert split page placement" (dualPageInvertPaged)
  *   - CheckboxItem(pref_page_rotate) -> "Rotate wide pages to fit" (dualPageRotateToFit)
  *   - if (dualPageRotateToFit) CheckboxItem(pref_page_rotate_invert) -> "Flip orientation of rotated wide pages" (dualPageRotateToFitInvert)
+ *   - CheckboxItem(KMR.strings.pref_paged_disable_zoom_in) -> "Disable zoom in" (pagedDisableZoomIn)
+ *   - if (!pagedDisableZoomIn) CheckboxItem(pref_double_tap_zoom) -> "Double tap to zoom" (pagedDoubleTapZoom)
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import Md3Slider from '@/core/components/Md3Slider.vue'
-import { useReaderPreferences } from '@/features/reader/stores/readerPreferences'
+import {
+  useReaderPreferences,
+  type PageLayoutMode,
+  type CenterMarginType,
+  type WebtoonScaleType,
+  type LandscapeZoomType,
+} from '@/features/reader/stores/readerPreferences'
 import { useReaderStore } from '@/features/reader/stores/reader'
 import { readPreference, writePreference } from '@/features/settings/stores/preferences'
 
@@ -144,7 +161,11 @@ function resolveInitialMode(): ReadingModeVal {
     return 'default'
   }
   const globalMode = readerPreferences.mode
-  return globalMode === 'webtoon' ? 'webtoon' : globalMode === 'rtl' ? 'rtl' : 'ltr'
+  return globalMode === 'webtoon' || globalMode === 'continuous'
+    ? globalMode
+    : globalMode === 'rtl'
+      ? 'rtl'
+      : 'ltr'
 }
 
 const selectedReadingMode = ref<ReadingModeVal>(resolveInitialMode())
@@ -162,15 +183,13 @@ function onSelectReadingMode(mode: ReadingModeVal) {
   if (mode === 'default') {
     // Follow global default mode
     const globalMode = readerPreferences.mode
-    if (globalMode === 'ltr' || globalMode === 'rtl' || globalMode === 'webtoon') {
+    if (globalMode === 'ltr' || globalMode === 'rtl' || globalMode === 'webtoon' || globalMode === 'continuous') {
       // already aligned
     }
-  } else if (mode === 'ltr' || mode === 'rtl' || mode === 'webtoon') {
+  } else if (mode === 'ltr' || mode === 'rtl' || mode === 'webtoon' || mode === 'continuous') {
     readerPreferences.mode = mode
   } else if (mode === 'vertical') {
     showToast('Paged (vertical) is not supported in the web version.')
-  } else if (mode === 'continuous') {
-    showToast('Long strip with gaps is not supported in the web version.')
   }
   emit('change-mode')
 }
@@ -181,7 +200,7 @@ const isWebtoonViewer = computed(() => {
     return true
   }
   if (selectedReadingMode.value === 'default') {
-    return readerPreferences.mode === 'webtoon'
+    return readerPreferences.mode === 'webtoon' || readerPreferences.mode === 'continuous'
   }
   return false
 })
@@ -312,12 +331,36 @@ const zoomStartChips: ChipItem<number>[] = [
 ]
 const zoomStart = persistedInt('mihon.reader.zoomStart', 1)
 
+// Page Layout chips (2.1)
+const pageLayoutChips: ChipItem<PageLayoutMode>[] = [
+  { label: 'Single page', value: 'single' },
+  { label: 'Double pages', value: 'double' },
+  { label: 'Automatic', value: 'auto' },
+]
+
+// Center Margin / Gutter chips (2.1)
+const centerMarginChips: ChipItem<CenterMarginType>[] = [
+  { label: 'None', value: 'none' },
+  { label: 'Double pages', value: 'double' },
+  { label: 'Wide pages', value: 'wide' },
+  { label: 'Both', value: 'double_and_wide' },
+]
+
+// Landscape Zoom Type chips (2.7)
+const landscapeZoomTypeChips: ChipItem<LandscapeZoomType>[] = [
+  { label: 'Fit screen', value: 'fit' },
+  { label: 'Double (2x)', value: 'double' },
+]
+
 // Pager Checkboxes
 const cropBorders = persistedBool('mihon.reader.cropBorders', false)
 watch(cropBorders, v => {
   readerPreferences.crop = v
 })
 const landscapeZoom = persistedBool('mihon.reader.landscapeZoom', true)
+watch(landscapeZoom, v => {
+  readerPreferences.landscapeZoom = v
+})
 const navigateToPan = persistedBool('mihon.reader.navigateToPan', true)
 const dualPageSplitPaged = persistedBool('mihon.reader.dualPageSplitPaged', false)
 const dualPageInvertPaged = persistedBool('mihon.reader.dualPageInvertPaged', false)
@@ -325,6 +368,14 @@ const dualPageRotateToFit = persistedBool('mihon.reader.dualPageRotateToFit', fa
 const dualPageRotateToFitInvert = persistedBool('mihon.reader.dualPageRotateToFitInvert', false)
 
 // --- Webtoon Viewer Settings -------------------------------------------------------------
+const webtoonScaleChips: ChipItem<WebtoonScaleType>[] = [
+  { label: 'Fit', value: 'fit' },
+  { label: '4:3', value: '4:3' },
+  { label: '3:2', value: '3:2' },
+  { label: '16:9', value: '16:9' },
+  { label: '20:9', value: '20:9' },
+]
+
 const webtoonSidePadding = persistedInt('mihon.reader.webtoonPadding', 0)
 const webtoonSidePaddingText = computed(() => `${webtoonSidePadding.value}%`)
 
@@ -336,6 +387,9 @@ function syncWebtoonPadding() {
 watch(webtoonSidePadding, syncWebtoonPadding)
 
 const cropBordersWebtoon = persistedBool('mihon.reader.cropBordersWebtoon', false)
+watch(cropBordersWebtoon, v => {
+  readerPreferences.cropWebtoon = v
+})
 const dualPageSplitWebtoon = persistedBool('mihon.reader.dualPageSplitWebtoon', false)
 const dualPageInvertWebtoon = persistedBool('mihon.reader.dualPageInvertWebtoon', false)
 const dualPageRotateToFitWebtoon = persistedBool('mihon.reader.dualPageRotateToFitWebtoon', false)
@@ -423,6 +477,43 @@ onMounted(() => {
             :class="{ 'rm-chip--selected': tapInvertWebtoon === chip.value }"
             :aria-pressed="tapInvertWebtoon === chip.value"
             @click="tapInvertWebtoon = chip.value"
+          >
+            <span>{{ chip.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Smaller Tap Zones (2.5) -->
+      <button
+        type="button"
+        role="checkbox"
+        class="rm-checkbox"
+        :aria-checked="readerPreferences.smallerTapZone"
+        aria-label="Smaller tap zones"
+        @click="readerPreferences.smallerTapZone = !readerPreferences.smallerTapZone"
+      >
+        <span class="rm-checkbox-slot">
+          <span class="rm-checkbox-box" :class="{ 'rm-checkbox-box--checked': readerPreferences.smallerTapZone }">
+            <svg v-if="readerPreferences.smallerTapZone" class="rm-checkbox-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </span>
+        <span class="rm-checkbox-label">Smaller tap zones</span>
+      </button>
+
+      <!-- Webtoon Smart Scale on Wide Screen (2.2) -->
+      <div class="rm-chip-row">
+        <h3 class="rm-heading">Smart scale on wide screen</h3>
+        <div class="rm-chips" role="group" aria-label="Smart scale on wide screen">
+          <button
+            v-for="chip in webtoonScaleChips"
+            :key="chip.value"
+            type="button"
+            class="rm-chip"
+            :class="{ 'rm-chip--selected': readerPreferences.webtoonScaleType === chip.value }"
+            :aria-pressed="readerPreferences.webtoonScaleType === chip.value"
+            @click="readerPreferences.webtoonScaleType = chip.value"
           >
             <span>{{ chip.label }}</span>
           </button>
@@ -562,6 +653,25 @@ onMounted(() => {
         <span class="rm-checkbox-label">Double tap to zoom</span>
       </button>
 
+      <!-- Pinch to Zoom (2.6) -->
+      <button
+        type="button"
+        role="checkbox"
+        class="rm-checkbox"
+        :aria-checked="readerPreferences.webtoonPinchToZoom"
+        aria-label="Pinch to zoom"
+        @click="readerPreferences.webtoonPinchToZoom = !readerPreferences.webtoonPinchToZoom"
+      >
+        <span class="rm-checkbox-slot">
+          <span class="rm-checkbox-box" :class="{ 'rm-checkbox-box--checked': readerPreferences.webtoonPinchToZoom }">
+            <svg v-if="readerPreferences.webtoonPinchToZoom" class="rm-checkbox-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </span>
+        <span class="rm-checkbox-label">Pinch to zoom</span>
+      </button>
+
       <!-- CheckboxItem(pref_webtoon_disable_zoom_out) -->
       <button
         type="button"
@@ -621,6 +731,25 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Smaller Tap Zones (2.5) -->
+      <button
+        type="button"
+        role="checkbox"
+        class="rm-checkbox"
+        :aria-checked="readerPreferences.smallerTapZone"
+        aria-label="Smaller tap zones"
+        @click="readerPreferences.smallerTapZone = !readerPreferences.smallerTapZone"
+      >
+        <span class="rm-checkbox-slot">
+          <span class="rm-checkbox-box" :class="{ 'rm-checkbox-box--checked': readerPreferences.smallerTapZone }">
+            <svg v-if="readerPreferences.smallerTapZone" class="rm-checkbox-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </span>
+        <span class="rm-checkbox-label">Smaller tap zones</span>
+      </button>
+
       <!-- SettingsChipRow(pref_image_scale_type) -->
       <div class="rm-chip-row">
         <h3 class="rm-heading">Scale type</h3>
@@ -657,6 +786,82 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Page Layout (2.1) -->
+      <div class="rm-chip-row">
+        <h3 class="rm-heading">Page layout</h3>
+        <div class="rm-chips" role="group" aria-label="Page layout">
+          <button
+            v-for="chip in pageLayoutChips"
+            :key="chip.value"
+            type="button"
+            class="rm-chip"
+            :class="{ 'rm-chip--selected': readerPreferences.pageLayout === chip.value }"
+            :aria-pressed="readerPreferences.pageLayout === chip.value"
+            @click="readerPreferences.pageLayout = chip.value"
+          >
+            <span>{{ chip.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Shift Double Pages (Shift Cover) (2.1) -->
+      <button
+        v-if="readerPreferences.pageLayout !== 'single'"
+        type="button"
+        role="checkbox"
+        class="rm-checkbox"
+        :aria-checked="readerPreferences.shiftDoublePages"
+        aria-label="Shift double pages"
+        @click="readerPreferences.shiftDoublePages = !readerPreferences.shiftDoublePages"
+      >
+        <span class="rm-checkbox-slot">
+          <span class="rm-checkbox-box" :class="{ 'rm-checkbox-box--checked': readerPreferences.shiftDoublePages }">
+            <svg v-if="readerPreferences.shiftDoublePages" class="rm-checkbox-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </span>
+        <span class="rm-checkbox-label">Shift double pages</span>
+      </button>
+
+      <!-- Invert Double Pages (2.1) -->
+      <button
+        v-if="readerPreferences.pageLayout !== 'single'"
+        type="button"
+        role="checkbox"
+        class="rm-checkbox"
+        :aria-checked="readerPreferences.invertDoublePages"
+        aria-label="Invert double pages"
+        @click="readerPreferences.invertDoublePages = !readerPreferences.invertDoublePages"
+      >
+        <span class="rm-checkbox-slot">
+          <span class="rm-checkbox-box" :class="{ 'rm-checkbox-box--checked': readerPreferences.invertDoublePages }">
+            <svg v-if="readerPreferences.invertDoublePages" class="rm-checkbox-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </span>
+        <span class="rm-checkbox-label">Invert double pages</span>
+      </button>
+
+      <!-- Center Margin / Gutter Selector (2.1) -->
+      <div class="rm-chip-row">
+        <h3 class="rm-heading">Center margin</h3>
+        <div class="rm-chips" role="group" aria-label="Center margin">
+          <button
+            v-for="chip in centerMarginChips"
+            :key="chip.value"
+            type="button"
+            class="rm-chip"
+            :class="{ 'rm-chip--selected': readerPreferences.centerMarginType === chip.value }"
+            :aria-pressed="readerPreferences.centerMarginType === chip.value"
+            @click="readerPreferences.centerMarginType = chip.value"
+          >
+            <span>{{ chip.label }}</span>
+          </button>
+        </div>
+      </div>
+
       <!-- CheckboxItem(pref_crop_borders) -->
       <button
         type="button"
@@ -676,7 +881,7 @@ onMounted(() => {
         <span class="rm-checkbox-label">Crop borders</span>
       </button>
 
-      <!-- CheckboxItem(pref_landscape_zoom) -->
+      <!-- CheckboxItem(pref_landscape_zoom) (2.7) -->
       <button
         type="button"
         role="checkbox"
@@ -694,6 +899,24 @@ onMounted(() => {
         </span>
         <span class="rm-checkbox-label">Automatically zoom into wide images</span>
       </button>
+
+      <!-- Landscape Zoom Scale Type (2.7) -->
+      <div v-if="landscapeZoom" class="rm-chip-row">
+        <h3 class="rm-heading">Wide image zoom mode</h3>
+        <div class="rm-chips" role="group" aria-label="Wide image zoom mode">
+          <button
+            v-for="chip in landscapeZoomTypeChips"
+            :key="chip.value"
+            type="button"
+            class="rm-chip"
+            :class="{ 'rm-chip--selected': readerPreferences.landscapeZoomType === chip.value }"
+            :aria-pressed="readerPreferences.landscapeZoomType === chip.value"
+            @click="readerPreferences.landscapeZoomType = chip.value"
+          >
+            <span>{{ chip.label }}</span>
+          </button>
+        </div>
+      </div>
 
       <!-- CheckboxItem(pref_navigate_pan) -->
       <button
@@ -790,6 +1013,45 @@ onMounted(() => {
           </span>
         </span>
         <span class="rm-checkbox-label">Flip orientation of rotated wide pages</span>
+      </button>
+
+      <!-- Paged Zoom Lock (2.6) -->
+      <button
+        type="button"
+        role="checkbox"
+        class="rm-checkbox"
+        :aria-checked="readerPreferences.pagedDisableZoomIn"
+        aria-label="Disable zoom in"
+        @click="readerPreferences.pagedDisableZoomIn = !readerPreferences.pagedDisableZoomIn"
+      >
+        <span class="rm-checkbox-slot">
+          <span class="rm-checkbox-box" :class="{ 'rm-checkbox-box--checked': readerPreferences.pagedDisableZoomIn }">
+            <svg v-if="readerPreferences.pagedDisableZoomIn" class="rm-checkbox-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </span>
+        <span class="rm-checkbox-label">Disable zoom in</span>
+      </button>
+
+      <!-- Double tap to zoom (when zoom in not disabled) (2.6) -->
+      <button
+        v-if="!readerPreferences.pagedDisableZoomIn"
+        type="button"
+        role="checkbox"
+        class="rm-checkbox"
+        :aria-checked="readerPreferences.pagedDoubleTapZoom"
+        aria-label="Double tap to zoom"
+        @click="readerPreferences.pagedDoubleTapZoom = !readerPreferences.pagedDoubleTapZoom"
+      >
+        <span class="rm-checkbox-slot">
+          <span class="rm-checkbox-box" :class="{ 'rm-checkbox-box--checked': readerPreferences.pagedDoubleTapZoom }">
+            <svg v-if="readerPreferences.pagedDoubleTapZoom" class="rm-checkbox-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </span>
+        <span class="rm-checkbox-label">Double tap to zoom</span>
       </button>
     </template>
 

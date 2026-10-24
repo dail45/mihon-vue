@@ -230,6 +230,27 @@ const flashColor = computed({
     hapticTick()
   },
 })
+
+// -----------------------------------------------------------------------------
+// Auto-Webtoon Heuristic Mode (Komikku / SY)
+// -----------------------------------------------------------------------------
+const autoWebtoon = computed({
+  get: () => reader.autoWebtoon,
+  set: val => {
+    reader.autoWebtoon = val
+    hapticTick()
+  },
+})
+
+// -----------------------------------------------------------------------------
+// Continuous Strip Gap Size (0..32px)
+// -----------------------------------------------------------------------------
+const stripGapSize = computed({
+  get: () => reader.stripGapSize,
+  set: val => {
+    reader.stripGapSize = val
+  },
+})
 </script>
 
 <template>
@@ -511,6 +532,41 @@ const flashColor = computed({
         </button>
       </div>
     </template>
+
+    <!-- 11. Auto-Webtoon detection (Komikku / SY) -->
+    <button
+      type="button"
+      role="checkbox"
+      :aria-checked="autoWebtoon"
+      class="gs-checkbox"
+      @click="autoWebtoon = !autoWebtoon"
+    >
+      <span class="gs-checkbox-slot" aria-hidden="true">
+        <span class="gs-checkbox-box" :class="{ 'gs-checkbox-box--checked': autoWebtoon }">
+          <svg v-if="autoWebtoon" class="gs-checkbox-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+          </svg>
+        </span>
+      </span>
+      <span class="gs-checkbox-label">Auto-Webtoon detection</span>
+    </button>
+
+    <!-- 12. Continuous Strip Gap Size Slider (0..32px) -->
+    <div class="gs-slider">
+      <div class="gs-slider-header">
+        <span class="gs-slider-title">Continuous strip gap</span>
+        <span class="gs-pill gs-pill--highest">{{ stripGapSize }} px</span>
+      </div>
+      <Md3Slider
+        v-model="stripGapSize"
+        :min="0"
+        :max="32"
+        :step="1"
+        label="Continuous strip gap"
+        :value-text="`${stripGapSize} px`"
+        @update:model-value="hapticTick"
+      />
+    </div>
   </div>
 </template>
 

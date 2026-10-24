@@ -48,7 +48,18 @@
      component `src/components/reader/ReaderPageIndicator.vue` owns its own geometry
      (Mihon aligns it BottomCenter and applies `navigationBarsPadding()`), so nothing
      about the indicator is styled here. */
-  .reader-strip { max-width: 900px; margin: auto; }
+  .reader-strip {
+    width: 100%;
+    max-width: var(--reader-webtoon-max-width, 100%);
+    margin: auto;
+    box-sizing: border-box;
+  }
+  .reader-strip--gaps {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--reader-strip-gap, 16px);
+    padding: var(--reader-strip-gap, 16px) 0;
+  }
   .reader-strip-page { min-height: 180px; }
   .reader-strip img { width: 100%; display: block; min-height: 180px; cursor: pointer; }
   .reader-inline-error { min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #202024; color: #f4f2f6; padding: 24px; }

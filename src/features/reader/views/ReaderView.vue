@@ -17,6 +17,15 @@ import ReaderPageActionsDialog from '@/features/reader/components/ReaderPageActi
 import ChapterTransition from '@/features/reader/components/ChapterTransition.vue'
 import { useReaderKeybindings } from '../composables/useReaderKeybindings'
 import { useReaderFullscreen } from '../composables/useReaderFullscreen'
+import { usePagePreloader } from '../composables/usePagePreloader'
+import {
+  computeSpreadLayout,
+  findSpreadIndexForPage,
+  getCenterMarginGap,
+  getSpreadDisplayOrder,
+  isDoublePageActive,
+  type SpreadPageItem,
+} from '../utils/spreadLayout'
 
 /**
  * Mihon reference:
@@ -106,7 +115,7 @@ const orientation = computed<'default' | 'free' | 'portrait' | 'landscape' | 'lo
 /* ------------------------------------------------------------------ reader */
 
 const loaded = ref(new Set<number>()), failed = ref(new Set<number>()), revisions = ref<Record<number, number>>({})
-const modeIsWebtoon = computed(() => preferences.mode === 'webtoon')
+const modeIsWebtoon = computed(() => preferences.mode === 'webtoon' || preferences.mode === 'continuous')
 /**
  * ReaderActivity.kt:455-488 - the vertical navigator is only used when the `verticalNavigator`
  * preference contains the current reading mode. The set holds ReadingMode values, so the modes
@@ -115,7 +124,7 @@ const modeIsWebtoon = computed(() => preferences.mode === 'webtoon')
  * and its height is `verticalNavigatorHeight` percent of the reader height.
  */
 const verticalNavigatorModes = computed(() => preferences.verticalNavigator.split(',').filter(Boolean))
-const currentModeKey = computed(() => (preferences.mode === 'webtoon' ? 'webtoon' : preferences.mode === 'rtl' ? 'rtl' : 'ltr'))
+const currentModeKey = computed(() => preferences.mode)
 const useVerticalNavigator = computed(() => verticalNavigatorModes.value.includes(currentModeKey.value))
 const navigatorType = computed<ChapterNavigatorType>(() => {
   if (useVerticalNavigator.value) return preferences.verticalNavigatorOnLeft ? 'vertical-left' : 'vertical-right'
@@ -126,11 +135,139 @@ const verticalNavigatorHeightPercent = computed(() => preferences.verticalNaviga
 const resumePage = ref<number | null>(null)
 let touchStart: { x: number; y: number } | null = null, animationFrame = 0, longTapTimer: number | undefined
 
+// 2.2 Webtoon Smart Scale & 2.4 Continuous Strip Gaps
+const webtoonAspectRatio = computed(() => {
+  if (preferences.mode === 'continuous' && !preferences.longStripGapSmartScale) {
+    return null
+  }
+  switch (preferences.webtoonScaleType) {
+    case '4:3': return 0.75
+    case '3:2': return 2 / 3
+    case '16:9': return 9 / 16
+    case '20:9': return 9 / 20
+    case 'fit':
+    default:
+      return null
+  }
+})
+
+const stripStyle = computed(() => {
+  const styles: Record<string, string> = {}
+  if (preferences.mode === 'continuous') {
+    styles['--reader-strip-gap'] = `${preferences.stripGapSize}px`
+  }
+  if (webtoonAspectRatio.value !== null) {
+    styles['--webtoon-aspect-ratio'] = String(webtoonAspectRatio.value)
+    styles['--reader-webtoon-max-width'] = `min(100%, calc(100vh * ${webtoonAspectRatio.value}))`
+  } else {
+    styles['--reader-webtoon-max-width'] = '100%'
+  }
+  return styles
+})
+
 const canBookmark = computed(() => !!reader.chapter && !reader.saveError && !reader.pendingWrites)
 async function toggleBookmark() {
   if (!reader.chapter || !canBookmark.value) return
   await reader.bookmark(!reader.chapter.bookmarked)
 }
+
+// 2.1 Double-page spread and landscape scan tracking
+const isLandscapeViewport = ref(typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : false)
+const pageDimensions = ref<Record<number, { width: number; height: number }>>({})
+
+function updateViewportDimensions() {
+  if (typeof window !== 'undefined') {
+    isLandscapeViewport.value = window.innerWidth > window.innerHeight
+  }
+}
+
+function isLandscapePage(index: number): boolean {
+  const dim = pageDimensions.value[index]
+  return dim ? dim.width > dim.height : false
+}
+
+const isSpreadActive = computed(() => {
+  return !modeIsWebtoon.value && isDoublePageActive(preferences.pageLayout, isLandscapeViewport.value)
+})
+
+const spreads = computed(() => {
+  return computeSpreadLayout({
+    pageCount: reader.pageCount,
+    pageLayout: preferences.pageLayout,
+    isLandscapeViewport: isLandscapeViewport.value,
+    shiftDoublePages: preferences.shiftDoublePages,
+    isLandscapePage,
+  })
+})
+
+const currentSpreadIndex = computed(() => {
+  return findSpreadIndexForPage(spreads.value, reader.pageIndex)
+})
+
+const currentSpread = computed<SpreadPageItem | null>(() => {
+  return spreads.value[currentSpreadIndex.value] ?? null
+})
+
+const currentSpreadDisplay = computed(() => {
+  if (!currentSpread.value) return { leftIndex: reader.pageIndex, rightIndex: null }
+  return getSpreadDisplayOrder(
+    currentSpread.value,
+    preferences.mode === 'rtl' ? 'rtl' : 'ltr',
+    preferences.invertDoublePages
+  )
+})
+
+const spreadCenterGap = computed(() => {
+  if (!currentSpread.value) return 0
+  const isPaired = currentSpread.value.secondaryIndex !== null
+  const isLandscapeScan = currentSpread.value.isLandscapeScan
+  return getCenterMarginGap(preferences.centerMarginType, isPaired, isLandscapeScan, 8)
+})
+
+function isWideDoubleZoom(index: number): boolean {
+  if (modeIsWebtoon.value) return false
+  if (!preferences.landscapeZoom || preferences.landscapeZoomType !== 'double') return false
+  return isLandscapePage(index)
+}
+
+// 2.9 Anticipatory Page Preloader Buffer
+usePagePreloader({
+  pageIndex: () => reader.pageIndex,
+  pageCount: () => reader.pageCount,
+  pageUrl: index => reader.pageUrl(index, revisions.value[index]),
+  bufferAhead: 2,
+  bufferBehind: 1,
+  enabled: () => !modeIsWebtoon.value,
+})
+
+// 2.8 Spread target action tracking for ReaderPageActionsDialog
+const targetActionPage = ref<number | null>(null)
+
+const activeSpreadForActions = computed(() => {
+  if (!isSpreadActive.value) return null
+  const page = targetActionPage.value !== null ? targetActionPage.value : reader.pageIndex
+  return spreads.value.find(s => s.primaryIndex === page || s.secondaryIndex === page) ?? null
+})
+
+const pageActionsPrimaryIndex = computed(() => {
+  if (activeSpreadForActions.value) {
+    return activeSpreadForActions.value.primaryIndex
+  }
+  return targetActionPage.value !== null ? targetActionPage.value : reader.pageIndex
+})
+
+const pageActionsSecondaryIndex = computed(() => {
+  if (activeSpreadForActions.value && activeSpreadForActions.value.secondaryIndex !== null) {
+    return activeSpreadForActions.value.secondaryIndex
+  }
+  return null
+})
+
+watch(pageActions, open => {
+  if (!open) {
+    targetActionPage.value = null
+  }
+})
 function showToast(message: string) { toast.value = message; toastOpen.value = true }
 /** ReaderActivity.kt:512 - toggling the crop borders shows a toast with the new state. */
 function toggleCrop() {
@@ -151,13 +288,13 @@ watch(() => [route.params.id, route.params.chapterIndex, server.apiUrl], async (
   await reader.open(server.apiUrl, Number(route.params.id), Number(route.params.chapterIndex))
   if (!active) return
   const storedMangaMode = readPreference(`mihon.reader.mode.${route.params.id}`)
-  if (storedMangaMode === 'ltr' || storedMangaMode === 'rtl' || storedMangaMode === 'webtoon') {
+  if (storedMangaMode === 'ltr' || storedMangaMode === 'rtl' || storedMangaMode === 'webtoon' || storedMangaMode === 'continuous') {
     preferences.mode = storedMangaMode
   }
   resumePage.value = modeIsWebtoon.value ? reader.pageIndex : null
   await nextTick(); if (active) scrollToCurrent()
 }, { immediate: true })
-watch(() => preferences.mode, async mode => { resumePage.value = mode === 'webtoon' ? reader.pageIndex : null; await nextTick(); scrollToCurrent() })
+watch(() => preferences.mode, async mode => { resumePage.value = (mode === 'webtoon' || mode === 'continuous') ? reader.pageIndex : null; await nextTick(); scrollToCurrent() })
 watch(() => preferences.saveProgress, enabled => { if (enabled) maybeSave(reader.pageIndex) })
 
 function maybeSave(index: number) { if (preferences.saveProgress && loaded.value.has(index)) void reader.savePage(index) }
@@ -166,6 +303,10 @@ function eventMatchesPage(event: Event, index: number) {
 }
 function imageLoaded(index: number, event: Event) {
   if (!eventMatchesPage(event, index)) return
+  const img = event.target as HTMLImageElement
+  if (img.naturalWidth && img.naturalHeight) {
+    pageDimensions.value[index] = { width: img.naturalWidth, height: img.naturalHeight }
+  }
   loaded.value = new Set([...loaded.value, index]); failed.value.delete(index)
   if (modeIsWebtoon.value && resumePage.value === index) {
     void nextTick().then(() => { reader.setPage(index); scrollToCurrent(); resumePage.value = null; maybeSave(index) })
@@ -213,6 +354,34 @@ function turn(delta: number) {
     }
     return
   }
+  if (isSpreadActive.value && spreads.value.length > 0) {
+    const curIdx = currentSpreadIndex.value
+    const targetSpreadIdx = curIdx + (delta > 0 ? 1 : -1)
+
+    if (targetSpreadIdx < 0) {
+      if (alwaysShowChapterTransition.value) {
+        pagerTransition.value = 'prev'
+      } else if (reader.previousChapter) {
+        goChapter(reader.previousChapter.index)
+      }
+      return
+    }
+
+    if (targetSpreadIdx >= spreads.value.length) {
+      if (alwaysShowChapterTransition.value) {
+        pagerTransition.value = 'next'
+      } else if (reader.nextChapter) {
+        goChapter(reader.nextChapter.index)
+      }
+      return
+    }
+
+    const nextSpread = spreads.value[targetSpreadIdx]
+    if (nextSpread) {
+      void goPage(nextSpread.primaryIndex)
+    }
+    return
+  }
   const target = reader.pageIndex + delta
   if (target < 0) {
     if (alwaysShowChapterTransition.value) {
@@ -248,7 +417,16 @@ function scheduleScroll() {
     if (!view) return
     const center = view.getBoundingClientRect().top + view.clientHeight * .45
     const pages = [...view.querySelectorAll<HTMLElement>('[data-page]')]
-    const active = pages.find(p => { const box = p.getBoundingClientRect(); return box.top <= center && box.bottom >= center })
+    let active = pages.find(p => { const box = p.getBoundingClientRect(); return box.top <= center && box.bottom >= center })
+    if (!active && pages.length > 0) {
+      active = pages.reduce((closest, p) => {
+        const box = p.getBoundingClientRect()
+        const dist = Math.min(Math.abs(box.top - center), Math.abs(box.bottom - center))
+        const closestBox = closest.getBoundingClientRect()
+        const closestDist = Math.min(Math.abs(closestBox.top - center), Math.abs(closestBox.bottom - center))
+        return dist < closestDist ? p : closest
+      })
+    }
     if (active) { reader.setPage(Number(active.dataset.page)); maybeSave(reader.pageIndex) }
   })
 }
@@ -331,8 +509,17 @@ const { onKey, scrollDown, scrollUp } = useReaderKeybindings({
 let touchMoved = false
 let longTapFired = false
 let suppressClickUntil = 0
+let lastTapTimestamp = 0
 
 function touchDown(e: TouchEvent) {
+  const now = Date.now()
+  if (!modeIsWebtoon.value && preferences.pagedDisableZoomIn) {
+    if (now - lastTapTimestamp < 300) {
+      if (e.cancelable) e.preventDefault()
+    }
+  }
+  lastTapTimestamp = now
+
   const t = e.touches[0]
   if (!t) return
   touchStart = { x: t.clientX, y: t.clientY }
@@ -348,7 +535,10 @@ function touchDown(e: TouchEvent) {
     longTapFired = true
     suppressClickUntil = Date.now() + 400
     if (targetPage !== null && Number.isInteger(targetPage)) {
+      targetActionPage.value = targetPage
       reader.setPage(targetPage)
+    } else {
+      targetActionPage.value = null
     }
     if (readWithLongTap.value) {
       pageActions.value = true
@@ -359,6 +549,9 @@ function touchDown(e: TouchEvent) {
 }
 
 function touchMove(e: TouchEvent) {
+  if (modeIsWebtoon.value && !preferences.webtoonPinchToZoom && e.touches.length > 1) {
+    if (e.cancelable) e.preventDefault()
+  }
   if (!touchStart) return
   const t = e.touches[0]
   if (!t) return
@@ -393,10 +586,20 @@ function onContextMenu(event: MouseEvent) {
     if (target?.dataset.page !== undefined) {
       const pageIdx = Number(target.dataset.page)
       if (Number.isInteger(pageIdx)) {
+        targetActionPage.value = pageIdx
         reader.setPage(pageIdx)
       }
+    } else {
+      targetActionPage.value = null
     }
     pageActions.value = true
+  }
+}
+
+function onDoubleClick(event: MouseEvent) {
+  if (!modeIsWebtoon.value && preferences.pagedDisableZoomIn) {
+    event.preventDefault()
+    event.stopPropagation()
   }
 }
 
@@ -425,10 +628,12 @@ function onViewerClick(event: MouseEvent) {
 
   // RightAndLeftNavigation:
   // LEFT: 0..0.33, RIGHT: 0.66..1.0, MENU: 0.33..0.66
+  // Smaller tap zones: LEFT: 0..0.25, RIGHT: 0.75..1.0, MENU: 0.25..0.75
+  const isSmaller = preferences.smallerTapZone
   let action: 'menu' | 'left' | 'right' = 'menu'
-  if (x < 0.33) {
+  if (isSmaller ? x < 0.25 : x < 0.33) {
     action = invertHorizontal ? 'right' : 'left'
-  } else if (x > 0.66) {
+  } else if (isSmaller ? x > 0.75 : x > 0.66) {
     action = invertHorizontal ? 'left' : 'right'
   }
 
@@ -449,9 +654,14 @@ function onViewerClick(event: MouseEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKey))
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('resize', updateViewportDimensions)
+  updateViewportDimensions()
+})
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
+  window.removeEventListener('resize', updateViewportDimensions)
   cancelAnimationFrame(animationFrame)
   window.clearTimeout(longTapTimer)
   reader.close()
@@ -472,10 +682,14 @@ onBeforeUnmount(() => {
     <div
       ref="viewport"
       class="reader-viewport"
+      :class="{
+        'reader-viewport--no-pinch': modeIsWebtoon && !preferences.webtoonPinchToZoom
+      }"
       @scroll.passive="scheduleScroll"
-      @touchstart.passive="touchDown"
-      @touchmove.passive="touchMove"
-      @touchend.passive="touchUp"
+      @touchstart="touchDown"
+      @touchmove="touchMove"
+      @touchend="touchUp"
+      @dblclick="onDoubleClick"
       @click="onViewerClick"
     >
       <template v-if="!modeIsWebtoon">
@@ -501,13 +715,83 @@ onBeforeUnmount(() => {
           <p class="mt-2 mb-4">The source or server may be unavailable. Check your connection and the Suwayomi logs, or retry this page.</p>
           <v-btn color="primary" variant="flat" rounded="pill" @click.stop="retryImage(reader.pageIndex)">Retry page</v-btn>
         </div>
+        <!-- Spread Mode: side-by-side paired pages -->
+        <div
+          v-else-if="isSpreadActive && currentSpread && currentSpread.secondaryIndex !== null"
+          class="reader-page-surface reader-page-surface--spread"
+          :class="{ 'reader-page-surface--animated': animatePages }"
+          :style="{ '--reader-spread-gap': `${spreadCenterGap}px` }"
+          role="region"
+          aria-label="Manga spread page surface"
+          @contextmenu.prevent="onContextMenu"
+          @dblclick="onDoubleClick"
+        >
+          <div class="reader-spread-container">
+            <!-- Left page -->
+            <div
+              v-if="currentSpreadDisplay.leftIndex !== null"
+              class="reader-spread-page"
+              :data-page="currentSpreadDisplay.leftIndex"
+            >
+              <div v-if="failed.has(currentSpreadDisplay.leftIndex)" class="reader-inline-error">
+                <p class="text-body-medium">Page {{ currentSpreadDisplay.leftIndex + 1 }} could not load.</p>
+                <v-btn color="primary" variant="flat" rounded="pill" class="mt-4" @click.stop="retryImage(currentSpreadDisplay.leftIndex!)">Retry</v-btn>
+              </div>
+              <template v-else>
+                <img
+                  :key="`${route.params.chapterIndex}-${currentSpreadDisplay.leftIndex}-${revisions[currentSpreadDisplay.leftIndex] || 0}`"
+                  :src="reader.pageUrl(currentSpreadDisplay.leftIndex, revisions[currentSpreadDisplay.leftIndex])"
+                  :alt="`Page ${currentSpreadDisplay.leftIndex + 1} of ${reader.pageCount}`"
+                  :data-page="currentSpreadDisplay.leftIndex"
+                  class="reader-page reader-spread-img"
+                  @load="imageLoaded(currentSpreadDisplay.leftIndex!, $event)"
+                  @error="imageFailed(currentSpreadDisplay.leftIndex!, $event)"
+                />
+                <div v-if="!loaded.has(currentSpreadDisplay.leftIndex)" class="reader-image-loading" role="status">
+                  <v-progress-circular indeterminate color="primary" size="36" width="3" />
+                </div>
+              </template>
+            </div>
+
+            <!-- Right page -->
+            <div
+              v-if="currentSpreadDisplay.rightIndex !== null"
+              class="reader-spread-page"
+              :data-page="currentSpreadDisplay.rightIndex"
+            >
+              <div v-if="failed.has(currentSpreadDisplay.rightIndex)" class="reader-inline-error">
+                <p class="text-body-medium">Page {{ currentSpreadDisplay.rightIndex + 1 }} could not load.</p>
+                <v-btn color="primary" variant="flat" rounded="pill" class="mt-4" @click.stop="retryImage(currentSpreadDisplay.rightIndex!)">Retry</v-btn>
+              </div>
+              <template v-else>
+                <img
+                  :key="`${route.params.chapterIndex}-${currentSpreadDisplay.rightIndex}-${revisions[currentSpreadDisplay.rightIndex] || 0}`"
+                  :src="reader.pageUrl(currentSpreadDisplay.rightIndex, revisions[currentSpreadDisplay.rightIndex])"
+                  :alt="`Page ${currentSpreadDisplay.rightIndex + 1} of ${reader.pageCount}`"
+                  :data-page="currentSpreadDisplay.rightIndex"
+                  class="reader-page reader-spread-img"
+                  @load="imageLoaded(currentSpreadDisplay.rightIndex!, $event)"
+                  @error="imageFailed(currentSpreadDisplay.rightIndex!, $event)"
+                />
+                <div v-if="!loaded.has(currentSpreadDisplay.rightIndex)" class="reader-image-loading" role="status">
+                  <v-progress-circular indeterminate color="primary" size="36" width="3" />
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <!-- Single Page Pager Mode -->
         <div
           v-else
           class="reader-page-surface"
-          :class="{ 'reader-page-surface--animated': animatePages }"
+          :class="{
+            'reader-page-surface--animated': animatePages,
+            'reader-page-surface--wide-2x': isWideDoubleZoom(reader.pageIndex)
+          }"
           role="region"
           aria-label="Manga page surface"
           @contextmenu.prevent="onContextMenu"
+          @dblclick="onDoubleClick"
         >
           <img
             :key="`${route.params.chapterIndex}-${reader.pageIndex}-${revisions[reader.pageIndex] || 0}`"
@@ -515,6 +799,7 @@ onBeforeUnmount(() => {
             :alt="`Page ${reader.pageIndex + 1} of ${reader.pageCount}`"
             :data-page="reader.pageIndex"
             class="reader-page"
+            :class="{ 'reader-page--scale-2x': isWideDoubleZoom(reader.pageIndex) }"
             @load="imageLoaded(Number(($event.target as HTMLImageElement).dataset.page), $event)"
             @error="imageFailed(Number(($event.target as HTMLImageElement).dataset.page), $event)"
           />
@@ -524,7 +809,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </template>
-      <div v-else class="reader-strip" @contextmenu.prevent="onContextMenu">
+      <div v-else class="reader-strip" :class="{ 'reader-strip--gaps': preferences.mode === 'continuous' }" :style="stripStyle" @contextmenu.prevent="onContextMenu">
         <!-- Webtoon chapter transition (Prev) at top of strip (WebtoonAdapter.kt) -->
         <ChapterTransition
           v-if="reader.chapter && (reader.previousChapter || alwaysShowChapterTransition)"
@@ -702,7 +987,12 @@ onBeforeUnmount(() => {
     <ReaderSettingsDialog v-model="settings" :manga-id="reader.manga?.id" @closed="refreshPrefs" />
     <ReadingModeSelectDialog v-model="readingModeDialog" :manga-id="reader.manga?.id" @change="refreshPrefs" />
     <OrientationSelectDialog v-model="orientationDialog" :manga-id="reader.manga?.id" @change="refreshPrefs" />
-    <ReaderPageActionsDialog v-model="pageActions" />
+    <ReaderPageActionsDialog
+      v-model="pageActions"
+      :page-index="pageActionsPrimaryIndex"
+      :secondary-page-index="pageActionsSecondaryIndex"
+      :direction="preferences.mode === 'rtl' ? 'rtl' : 'ltr'"
+    />
 
     <v-snackbar v-model="toastOpen" :timeout="2500" color="surface-container-high" location="bottom">{{ toast }}</v-snackbar>
 
@@ -809,6 +1099,12 @@ onBeforeUnmount(() => {
   color: rgb(var(--v-theme-on-surface-variant));
 }
 
+.reader-strip--gaps {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--reader-strip-gap, 16px);
+  padding: var(--reader-strip-gap, 16px) 0;
+}
 .reader-strip-image-wrap {
   position: relative;
   min-height: 180px;
@@ -842,6 +1138,56 @@ onBeforeUnmount(() => {
 }
 .reader-chapters-list::-webkit-scrollbar {
   display: none;
+}
+
+.reader-page-surface--spread {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100dvh;
+  box-sizing: border-box;
+}
+
+.reader-spread-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  column-gap: var(--reader-spread-gap, 0px);
+}
+
+.reader-spread-page {
+  flex: 1 1 50%;
+  max-width: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.reader-spread-img {
+  max-width: 100%;
+  max-height: 100dvh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.reader-page-surface--wide-2x {
+  overflow: auto;
+}
+
+.reader-page--scale-2x {
+  transform: scale(2);
+  transform-origin: center center;
+}
+
+.reader-viewport--no-pinch {
+  touch-action: pan-y !important;
 }
 }
 </style>

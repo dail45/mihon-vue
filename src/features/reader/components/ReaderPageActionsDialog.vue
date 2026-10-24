@@ -2,10 +2,18 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useTabletUi } from '@/core/composables/useTabletUi'
 import { useReaderStore } from '@/features/reader/stores/reader'
+import { t } from '@/core/i18n'
+import {
+  copyBlobToClipboard,
+  saveBlobToFile,
+  shareBlobFile,
+  stitchPagesToBlob,
+} from '../utils/canvasStitch'
 import SetCoverDialog from './SetCoverDialog.vue'
 
 /**
  * Mihon reference: eu/kanade/presentation/reader/ReaderPageActionsDialog.kt
+ * Komikku reference: ReaderPageActionsDialog.kt (spread actions)
  *
  *   AdaptiveSheet(onDismissRequest = onDismissRequest) {
  *     Row(modifier = Modifier.padding(vertical = 16.dp),
@@ -46,16 +54,26 @@ import SetCoverDialog from './SetCoverDialog.vue'
  *  - Copy / Share / Save act on the page image itself, matching the reference behaviour
  *    (image to the clipboard, image to the system share sheet, image to disk).
  */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   onSetAsCover?: () => void
   onShare?: (toClipboard: boolean) => void
   onSave?: () => void
-}>()
+  onShareCombined?: (toClipboard: boolean) => void
+  onSaveCombined?: () => void
+  pageIndex?: number
+  secondaryPageIndex?: number | null
+  direction?: 'ltr' | 'rtl'
+}>(), {
+  secondaryPageIndex: null,
+  direction: 'ltr',
+})
 
 const emit = defineEmits<{
   (e: 'set-as-cover'): void
   (e: 'share', toClipboard: boolean): void
   (e: 'save'): void
+  (e: 'share-combined', toClipboard: boolean): void
+  (e: 'save-combined'): void
 }>()
 
 const open = defineModel<boolean>({ required: true })
@@ -63,6 +81,8 @@ const reader = useReaderStore()
 const tablet = useTabletUi()
 
 const setCoverOpen = ref(false)
+const selectedCoverPage = ref<number | null>(null)
+
 /** Dismissal animation state: AdaptiveSheet animates out for 350ms before it is removed. */
 const closing = ref(false)
 const toast = ref(''), toastOpen = ref(false)
@@ -70,16 +90,46 @@ const sheet = ref<HTMLElement | null>(null)
 const dragStart = ref<number | null>(null), dragOffset = ref(0), dragging = ref(false)
 let toastTimer: number | undefined, imageRequest = 0
 const pageImage = ref<Blob | null>(null)
+const extraPageImage = ref<Blob | null>(null)
+
+const primaryIndex = computed(() => (props.pageIndex !== undefined && props.pageIndex >= 0) ? props.pageIndex : reader.pageIndex)
+const secondaryIndex = computed(() => (props.secondaryPageIndex !== null && props.secondaryPageIndex !== undefined && props.secondaryPageIndex >= 0) ? props.secondaryPageIndex : null)
+const hasExtraPage = computed(() => secondaryIndex.value !== null)
 
 /** MR.strings.share_page_info = "%1$s: %2$s, page %3$d" (Mihon uses the 1-based page number). */
-const pageNumber = computed(() => reader.pageIndex + 1)
+const pageNumber = computed(() => primaryIndex.value + 1)
 const shareText = computed(() => `${reader.manga?.title ?? ''}: ${reader.chapter?.name ?? ''}, page ${pageNumber.value}`)
+
 /** ReaderViewModel.generateFilename(): "${manga.title} - ${chapter.name} - ${page.number}". */
 const fileName = computed(() => {
   const title = reader.manga?.title ?? 'Page'
   const chapter = reader.chapter?.name ?? ''
   const base = chapter ? `${title} - ${chapter}` : title
   return `${base} - ${pageNumber.value}`.replace(/[\\/:*?"<>|]/g, '_')
+})
+
+function getFileName(pageIdx: number): string {
+  const title = reader.manga?.title ?? 'Page'
+  const chapter = reader.chapter?.name ?? ''
+  const base = chapter ? `${title} - ${chapter}` : title
+  return `${base} - ${pageIdx + 1}`.replace(/[\\/:*?"<>|]/g, '_')
+}
+
+const fileNameCombined = computed(() => {
+  const title = reader.manga?.title ?? 'Page'
+  const chapter = reader.chapter?.name ?? ''
+  const base = chapter ? `${title} - ${chapter}` : title
+  const p1 = primaryIndex.value + 1
+  const p2 = secondaryIndex.value !== null ? secondaryIndex.value + 1 : p1
+  return `${base} - ${p1}-${p2}.png`.replace(/[\\/:*?"<>|]/g, '_')
+})
+
+const shareTextCombined = computed(() => {
+  const title = reader.manga?.title ?? ''
+  const chapter = reader.chapter?.name ?? ''
+  const p1 = primaryIndex.value + 1
+  const p2 = secondaryIndex.value !== null ? secondaryIndex.value + 1 : p1
+  return `${title}: ${chapter}, pages ${p1}-${p2}`
 })
 
 /** MR.strings.set_as_cover, action_copy_to_clipboard, action_share, action_save. */
@@ -89,6 +139,26 @@ const actions = [
   { key: 'share', label: 'Share', icon: 'share' },
   { key: 'save', label: 'Save', icon: 'save' },
 ] as const
+
+const firstPageActions = computed(() => [
+  { key: 'cover_first', label: t('action_set_first_page_cover') || 'Set first page as cover', icon: 'photo' },
+  { key: 'copy_first', label: t('action_copy_to_clipboard_first_page') || 'Copy first page to clipboard', icon: 'content_copy' },
+  { key: 'share_first', label: t('action_share_first_page') || 'Share first page', icon: 'share' },
+  { key: 'save_first', label: t('action_save_first_page') || 'Save first page', icon: 'save' },
+])
+
+const secondPageActions = computed(() => [
+  { key: 'cover_second', label: t('action_set_second_page_cover') || 'Set second page as cover', icon: 'photo' },
+  { key: 'copy_second', label: t('action_copy_to_clipboard_second_page') || 'Copy second page to clipboard', icon: 'content_copy' },
+  { key: 'share_second', label: t('action_share_second_page') || 'Share second page', icon: 'share' },
+  { key: 'save_second', label: t('action_save_second_page') || 'Save second page', icon: 'save' },
+])
+
+const combinedPageActions = computed(() => [
+  { key: 'copy_combined', label: t('action_copy_to_clipboard_combined_page') || 'Copy combined page to clipboard', icon: 'content_copy' },
+  { key: 'share_combined', label: t('action_share_combined_page') || 'Share combined page', icon: 'share' },
+  { key: 'save_combined', label: t('action_save_combined_page') || 'Save combined page', icon: 'save' },
+])
 
 function showToast(message: string) {
   toast.value = message
@@ -147,8 +217,8 @@ function handleSetAsCoverConfirm() {
   emit('set-as-cover')
 }
 
-async function fetchPageImage(): Promise<Blob> {
-  const url = reader.pageUrl(reader.pageIndex)
+async function fetchPageImage(pageIdx: number = primaryIndex.value): Promise<Blob> {
+  const url = reader.pageUrl(pageIdx)
   if (!url) throw new Error('The page is not loaded yet.')
   const response = await fetch(url, { credentials: 'include' })
   if (!response.ok) throw new Error(`The page image could not be loaded (HTTP ${response.status}).`)
@@ -160,14 +230,24 @@ async function fetchPageImage(): Promise<Blob> {
 async function prefetchPageImage() {
   const request = ++imageRequest
   try {
-    const blob = await fetchPageImage()
+    const blob = await fetchPageImage(primaryIndex.value)
     if (request !== imageRequest) return
     pageImage.value = blob
   } catch { pageImage.value = null }
+
+  if (hasExtraPage.value && secondaryIndex.value !== null) {
+    try {
+      const extraBlob = await fetchPageImage(secondaryIndex.value)
+      if (request !== imageRequest) return
+      extraPageImage.value = extraBlob
+    } catch { extraPageImage.value = null }
+  }
 }
 
-async function pageBlob(): Promise<Blob> {
-  return pageImage.value ?? await fetchPageImage()
+async function pageBlob(pageIdx: number = primaryIndex.value): Promise<Blob> {
+  if (pageIdx === primaryIndex.value && pageImage.value) return pageImage.value
+  if (pageIdx === secondaryIndex.value && extraPageImage.value) return extraPageImage.value
+  return await fetchPageImage(pageIdx)
 }
 
 /** The clipboard only accepts PNG, so other formats are converted through a canvas. */
@@ -186,44 +266,90 @@ async function toPng(blob: Blob): Promise<Blob> {
   return png
 }
 
-async function copyToClipboard() {
+async function copyToClipboard(pageIdx: number = primaryIndex.value) {
   dismissNow()
   try {
     if (!navigator.clipboard || typeof navigator.clipboard.write !== 'function') throw new Error('Clipboard images are not supported.')
-    const png = await toPng(await pageBlob())
+    const png = await toPng(await pageBlob(pageIdx))
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })])
   } catch {
     showToast('Copying the page image is not supported in this browser.')
   }
 }
 
-async function sharePage() {
+async function sharePage(pageIdx: number = primaryIndex.value) {
   dismissNow()
   try {
     const share = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
     if (typeof share.share !== 'function') throw new Error('Sharing is not supported.')
-    const blob = await pageBlob()
-    const file = new File([blob], fileName.value, { type: blob.type || 'image/png' })
+    const blob = await pageBlob(pageIdx)
+    const currentName = pageIdx === primaryIndex.value ? fileName.value : getFileName(pageIdx)
+    const currentShareText = pageIdx === primaryIndex.value ? shareText.value : `${reader.manga?.title ?? ''}: ${reader.chapter?.name ?? ''}, page ${pageIdx + 1}`
+    const file = new File([blob], currentName, { type: blob.type || 'image/png' })
     if (typeof share.canShare === 'function' && !share.canShare({ files: [file] })) throw new Error('Files cannot be shared.')
-    await share.share({ files: [file], text: shareText.value, title: reader.manga?.title })
+    await share.share({ files: [file], text: currentShareText, title: reader.manga?.title })
   } catch (error) {
     if ((error as Error)?.name === 'AbortError') return
     showToast('Sharing the page image is not supported in this browser.')
   }
 }
 
-async function savePage() {
+async function savePage(pageIdx: number = primaryIndex.value) {
   dismissNow()
   try {
-    const blob = await pageBlob()
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = fileName.value
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    const blob = await pageBlob(pageIdx)
+    const currentName = pageIdx === primaryIndex.value ? fileName.value : getFileName(pageIdx)
+    saveBlobToFile(blob, currentName)
+    showToast('Picture saved')
+  } catch {
+    showToast('The page image could not be saved.')
+  }
+}
+
+async function copyCombinedToClipboard() {
+  dismissNow()
+  try {
+    const url1 = reader.pageUrl(primaryIndex.value)
+    const url2 = secondaryIndex.value !== null ? reader.pageUrl(secondaryIndex.value) : ''
+    if (!url1 || !url2) throw new Error('Page URLs not available')
+
+    const blob = await stitchPagesToBlob(url1, url2, props.direction)
+    const ok = await copyBlobToClipboard(blob)
+    if (!ok) throw new Error('Clipboard copy failed')
+    showToast(t('combined_page_copied') || 'Combined page copied to clipboard')
+  } catch {
+    showToast('Copying the page image is not supported in this browser.')
+  }
+}
+
+async function shareCombined() {
+  dismissNow()
+  try {
+    const url1 = reader.pageUrl(primaryIndex.value)
+    const url2 = secondaryIndex.value !== null ? reader.pageUrl(secondaryIndex.value) : ''
+    if (!url1 || !url2) throw new Error('Page URLs not available')
+
+    const blob = await stitchPagesToBlob(url1, url2, props.direction)
+    const ok = await shareBlobFile(blob, fileNameCombined.value, {
+      title: reader.manga?.title,
+      text: shareTextCombined.value,
+    })
+    if (!ok) throw new Error('Share not supported')
+  } catch (error) {
+    if ((error as Error)?.name === 'AbortError') return
+    showToast('Sharing the page image is not supported in this browser.')
+  }
+}
+
+async function saveCombined() {
+  dismissNow()
+  try {
+    const url1 = reader.pageUrl(primaryIndex.value)
+    const url2 = secondaryIndex.value !== null ? reader.pageUrl(secondaryIndex.value) : ''
+    if (!url1 || !url2) throw new Error('Page URLs not available')
+
+    const blob = await stitchPagesToBlob(url1, url2, props.direction)
+    saveBlobToFile(blob, fileNameCombined.value)
     showToast('Picture saved')
   } catch {
     showToast('The page image could not be saved.')
@@ -232,25 +358,100 @@ async function savePage() {
 
 function runAction(key: string) {
   if (key === 'cover') {
+    selectedCoverPage.value = primaryIndex.value
     setCoverOpen.value = true
     return
   }
   if (key === 'copy') {
     props.onShare?.(true)
     emit('share', true)
-    void copyToClipboard()
+    void copyToClipboard(primaryIndex.value)
     return
   }
   if (key === 'share') {
     props.onShare?.(false)
     emit('share', false)
-    void sharePage()
+    void sharePage(primaryIndex.value)
     return
   }
   if (key === 'save') {
     props.onSave?.()
     emit('save')
-    void savePage()
+    void savePage(primaryIndex.value)
+  }
+}
+
+function runSpreadAction(key: string) {
+  if (key === 'cover_first') {
+    selectedCoverPage.value = primaryIndex.value
+    setCoverOpen.value = true
+    return
+  }
+  if (key === 'cover_second') {
+    if (secondaryIndex.value !== null) {
+      selectedCoverPage.value = secondaryIndex.value
+      setCoverOpen.value = true
+    }
+    return
+  }
+  if (key === 'copy_first') {
+    props.onShare?.(true)
+    emit('share', true)
+    void copyToClipboard(primaryIndex.value)
+    return
+  }
+  if (key === 'copy_second') {
+    if (secondaryIndex.value !== null) {
+      props.onShare?.(true)
+      emit('share', true)
+      void copyToClipboard(secondaryIndex.value)
+    }
+    return
+  }
+  if (key === 'share_first') {
+    props.onShare?.(false)
+    emit('share', false)
+    void sharePage(primaryIndex.value)
+    return
+  }
+  if (key === 'share_second') {
+    if (secondaryIndex.value !== null) {
+      props.onShare?.(false)
+      emit('share', false)
+      void sharePage(secondaryIndex.value)
+    }
+    return
+  }
+  if (key === 'save_first') {
+    props.onSave?.()
+    emit('save')
+    void savePage(primaryIndex.value)
+    return
+  }
+  if (key === 'save_second') {
+    if (secondaryIndex.value !== null) {
+      props.onSave?.()
+      emit('save')
+      void savePage(secondaryIndex.value)
+    }
+    return
+  }
+  if (key === 'copy_combined') {
+    props.onShareCombined?.(true)
+    emit('share-combined', true)
+    void copyCombinedToClipboard()
+    return
+  }
+  if (key === 'share_combined') {
+    props.onShareCombined?.(false)
+    emit('share-combined', false)
+    void shareCombined()
+    return
+  }
+  if (key === 'save_combined') {
+    props.onSaveCombined?.()
+    emit('save-combined')
+    void saveCombined()
   }
 }
 
@@ -331,7 +532,7 @@ onBeforeUnmount(() => { if (toastTimer) window.clearTimeout(toastTimer) })
         :class="{ 'reader-page-actions-surface--dragging': dragging }"
         :style="dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined"
       >
-        <div class="reader-page-actions-row">
+        <div v-if="!hasExtraPage" class="reader-page-actions-row">
           <button
             v-for="action in actions"
             :key="action.key"
@@ -345,6 +546,59 @@ onBeforeUnmount(() => { if (toastTimer) window.clearTimeout(toastTimer) })
             <span class="reader-page-action-icon material-symbols-rounded" aria-hidden="true">{{ action.icon }}</span>
             <span class="reader-page-action-label">{{ action.label }}</span>
           </button>
+        </div>
+
+        <div v-else class="reader-page-actions-column">
+          <!-- Row 1: First page actions -->
+          <div class="reader-page-actions-row">
+            <button
+              v-for="action in firstPageActions"
+              :key="action.key"
+              v-ripple
+              type="button"
+              class="reader-page-action"
+              :title="action.label"
+              :aria-label="action.label"
+              @click="runSpreadAction(action.key)"
+            >
+              <span class="reader-page-action-icon material-symbols-rounded" aria-hidden="true">{{ action.icon }}</span>
+              <span class="reader-page-action-label">{{ action.label }}</span>
+            </button>
+          </div>
+
+          <!-- Row 2: Second page actions -->
+          <div class="reader-page-actions-row">
+            <button
+              v-for="action in secondPageActions"
+              :key="action.key"
+              v-ripple
+              type="button"
+              class="reader-page-action"
+              :title="action.label"
+              :aria-label="action.label"
+              @click="runSpreadAction(action.key)"
+            >
+              <span class="reader-page-action-icon material-symbols-rounded" aria-hidden="true">{{ action.icon }}</span>
+              <span class="reader-page-action-label">{{ action.label }}</span>
+            </button>
+          </div>
+
+          <!-- Row 3: Combined actions -->
+          <div class="reader-page-actions-row">
+            <button
+              v-for="action in combinedPageActions"
+              :key="action.key"
+              v-ripple
+              type="button"
+              class="reader-page-action"
+              :title="action.label"
+              :aria-label="action.label"
+              @click="runSpreadAction(action.key)"
+            >
+              <span class="reader-page-action-icon material-symbols-rounded" aria-hidden="true">{{ action.icon }}</span>
+              <span class="reader-page-action-label">{{ action.label }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -421,6 +675,15 @@ onBeforeUnmount(() => { if (toastTimer) window.clearTimeout(toastTimer) })
   align-items: stretch;
   gap: 8px;
   padding: 16px 0;
+}
+.reader-page-actions-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 0;
+}
+.reader-page-actions-column .reader-page-actions-row {
+  padding: 4px 0;
 }
 /* ActionButton: TextButton { Column(spacedBy = 4dp, CenterHorizontally) { Icon; Text } }.
    Modifier.weight(1f) distributes all 4 buttons equally.

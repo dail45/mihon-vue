@@ -1,11 +1,12 @@
 import { type Ref } from 'vue'
+import type { ReadingMode } from '@/features/reader/stores/readerPreferences'
 
 export interface UseReaderKeybindingsOptions {
   isDialogActive: () => boolean
   chaptersOpen: Ref<boolean>
   controls: Ref<boolean>
   modeIsWebtoon: () => boolean
-  readingMode: () => 'ltr' | 'rtl' | 'webtoon'
+  readingMode: () => ReadingMode
   animatePages: () => boolean
   viewport: Ref<HTMLElement | null>
   pageCount: () => number
