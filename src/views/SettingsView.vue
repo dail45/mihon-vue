@@ -44,10 +44,19 @@ import AboutView from './AboutView.vue'
 import SettingsAdvancedView from './SettingsAdvancedView.vue'
 import SettingsAppearanceView from './SettingsAppearanceView.vue'
 import SettingsLibraryView from './SettingsLibraryView.vue'
+import CategoriesView from './CategoriesView.vue'
+import ExtensionStoresView from './ExtensionStoresView.vue'
+import CreateBackupView from './CreateBackupView.vue'
+import RestoreBackupView from './RestoreBackupView.vue'
+import ClearDatabaseView from './ClearDatabaseView.vue'
+import DebugInfoView from './DebugInfoView.vue'
+import OpenSourceLicensesView from './OpenSourceLicensesView.vue'
 import { t, MR } from '../i18n'
 
 const route = useRoute()
 const router = useRouter()
+const storesViewRef = ref<InstanceType<typeof ExtensionStoresView> | null>(null)
+const debugViewRef = ref<InstanceType<typeof DebugInfoView> | null>(null)
 const server = useSuwayomiStore()
 const preferences = usePreferencesStore()
 const connectionOpen = ref(false)
@@ -58,6 +67,10 @@ const { width } = useDisplay()
 const twoPane = computed(() => preferences.tabletUiMode === 'always' || (tablet.value && width.value >= 600))
 // Default selected section in two-pane mode is Appearance (SettingsScreen.kt: else -> SettingsAppearanceScreen).
 const section = computed(() => String(route.meta.settingsSection || (twoPane.value ? 'appearance' : 'main')))
+
+const activeSubScreen = ref<string | null>(null)
+const subSection = computed(() => (route.meta.subSection as string) || activeSubScreen.value || null)
+const isSubScreen = computed(() => !!subSection.value)
 
 export interface SettingsSectionItem {
   title: string
@@ -115,6 +128,38 @@ function getItemSubtitle(item: SettingsSectionItem): string {
 
 const selectedItem = computed(() => items.value.find(i => i.section === section.value))
 const currentDetailTitle = computed(() => {
+  if (subSection.value === 'language') {
+    const val = t(MR.strings.pref_app_language)
+    return (val && val !== 'pref_app_language') ? val : 'App language'
+  }
+  if (subSection.value === 'categories') {
+    const val = t(MR.strings.action_edit_categories)
+    return (val && val !== 'action_edit_categories') ? val : 'Edit categories'
+  }
+  if (subSection.value === 'stores') {
+    const val = t('extensionStores')
+    return (val && val !== 'extensionStores') ? val : 'Extension stores'
+  }
+  if (subSection.value === 'create-backup') {
+    const val = t(MR.strings.pref_create_backup)
+    return (val && val !== 'pref_create_backup') ? val : 'Create backup'
+  }
+  if (subSection.value === 'restore-backup') {
+    const val = t(MR.strings.pref_restore_backup)
+    return (val && val !== 'pref_restore_backup') ? val : 'Restore backup'
+  }
+  if (subSection.value === 'clear-database') {
+    const val = t(MR.strings.pref_clear_database)
+    return (val && val !== 'pref_clear_database') ? val : 'Clear database'
+  }
+  if (subSection.value === 'debug') {
+    const val = t(MR.strings.pref_debug_info)
+    return (val && val !== 'pref_debug_info') ? val : 'Debug information'
+  }
+  if (subSection.value === 'licenses') {
+    const val = t(MR.strings.licenses)
+    return (val && val !== 'licenses') ? val : 'Open source licenses'
+  }
   if (section.value === 'connection') return 'Server connection'
   if (selectedItem.value) return getItemTitle(selectedItem.value)
   return (route.meta.title as string) || 'Settings'
@@ -125,7 +170,14 @@ function navigateUpMain() {
 }
 
 function navigateUpDetail() {
-  void router.push('/settings')
+  if (isSubScreen.value) {
+    activeSubScreen.value = null
+    if (route.meta.subSection) {
+      void router.push(`/settings/${section.value}`)
+    }
+  } else {
+    void router.push('/settings')
+  }
 }
 
 function openSearch() {
@@ -137,6 +189,9 @@ usePreferenceHighlight('.settings-detail-scroll, .settings-detail')
 
 const detailScrollEl = ref<HTMLElement | null>(null)
 watch(section, () => {
+  activeSubScreen.value = null
+})
+watch([section, subSection], () => {
   if (detailScrollEl.value) {
     detailScrollEl.value.scrollTop = 0
   }
@@ -194,10 +249,10 @@ watch(section, () => {
 
     <!-- Detail pane: visible in two-pane mode OR on sub-routes in single-pane mode -->
     <section v-if="section !== 'main'" class="settings-detail" :aria-label="currentDetailTitle">
-      <!-- TopAppBar for detail pane: on single-pane it has Navigate up back to /settings; in two-pane it has no back button -->
+      <!-- TopAppBar for detail pane: on single-pane or when a sub-screen is open, it has Navigate up; in two-pane root it has no back button -->
       <header class="settings-top-app-bar settings-top-app-bar--detail">
         <button
-          v-if="!twoPane"
+          v-if="!twoPane || isSubScreen"
           type="button"
           class="settings-icon-btn"
           aria-label="Navigate up"
@@ -207,17 +262,49 @@ watch(section, () => {
           <v-icon icon="arrow_back" size="24" />
           <v-tooltip activator="parent" location="bottom">Navigate up</v-tooltip>
         </button>
-        <h2 class="settings-top-app-bar__title" :class="{ 'settings-top-app-bar__title--detail-twopane': twoPane }">
+        <h2 class="settings-top-app-bar__title" :class="{ 'settings-top-app-bar__title--detail-twopane': twoPane && !isSubScreen }">
           {{ currentDetailTitle }}
         </h2>
+        <div v-if="subSection === 'stores'" class="settings-header-actions">
+          <v-btn
+            icon="refresh"
+            variant="text"
+            aria-label="Refresh"
+            :class="{ 'is-refreshing': storesViewRef?.refreshing }"
+            @click="storesViewRef?.onRefresh?.()"
+          />
+        </div>
+        <div v-else-if="subSection === 'debug'" class="settings-header-actions">
+          <button
+            type="button"
+            class="settings-icon-btn"
+            aria-label="Share"
+            title="Share"
+            @click="debugViewRef?.shareDebugInfo?.()"
+          >
+            <v-icon icon="share" size="24" />
+            <v-tooltip activator="parent" location="bottom">Share</v-tooltip>
+          </button>
+          <button
+            type="button"
+            class="settings-icon-btn"
+            aria-label="Copy to clipboard"
+            title="Copy to clipboard"
+            @click="debugViewRef?.copyAllDebugInfo?.()"
+          >
+            <v-icon icon="content_copy" size="24" />
+            <v-tooltip activator="parent" location="bottom">Copy to clipboard</v-tooltip>
+          </button>
+        </div>
       </header>
 
       <!-- Scrollable content area for the selected settings screen -->
       <div ref="detailScrollEl" class="settings-detail-scroll">
         <!-- SettingsAppearanceScreen.kt (Mihon 446f6df): the whole "Appearance" preference screen -->
-        <SettingsAppearanceView v-if="section === 'appearance'" />
+        <SettingsAppearanceView v-if="section === 'appearance'" :sub-screen="subSection" @update:sub-screen="val => { activeSubScreen = val }" />
 
         <!-- SettingsLibraryScreen.kt: full library preference tree -->
+        <CategoriesView v-if="section === 'library' && subSection === 'categories'" embedded />
         <SettingsLibraryView v-else-if="section === 'library'" />
 
         <!-- SettingsReaderScreen.kt (Mihon 446f6df): full reader preference tree -->
@@ -232,9 +319,12 @@ watch(section, () => {
         <SettingsTrackingScreen v-else-if="section === 'tracking'" />
 
         <!-- SettingsBrowseScreen.kt (Mihon 446f6df): the whole "Browse" preference screen -->
+        <ExtensionStoresView v-if="section === 'browse' && subSection === 'stores'" ref="storesViewRef" embedded />
         <SettingsBrowseScreen v-else-if="section === 'browse'" />
 
         <!-- SettingsDataScreen.kt: data and storage preference screen -->
+        <CreateBackupView v-if="section === 'data' && subSection === 'create-backup'" embedded />
+        <RestoreBackupView v-else-if="section === 'data' && subSection === 'restore-backup'" embedded />
         <SettingsDataScreen v-else-if="section === 'data'" />
 
         <!-- SettingsSecurityScreen.kt: security and privacy preference screen -->
@@ -243,9 +333,12 @@ watch(section, () => {
         </template>
 
         <!-- SettingsAdvancedScreen.kt: the whole "Advanced" preference screen -->
+        <ClearDatabaseView v-if="section === 'advanced' && subSection === 'clear-database'" embedded />
+        <DebugInfoView v-else-if="section === 'advanced' && subSection === 'debug'" ref="debugViewRef" embedded />
         <SettingsAdvancedView v-else-if="section === 'advanced'" />
 
         <!-- AboutScreen.kt: about app information -->
+        <OpenSourceLicensesView v-if="section === 'about' && subSection === 'licenses'" embedded />
         <AboutView v-else-if="section === 'about'" :standalone="false" />
 
         <!-- Server connection (web-specific) -->
@@ -318,6 +411,7 @@ watch(section, () => {
 .settings-two-pane .settings-navigation {
   border-right: 1px solid rgb(var(--v-theme-outline-variant), 0.5);
   background: #ffffff;
+  background: rgb(var(--v-theme-paler-surface, 255, 255, 255));
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -325,6 +419,10 @@ watch(section, () => {
 .v-theme--mihonDark .settings-two-pane .settings-navigation,
 :root[data-theme='dark'] .settings-two-pane .settings-navigation {
   background: #0f0f11;
+  background: rgb(var(--v-theme-paler-surface, 15, 15, 17));
+}
+:root[data-amoled='true'] .settings-two-pane .settings-navigation {
+  background: #000000;
 }
 
 /* Left navigation pane: independent scrolling with hidden scrollbar track/thumb in two-pane */
@@ -411,10 +509,15 @@ watch(section, () => {
 
 .settings-two-pane .settings-top-app-bar--nav {
   background: #ffffff;
+  background: rgb(var(--v-theme-paler-surface, 255, 255, 255));
 }
 .v-theme--mihonDark .settings-two-pane .settings-top-app-bar--nav,
 :root[data-theme='dark'] .settings-two-pane .settings-top-app-bar--nav {
   background: #0f0f11;
+  background: rgb(var(--v-theme-paler-surface, 15, 15, 17));
+}
+:root[data-amoled='true'] .settings-two-pane .settings-top-app-bar--nav {
+  background: #000000;
 }
 
 .settings-top-app-bar__title {
@@ -435,6 +538,14 @@ watch(section, () => {
 
 .settings-top-app-bar__title--detail-twopane {
   padding-left: 16px;
+}
+
+.settings-header-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
+  padding-right: 4px;
 }
 
 /* Material 3 IconButton: 48x48dp touch area, 40dp circle ripple layer, 24dp icon */

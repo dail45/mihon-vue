@@ -5,10 +5,10 @@ describe('CategoryDeleteDialog matches the Mihon reference', () => {
   const source = readFileSync('src/components/CategoryDeleteDialog.vue', 'utf8')
 
   it('renders the reference title, message and buttons', () => {
-    expect(source).toContain('Delete category')
-    expect(source).toContain('Do you wish to delete the category "${props.category.name}"?')
-    expect(source).toMatch(/>OK</)
-    expect(source).toMatch(/>Cancel</)
+    expect(source).toContain('delete_category')
+    expect(source).toContain('delete_category_confirmation')
+    expect(source).toContain('action_ok')
+    expect(source).toContain('action_cancel')
   })
 
   it('uses the MD3 alert dialog geometry', () => {

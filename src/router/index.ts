@@ -18,7 +18,16 @@ export const router = createRouter({
     // (`SourcesTab.kt`: "Filter", `ExtensionsTab.kt`: "Filter" / "Extension stores").
     { path: '/browse/sources/filter', component: () => import('../views/SourcesFilterView.vue'), meta: { title: 'Sources', detail: true } },
     { path: '/browse/extensions/filter', component: () => import('../views/ExtensionFilterView.vue'), meta: { title: 'Extensions', detail: true } },
-    { path: '/browse/extensions/stores', component: () => import('../views/ExtensionStoresView.vue'), meta: { title: 'Extension stores', detail: true, ownToolbar: true } },
+    {
+      path: '/browse/extensions/stores',
+      component: () => import('../views/ExtensionStoresView.vue'),
+      meta: { title: 'Extension stores', detail: true, ownToolbar: true },
+      beforeEnter: to => {
+        if (to.query.from === 'settings') {
+          return { path: '/settings/browse/stores' }
+        }
+      },
+    },
     { path: '/browse/extension/:pkgName', component: () => import('../views/ExtensionDetailsView.vue'), meta: { title: 'Extension info', detail: true, ownToolbar: true } },
     { path: '/browse/source/:sourceId', component: () => import('../views/SourceView.vue'), meta: { title: 'Source', detail: true, catalogue: true } },
     // Mihon `SourcePreferencesScreen`: the per-source settings screen opened from the
@@ -39,22 +48,117 @@ export const router = createRouter({
     { path: '/settings/search', component: () => import('../views/SettingsSearchView.vue'), meta: { title: 'Search settings', detail: true, ownToolbar: true } },
     ...['appearance', 'library', 'reader', 'downloads', 'tracking', 'browse', 'data', 'security', 'advanced', 'about', 'connection'].map(section => ({ path: `/settings/${section}`, component: () => import('../views/SettingsView.vue'), meta: { title: section === 'connection' ? 'Server connection' : section === 'data' ? 'Data and storage' : section === 'security' ? 'Security and privacy' : section[0]!.toUpperCase() + section.slice(1), detail: true, settingsSection: section, ownToolbar: true } })),
     // Mihon `AppLanguageScreen` (Appearance)
-    { path: '/settings/appearance/language', component: () => import('../views/AppLanguageView.vue'), meta: { title: 'App language', detail: true, ownToolbar: true } },
+    {
+      path: '/settings/appearance/language',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'App language',
+        detail: true,
+        settingsSection: 'appearance',
+        subSection: 'language',
+        ownToolbar: true,
+      },
+    },
     { path: '/settings/app-language', redirect: '/settings/appearance/language' },
+    // Mihon `CategoryScreen` (Library -> Edit categories)
+    {
+      path: '/settings/library/categories',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'Edit categories',
+        detail: true,
+        settingsSection: 'library',
+        subSection: 'categories',
+        ownToolbar: true,
+      },
+    },
+    // Mihon `ExtensionStoresScreen` (Browse -> Extension stores)
+    {
+      path: '/settings/browse/stores',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'Extension stores',
+        detail: true,
+        settingsSection: 'browse',
+        subSection: 'stores',
+        ownToolbar: true,
+      },
+    },
     // Mihon `CreateBackupScreen` and `RestoreBackupScreen` (Data & storage)
-    { path: '/settings/data/create-backup', component: () => import('../views/CreateBackupView.vue'), meta: { title: 'Create backup', detail: true, ownToolbar: true } },
-    { path: '/settings/data/restore-backup', component: () => import('../views/RestoreBackupView.vue'), meta: { title: 'Restore backup', detail: true, ownToolbar: true } },
+    {
+      path: '/settings/data/create-backup',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'Create backup',
+        detail: true,
+        settingsSection: 'data',
+        subSection: 'create-backup',
+        ownToolbar: true,
+      },
+    },
+    {
+      path: '/settings/data/restore-backup',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'Restore backup',
+        detail: true,
+        settingsSection: 'data',
+        subSection: 'restore-backup',
+        ownToolbar: true,
+      },
+    },
     // Mihon `ClearDatabaseScreen` (Advanced)
-    { path: '/settings/advanced/clear-database', component: () => import('../views/ClearDatabaseView.vue'), meta: { title: 'Clear database', detail: true, ownToolbar: true } },
+    {
+      path: '/settings/advanced/clear-database',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'Clear database',
+        detail: true,
+        settingsSection: 'advanced',
+        subSection: 'clear-database',
+        ownToolbar: true,
+      },
+    },
     { path: '/settings/clear-database', redirect: '/settings/advanced/clear-database' },
     // Mihon `DebugInfoScreen`, `WorkerInfoScreen`, `BackupSchemaScreen` (Advanced -> Debug info)
-    { path: '/settings/advanced/debug', component: () => import('../views/DebugInfoView.vue'), meta: { title: 'Debug information', detail: true, ownToolbar: true } },
+    {
+      path: '/settings/advanced/debug',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'Debug information',
+        detail: true,
+        settingsSection: 'advanced',
+        subSection: 'debug',
+        ownToolbar: true,
+      },
+    },
     { path: '/settings/debug', redirect: '/settings/advanced/debug' },
     { path: '/settings/debug/worker', component: () => import('../views/WorkerInfoView.vue'), meta: { title: 'Worker info', detail: true, ownToolbar: true } },
     { path: '/settings/debug/backup-schema', component: () => import('../views/BackupSchemaView.vue'), meta: { title: 'Backup file schema', detail: true, ownToolbar: true } },
     { path: '/debug/backup-schema', redirect: '/settings/debug/backup-schema' },
+    // Mihon `OpenSourceLicensesScreen` (About -> Open source licenses)
+    {
+      path: '/settings/about/licenses',
+      component: () => import('../views/SettingsView.vue'),
+      meta: {
+        title: 'Open source licenses',
+        detail: true,
+        settingsSection: 'about',
+        subSection: 'licenses',
+        ownToolbar: true,
+      },
+    },
     // Mihon `CategoryScreen`: the app bar title is `action_edit_categories` = "Edit categories".
-    { path: '/categories', component: () => import('../views/CategoriesView.vue'), meta: { title: 'Edit categories', detail: true, ownToolbar: true } },
+    {
+      path: '/categories',
+      component: () => import('../views/CategoriesView.vue'),
+      meta: { title: 'Edit categories', detail: true, ownToolbar: true },
+      beforeEnter: to => {
+        if (to.query.from === 'settings') {
+          return { path: '/settings/library/categories' }
+        }
+      },
+    },
     { path: '/category', redirect: '/categories' },
     { path: '/tracker-search', component: () => import('../views/TrackerSearchView.vue'), meta: { title: 'Track search', detail: true, ownToolbar: true } },
     { path: '/tracker-login', component: () => import('../views/TrackerLoginView.vue'), meta: { title: 'Track login', detail: true } },

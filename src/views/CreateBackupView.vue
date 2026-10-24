@@ -30,6 +30,12 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
 /** `BackupOptions` (BackupOptions.kt:6-17) — the ten toggles of the reference model. */
 const options = reactive({
   libraryEntries: true,
@@ -127,17 +133,23 @@ function goBack() {
 }
 
 /** The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-onMounted(() => { document.body.classList.add('create-backup-active') })
+onMounted(() => {
+  if (!props.embedded) {
+    document.body.classList.add('create-backup-active')
+  }
+})
 onBeforeUnmount(() => {
-  document.body.classList.remove('create-backup-active')
+  if (!props.embedded) {
+    document.body.classList.remove('create-backup-active')
+  }
   if (toastTimer) window.clearTimeout(toastTimer)
 })
 </script>
 
 <template>
-  <section class="create-backup">
+  <section class="create-backup" :class="{ 'create-backup--embedded': embedded }">
     <!-- AppBar.kt: TopAppBar (64.dp) with the up arrow and the screen title, pinned while scrolling. -->
-    <header class="create-backup-toolbar">
+    <header v-if="!embedded" class="create-backup-toolbar">
       <button class="create-backup-icon-button" type="button" aria-label="Back" @click="goBack">
         <v-icon icon="arrow_back" size="24" />
       </button>
@@ -263,7 +275,9 @@ body.create-backup-active .app-toolbar { display: none; }
 
 /* LazyColumnWithAction: Column(fillMaxSize) with the list taking the remaining height. */
 .create-backup-body { flex: 1 1 auto; display: flex; flex-direction: column; min-height: calc(100dvh - 64px); padding-top: 64px; }
+.create-backup--embedded .create-backup-body { min-height: auto; padding-top: 0; }
 .create-backup-list { flex: 1 1 auto; overflow-y: auto; padding-bottom: 8px; }
+.create-backup--embedded .create-backup-list { overflow-y: visible; }
 
 /* SectionCard.kt: title (titleSmall) above an ElevatedCard (shapes.extraLarge) with 16.dp inner padding. */
 /* The 8.dp vertical card padding is the only spacing between a card and the next section title. */

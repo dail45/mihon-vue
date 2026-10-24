@@ -47,7 +47,8 @@ export const vuetify = createVuetify({
         "surface-container-low": "#F7F2FA",
         "surface-container": "#F3EDF7",
         "surface-container-high": "#FCF7FF",
-        "surface-container-highest": "#FCF7FF"
+        "surface-container-highest": "#FCF7FF",
+        "paler-surface": "#FFFFFF"
 } },
       mihonDark: { dark: true, colors: {
         "primary": "#B0C6FF",
@@ -82,7 +83,8 @@ export const vuetify = createVuetify({
         "surface-container-low": "#1E1C22",
         "surface-container": "#211F26",
         "surface-container-high": "#292730",
-        "surface-container-highest": "#302E38"
+        "surface-container-highest": "#302E38",
+        "paler-surface": "#0F0F11"
 } },
     },
   },

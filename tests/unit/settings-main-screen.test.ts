@@ -77,6 +77,9 @@ describe('SettingsMainScreen parity with Mihon', () => {
     expect(viewSource).toMatch(/\.settings-two-pane \{[^}]*grid-template-columns: min\(50%, 450px\) 1fr;/s)
     expect(viewSource).toContain('#ffffff')
     expect(viewSource).toContain('#0f0f11')
+    expect(viewSource).toContain('--v-theme-paler-surface')
+    expect(viewSource).toMatch(/:root\[data-amoled='true'\] \.settings-two-pane \.settings-navigation \{[^}]*background:\s*#000000;/s)
+    expect(viewSource).toMatch(/:root\[data-amoled='true'\] \.settings-two-pane \.settings-top-app-bar--nav \{[^}]*background:\s*#000000;/s)
     expect(viewSource).toMatch(/\.settings-two-pane \.pref-row \{[^}]*border-radius: 24px;/s)
     expect(viewSource).toMatch(/\.settings-two-pane \.pref-row \{[^}]*margin-inline: 8px;/s)
     expect(viewSource).toMatch(/\.settings-two-pane \.pref-row\.is-selected \{[^}]*background: rgb\(var\(--v-theme-surface-variant\)\);/s)
@@ -99,5 +102,18 @@ describe('SettingsMainScreen parity with Mihon', () => {
   it('has ownToolbar: true configured in router for settings routes', () => {
     expect(routerSource).toContain("{ path: '/settings', component: () => import('../views/SettingsView.vue'), meta: { title: 'Settings', detail: true, ownToolbar: true } }")
     expect(routerSource).toContain("ownToolbar: true")
+  })
+
+  it('supports sticky sub-screen topbar with back button in two-pane and single-pane modes', () => {
+    expect(viewSource).toContain('!twoPane || isSubScreen')
+    expect(viewSource).toContain("subSection.value === 'language'")
+    expect(viewSource).toContain(':sub-screen="subSection"')
+    expect(viewSource).toContain('@update:sub-screen')
+    expect(routerSource).toContain("path: '/settings/appearance/language'")
+    expect(routerSource).toContain("subSection: 'language'")
+    expect(routerSource).toContain("path: '/settings/library/categories'")
+    expect(routerSource).toContain("subSection: 'categories'")
+    expect(routerSource).toContain("path: '/settings/browse/stores'")
+    expect(routerSource).toContain("subSection: 'stores'")
   })
 })

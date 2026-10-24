@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { renameCategory } from '../api/categoryRename'
 import { apiErrorMessage } from '../api/client'
 import { useSuwayomiStore } from '../stores/suwayomi'
+import { t, MR } from '../i18n'
 
 /**
  * Pixel-parity port of `CategoryRenameDialog` in
@@ -147,7 +148,7 @@ const canConfirm = computed(
   () => valueHasChanged.value && name.value !== '' && !nameAlreadyExists.value,
 )
 const supportingText = computed(() =>
-  isError.value ? 'A category with this name already exists!' : '*required',
+  isError.value ? (t(MR.strings.error_category_exists) || 'A category with this name already exists!') : (t(MR.strings.information_required_plain) || '*required'),
 )
 const hasValue = computed(() => name.value !== '')
 
@@ -239,7 +240,7 @@ async function confirm() {
   <v-dialog v-model="open" max-width="560" aria-labelledby="category-rename-title">
     <div class="category-rename-dialog">
       <!-- DialogTokens.HeadlineFont = HeadlineSmall (24sp/32sp, w400), HeadlineColor = OnSurface. -->
-      <h2 id="category-rename-title" class="category-rename-title">Rename category</h2>
+      <h2 id="category-rename-title" class="category-rename-title">{{ t(MR.strings.action_rename_category) || 'Rename category' }}</h2>
 
       <!-- AlertDialogDefaults.textPadding = 24dp bottom; the text slot holds the OutlinedTextField. -->
       <div class="category-rename-content">
@@ -260,7 +261,7 @@ async function confirm() {
             @focus="focused = true"
             @blur="focused = false"
           />
-          <label for="category-rename-name" class="category-rename-label">Name</label>
+          <label for="category-rename-name" class="category-rename-label">{{ t(MR.strings.name) || 'Name' }}</label>
         </div>
         <p id="category-rename-support" class="category-rename-support" :class="{ 'is-error': isError }">
           {{ supportingText }}
@@ -270,8 +271,8 @@ async function confirm() {
       <!-- Box(align = End) + AlertDialogFlowRow: the confirm button is composed first and the
            layout direction is flipped, so "OK" ends up rightmost and "Cancel" to its left. -->
       <div class="category-rename-actions">
-        <button type="button" class="category-rename-button" :disabled="!canConfirm" @click="confirm">OK</button>
-        <button type="button" class="category-rename-button" @click="dismiss">Cancel</button>
+        <button type="button" class="category-rename-button" :disabled="!canConfirm" @click="confirm">{{ t(MR.strings.action_ok) || 'OK' }}</button>
+        <button type="button" class="category-rename-button" @click="dismiss">{{ t(MR.strings.action_cancel) || 'Cancel' }}</button>
       </div>
     </div>
   </v-dialog>
@@ -340,13 +341,11 @@ async function confirm() {
     transition: border-color 0.15s ease-in-out, border-width 0.15s ease-in-out,
       padding 0.15s ease-in-out;
   }
-  .category-rename-field.is-focused .category-rename-input,
-  .category-rename-field.has-value .category-rename-input {
-    /* Floating state: the input text drops below the floated label. The 2dp outline is
-       included in the box, so 22 + 2 = 24dp of top padding and 8dp of bottom padding. */
-    padding: 22px 15px 8px;
+  .category-rename-field.has-value:not(.is-focused) .category-rename-input {
+    padding: 15px 16px;
   }
   .category-rename-field.is-focused .category-rename-input {
+    padding: 14px 15px;
     border-color: rgb(var(--v-theme-primary));
     border-width: 2px;
   }
@@ -376,7 +375,9 @@ async function confirm() {
   .category-rename-field.has-value .category-rename-label {
     /* The floated label is centred on the top outline of the field, so it straddles the
        1dp/2dp border line instead of sitting inside the box. */
+    left: 8px;
     top: -8px;
+    transform: none;
     font-size: 12px;
     line-height: 16px;
     letter-spacing: 0.0333333333em;

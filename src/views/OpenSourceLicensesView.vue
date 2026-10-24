@@ -296,6 +296,12 @@ const HUE_LIGHT: Record<string, string> = {
 
 const theme = useTheme()
 const router = useRouter()
+
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
 const isDark = computed(() => theme.global.current.value?.dark ?? false)
 
 function hueFor(spdxId: string): string {
@@ -369,22 +375,26 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  document.body.classList.add('licenses-screen-active')
+  if (!props.embedded) {
+    document.body.classList.add('licenses-screen-active')
+  }
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('licenses-screen-active')
+  if (!props.embedded) {
+    document.body.classList.remove('licenses-screen-active')
+  }
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('keydown', onKeydown)
 })
 </script>
 
 <template>
-  <section class="licenses-screen">
+  <section class="licenses-screen" :class="{ 'licenses-screen--embedded': embedded }">
     <!-- AppBar.kt: TopAppBar, 64dp, surfaceColorAtElevation(0dp) = surface, elevated to surfaceContainer on scroll. -->
-    <header class="licenses-toolbar" :class="{ 'is-scrolled': isScrolled }">
+    <header v-if="!embedded" class="licenses-toolbar" :class="{ 'is-scrolled': isScrolled }">
       <!-- UpIcon: MaterialSymbols.AutoMirroredRounded.ArrowBack (action_bar_up_description = "Navigate up"). -->
       <v-btn
         icon="arrow_back"

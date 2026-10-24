@@ -7,7 +7,7 @@ describe('CategoryFab matches the Mihon reference', () => {
   it('renders the "Add" label and the Material Symbols Add icon', () => {
     expect(source).toContain('material-symbols-rounded category-fab-icon')
     expect(source).toContain('>add<')
-    expect(source).toContain('>Add<')
+    expect(source).toContain('action_add')
   })
 
   it('keeps the MD3 small extended FAB geometry', () => {

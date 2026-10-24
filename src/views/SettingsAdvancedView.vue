@@ -287,11 +287,7 @@ function resetUserAgent() {
             <!-- SwitchPreferenceWidget.kt: the switch is decorative, the whole row toggles it. -->
             <span class="pref-widget" aria-hidden="true">
               <span class="md3-switch-track" :class="{ 'is-on': item.key ? flags[item.key] : false }">
-                <span class="md3-switch-thumb">
-                  <svg class="md3-switch-mark" viewBox="0 0 24 24" focusable="false">
-                    <path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z" fill="currentColor" />
-                  </svg>
-                </span>
+                <span class="md3-switch-thumb" />
               </span>
             </span>
           </button>
@@ -411,12 +407,10 @@ function resetUserAgent() {
 .pref-subtitle { font-size: 12px; line-height: 16px; font-weight: 400; color: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 78%, transparent); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 10; }
 /* SwitchPreferenceWidget.kt: TrailingWidgetBuffer 16dp before the switch, PrefsHorizontalPadding 16dp after it. */
 .pref-widget { display: inline-flex; flex: 0 0 auto; padding-inline: 16px 16px; }
-.md3-switch-track { position: relative; display: inline-flex; align-items: center; width: 52px; height: 32px; border-radius: 16px; background: rgb(var(--v-theme-surface-variant)); box-shadow: inset 0 0 0 2px rgb(var(--v-theme-outline)); box-sizing: border-box; }
-.md3-switch-thumb { position: absolute; left: 4px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: rgb(var(--v-theme-outline)); color: rgb(var(--v-theme-primary)); transition: transform .2s cubic-bezier(.2, 0, 0, 1), width .15s .05s cubic-bezier(0, 0, .2, 1), height .15s .05s cubic-bezier(0, 0, .2, 1), background-color .2s; }
-.md3-switch-mark { width: 18px; height: 18px; opacity: 0; transition: opacity .15s; }
-.md3-switch-track.is-on { background: rgb(var(--v-theme-primary)); box-shadow: inset 0 0 0 2px rgb(var(--v-theme-primary)); }
-.md3-switch-track.is-on .md3-switch-thumb { width: 24px; height: 24px; transform: translateX(20px); background: rgb(var(--v-theme-on-primary)); }
-.md3-switch-track.is-on .md3-switch-mark { opacity: 1; }
+.md3-switch-track { position: relative; display: inline-flex; align-items: center; width: 52px; height: 32px; border-radius: 16px; background: rgb(var(--v-theme-surface-container-highest)); box-shadow: inset 0 0 0 2px rgb(var(--v-theme-outline)); box-sizing: border-box; transition: background-color .2s cubic-bezier(.2, 0, 0, 1), box-shadow .2s cubic-bezier(.2, 0, 0, 1); }
+.md3-switch-thumb { position: absolute; left: 8px; top: 8px; width: 16px; height: 16px; border-radius: 50%; background: rgb(var(--v-theme-outline)); transition: transform .2s cubic-bezier(.2, 0, 0, 1), width .15s .05s cubic-bezier(0, 0, .2, 1), height .15s .05s cubic-bezier(0, 0, .2, 1), top .15s .05s cubic-bezier(0, 0, .2, 1), background-color .2s cubic-bezier(.2, 0, 0, 1); }
+.md3-switch-track.is-on { background: rgb(var(--v-theme-primary)); box-shadow: inset 0 0 0 2px transparent; }
+.md3-switch-track.is-on .md3-switch-thumb { width: 24px; height: 24px; top: 4px; transform: translateX(16px); background: rgb(var(--v-theme-on-primary)); }
 /* PreferenceGroupHeader.kt: bodyMedium in colorScheme.secondary, padding(top 14dp, bottom 8dp, horizontal 16dp). */
 .adv-group { margin: 0; padding: 14px 16px 8px; font-size: 14px; line-height: 20px; font-weight: 500; color: rgb(var(--v-theme-secondary)); }
 

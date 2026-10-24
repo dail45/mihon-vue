@@ -44,6 +44,12 @@ import { useSuwayomiStore } from '../stores/suwayomi'
 const router = useRouter()
 const server = useSuwayomiStore()
 
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
 /* ------------------------------------------------------------------ scroll state */
 const isScrolled = ref(false)
 function onScroll() {
@@ -337,6 +343,11 @@ onMounted(() => {
   fetchServerAbout()
 })
 
+defineExpose({
+  shareDebugInfo,
+  copyAllDebugInfo,
+})
+
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', onScroll)
   if (snackbarTimer) window.clearTimeout(snackbarTimer)
@@ -344,9 +355,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="debug-screen" aria-label="Debug information">
+  <div class="debug-screen" :class="{ 'debug-screen--embedded': embedded }" aria-label="Debug information">
     <!-- TopAppBar (Scaffold.topBar = AppBar, 64dp, surface container, navigateUp 48dp, titleLarge 22/28sp w400) -->
-    <header class="debug-toolbar" :class="{ 'debug-toolbar--scrolled': isScrolled }">
+    <header v-if="!embedded" class="debug-toolbar" :class="{ 'debug-toolbar--scrolled': isScrolled }">
       <button
         type="button"
         class="debug-nav-btn"

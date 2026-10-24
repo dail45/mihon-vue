@@ -745,21 +745,21 @@ const themes = computed(() => APP_THEME_SCHEMES.map(scheme => ({
     align-items: center;
     width: 52px;
     height: 32px;
-    padding: 0 4px;
-    border-radius: 9999px;
-    border: 2px solid rgb(var(--v-theme-outline));
+    border-radius: 16px;
     background: rgb(var(--v-theme-surface-container-highest));
+    box-shadow: inset 0 0 0 2px rgb(var(--v-theme-outline));
     transition: background-color 200ms cubic-bezier(0.2, 0, 0, 1),
-                border-color 200ms cubic-bezier(0.2, 0, 0, 1);
+                box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
   }
   .theme-step__switch-track.is-checked {
-    border-color: rgb(var(--v-theme-primary));
+    box-shadow: inset 0 0 0 2px transparent;
     background: rgb(var(--v-theme-primary));
   }
   /* Thumb: 16dp unselected (outline), 24dp selected (onPrimary) */
   .theme-step__switch-thumb {
     position: absolute;
-    left: 6px;
+    left: 8px;
+    top: 8px;
     width: 16px;
     height: 16px;
     border-radius: 50%;
@@ -767,13 +767,14 @@ const themes = computed(() => APP_THEME_SCHEMES.map(scheme => ({
     transition: transform 200ms cubic-bezier(0.2, 0, 0, 1),
                 width 200ms cubic-bezier(0.2, 0, 0, 1),
                 height 200ms cubic-bezier(0.2, 0, 0, 1),
+                top 200ms cubic-bezier(0.2, 0, 0, 1),
                 background-color 200ms cubic-bezier(0.2, 0, 0, 1);
   }
   .theme-step__switch-track.is-checked .theme-step__switch-thumb {
-    transform: translateX(20px);
+    transform: translateX(16px);
     width: 24px;
     height: 24px;
-    left: 2px;
+    top: 4px;
     background: rgb(var(--v-theme-on-primary));
   }
 }

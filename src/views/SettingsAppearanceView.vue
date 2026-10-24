@@ -27,7 +27,8 @@
  *
  * The web client stores these as harmless local preferences; no server state is touched.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Md3Switch from '../components/Md3Switch.vue'
 import { usePreferencesStore } from '../stores/preferences'
 import {
@@ -44,6 +45,21 @@ import ThemePreviewItem from '../components/appearance/ThemePreviewItem.vue'
 import { appLanguages } from '../utils/appLanguage'
 import { setAppLanguage, t, MR } from '../i18n'
 
+const props = withDefaults(defineProps<{
+  standalone?: boolean
+  subScreen?: string | null
+}>(), {
+  standalone: false,
+  subScreen: null,
+})
+
+const emit = defineEmits<{
+  (e: 'update:subScreen', value: string | null): void
+}>()
+
+const route = useRoute()
+const router = useRouter()
+
 const preferences = usePreferencesStore()
 const appearance = useAppearancePreferences()
 
@@ -57,6 +73,35 @@ const dialog = ref<DialogKind>(null)
  * `pref_app_language` = "App language", then the list of the shipped translations.
  */
 const screen = ref<'language' | null>(null)
+const isLanguageScreen = computed(() => {
+  return props.subScreen === 'language' || route.meta.subSection === 'language' || screen.value === 'language'
+})
+
+function openLanguage() {
+  screen.value = 'language'
+  emit('update:subScreen', 'language')
+  if (route.path.startsWith('/settings')) {
+    void router.push('/settings/appearance/language')
+  }
+}
+
+function closeLanguage() {
+  screen.value = null
+  emit('update:subScreen', null)
+  if (route.meta.subSection === 'language') {
+    void router.push('/settings/appearance')
+  }
+}
+
+watch(() => props.subScreen, val => {
+  if (val === 'language') screen.value = 'language'
+  else if (val === null && screen.value === 'language') screen.value = null
+})
+watch(() => route.meta.subSection, val => {
+  if (val === 'language') screen.value = 'language'
+  else if (!val && screen.value === 'language') screen.value = null
+})
+
 const LANGUAGE_STORAGE_KEY = 'mihon.appLanguage'
 const deviceLocale = typeof navigator !== 'undefined' ? (navigator.language || 'en') : 'en'
 const languages = computed(() => appLanguages(deviceLocale))
@@ -158,12 +203,13 @@ const activeListDialog = computed(() => {
   <div class="appearance-settings">
     <!--
       AppLanguageScreen.kt: a separate screen with an app bar and a LazyColumn of ListItems.
-      The web client renders it inside the settings pane; the app bar row has the up button and
-      the title `pref_app_language` = "App language".
+      The web client renders it inside the settings pane; when embedded in SettingsView, the
+      detail pane's sticky TopAppBar provides the title and back navigation. In standalone mode,
+      the local app bar is rendered.
     -->
-    <div v-if="screen === 'language'" class="appearance-language-screen">
-      <div class="appearance-language-bar">
-        <button type="button" class="appearance-language-bar__up" aria-label="Back" @click="screen = null">
+    <div v-if="isLanguageScreen" class="appearance-language-screen">
+      <div v-if="standalone" class="appearance-language-bar">
+        <button type="button" class="appearance-language-bar__up" aria-label="Back" @click="closeLanguage">
           <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
         </button>
         <span class="appearance-language-bar__title">{{ t(MR.strings.pref_app_language) || 'App language' }}</span>
@@ -257,7 +303,7 @@ const activeListDialog = computed(() => {
     <!-- Display group (pref_category_display). -->
     <h2 class="pref-group-header">{{ t(MR.strings.pref_category_display) || 'Display' }}</h2>
     <!-- pref_app_language pushes the AppLanguageScreen (a separate screen in the reference). -->
-    <button type="button" class="pref-row pref-row--button" @click="screen = 'language'">
+    <button type="button" class="pref-row pref-row--button" @click="openLanguage">
       <span class="pref-text">
         <span class="pref-title">{{ t(MR.strings.pref_app_language) || 'App language' }}</span>
         <span class="pref-subtitle">{{ selectedLanguageDisplayName }}</span>
@@ -362,22 +408,18 @@ const activeListDialog = computed(() => {
   width: 100%;
   background: rgb(var(--v-theme-surface));
 }
-@media (max-width: 599.98px) {
-  .appearance-language-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    overflow-y: auto;
-  }
-}
 
 /* AppLanguageScreen.kt: the app bar (AppBar.kt) with the up button and the title. */
 .appearance-language-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 4px;
   height: 64px;
   padding: 0 4px 0 4px;
+  background: rgb(var(--v-theme-surface));
 }
 .appearance-language-bar__up {
   display: flex;

@@ -194,7 +194,11 @@ function openWhatsNew() {
 
 /** The "Open source licenses" row navigates to the OpenSourceLicensesScreen. */
 function openLicenses() {
-  void router.push('/about/licenses')
+  if (showTopBar.value) {
+    void router.push('/about/licenses')
+  } else {
+    void router.push('/settings/about/licenses')
+  }
 }
 
 /**

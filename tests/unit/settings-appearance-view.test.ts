@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { calculatePalerSurface } from '../../src/composables/useAppearancePreferences'
 
 const viewSource = readFileSync('src/views/SettingsAppearanceView.vue', 'utf8')
 const previewSource = readFileSync('src/components/appearance/ThemePreviewItem.vue', 'utf8')
@@ -131,5 +132,16 @@ describe('SettingsAppearanceView parity with Mihon', () => {
     expect(viewSource).toMatch(/\.appearance-language-item__headline \{[^}]*font-size:\s*16px;/s)
     expect(viewSource).toMatch(/\.appearance-language-item__supporting \{[^}]*font-size:\s*14px;/s)
     expect(viewSource).toMatch(/\.appearance-language-item__check \{[^}]*font-size:\s*24px;/s)
+  })
+
+  it('calculates palerSurface matching Mihon getPalerSurface and handles pure black AMOLED', () => {
+    // Pure black (#000000): 0 - 0.05 coerced to 0 -> #000000
+    expect(calculatePalerSurface('#000000', true)).toBe('#000000')
+
+    // Dark default (#1B1B1F): lightness - 5% -> #0f0f11
+    expect(calculatePalerSurface('#1B1B1F', true)).toBe('#0f0f11')
+
+    // Light default (#FEFBFF): lightness + 2% -> #ffffff
+    expect(calculatePalerSurface('#FEFBFF', false)).toBe('#ffffff')
   })
 })

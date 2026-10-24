@@ -44,6 +44,12 @@ import { useSuwayomiStore } from '../stores/suwayomi'
 const router = useRouter()
 const server = useSuwayomiStore()
 
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
 /** `RestoreOptions` (RestoreOptions.kt:6-12) — the five toggles of the reference model. */
 const options = reactive({
   libraryEntries: true,
@@ -270,17 +276,23 @@ function goBack() {
 }
 
 /** The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-onMounted(() => { document.body.classList.add('restore-backup-active') })
+onMounted(() => {
+  if (!props.embedded) {
+    document.body.classList.add('restore-backup-active')
+  }
+})
 onBeforeUnmount(() => {
-  document.body.classList.remove('restore-backup-active')
+  if (!props.embedded) {
+    document.body.classList.remove('restore-backup-active')
+  }
   if (toastTimer) window.clearTimeout(toastTimer)
 })
 </script>
 
 <template>
-  <section class="restore-backup">
+  <section class="restore-backup" :class="{ 'restore-backup--embedded': embedded }">
     <!-- AppBar.kt: TopAppBar (64.dp) with the up arrow and the screen title, pinned while scrolling. -->
-    <header class="restore-backup-toolbar">
+    <header v-if="!embedded" class="restore-backup-toolbar">
       <button
         class="restore-backup-icon-button"
         type="button"
@@ -482,7 +494,9 @@ body.restore-backup-active .app-toolbar { display: none; }
 
 /* LazyColumnWithAction: Column(fillMaxSize) with the list taking the remaining height. */
 .restore-backup-body { flex: 1 1 auto; display: flex; flex-direction: column; min-height: calc(100dvh - 64px); padding-top: 64px; }
+.restore-backup--embedded .restore-backup-body { min-height: auto; padding-top: 0; }
 .restore-backup-list { flex: 1 1 auto; overflow-y: auto; padding-bottom: 8px; }
+.restore-backup--embedded .restore-backup-list { overflow-y: visible; }
 
 /* SectionCard.kt: ElevatedCard(shapes.extraLarge) with 16.dp inner padding, 16.dp horizontal margin. */
 .restore-backup-section { display: flex; flex-direction: column; }

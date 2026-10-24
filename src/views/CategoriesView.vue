@@ -55,6 +55,12 @@ import Md3CircularProgress from '../components/Md3CircularProgress.vue'
 const server = useSuwayomiStore()
 const router = useRouter()
 
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
 /** Mihon hides its system (uncategorized) category; Suwayomi keeps the default category at id 0. */
 const SYSTEM_CATEGORY_ID = 0
 
@@ -96,14 +102,18 @@ async function loadCategories() {
 }
 
 onMounted(() => {
-  document.body.classList.add('categories-screen-active')
+  if (!props.embedded) {
+    document.body.classList.add('categories-screen-active')
+  }
   window.addEventListener('scroll', onWindowScroll, { passive: true })
   onWindowScroll()
   void loadCategories()
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('categories-screen-active')
+  if (!props.embedded) {
+    document.body.classList.remove('categories-screen-active')
+  }
   window.removeEventListener('scroll', onWindowScroll)
   if (snackbarTimer) window.clearTimeout(snackbarTimer)
 })
@@ -264,7 +274,7 @@ function goBack() {
         (MaterialSymbols.AutoMirroredRounded.ArrowBack) and the title slot holds AppBarTitle,
         which uses the TopAppBar title style (titleLarge) and is inset by 4dp.
       -->
-      <header class="categories-screen__toolbar" :class="{ 'is-scrolled': isScrolled }">
+      <header v-if="!embedded" class="categories-screen__toolbar" :class="{ 'is-scrolled': isScrolled }">
         <button
           type="button"
           class="categories-screen__nav"

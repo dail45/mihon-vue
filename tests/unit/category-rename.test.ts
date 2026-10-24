@@ -32,12 +32,12 @@ describe('CategoryRenameDialog matches the Mihon reference', () => {
   const source = readFileSync('src/components/CategoryRenameDialog.vue', 'utf8')
 
   it('renders the reference title, labels and messages', () => {
-    expect(source).toContain('Rename category')
-    expect(source).toContain('>Name</label>')
-    expect(source).toContain('*required')
-    expect(source).toContain('A category with this name already exists!')
-    expect(source).toContain('>OK')
-    expect(source).toContain('>Cancel')
+    expect(source).toContain('action_rename_category')
+    expect(source).toContain('MR.strings.name')
+    expect(source).toContain('information_required_plain')
+    expect(source).toContain('error_category_exists')
+    expect(source).toContain('action_ok')
+    expect(source).toContain('action_cancel')
   })
 
   it('keeps the reference enable rule for the confirm button', () => {

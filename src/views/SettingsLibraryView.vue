@@ -19,6 +19,7 @@ import { useRouter } from 'vue-router'
 import { createSuwayomiApi } from '../api/client'
 import { readServerSettings, saveServerSettings } from '../api/serverSettings'
 import type { Category } from '../api/types'
+import Md3Switch from '../components/Md3Switch.vue'
 import { readPreference, usePreferencesStore, writePreference } from '../stores/preferences'
 import { useSuwayomiStore } from '../stores/suwayomi'
 
@@ -221,7 +222,7 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
   <div class="pref-screen">
     <!-- ============================ Categories ============================ -->
     <div class="pref-group-header">Categories</div>
-    <div class="pref-item" role="button" tabindex="0" @click="router.push('/categories')" @keydown.enter="router.push('/categories')">
+    <div class="pref-item" role="button" tabindex="0" @click="router.push('/settings/library/categories')" @keydown.enter="router.push('/settings/library/categories')">
       <div class="pref-text">
         <div class="pref-title">Edit categories</div>
         <div class="pref-subtitle">{{ categoriesCountLabel }}</div>
@@ -237,7 +238,7 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
       <div class="pref-text">
         <div class="pref-title">Per-category settings for sort</div>
       </div>
-      <v-switch :model-value="preferences.categorizedSort" color="primary" hide-details density="compact" class="pref-switch" aria-label="Per-category settings for sort" @click.stop @update:model-value="preferences.categorizedSort = !!$event" />
+      <Md3Switch :model-value="preferences.categorizedSort" class="pref-switch" label="Per-category settings for sort" />
     </div>
 
     <div class="pref-group-gap"></div>
@@ -268,7 +269,7 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
         <div class="pref-title">Automatically refresh metadata</div>
         <div class="pref-subtitle">Check for new cover and details when updating library</div>
       </div>
-      <v-switch :model-value="autoUpdateMetadata" color="primary" hide-details density="compact" class="pref-switch" aria-label="Automatically refresh metadata" @click.stop @update:model-value="autoUpdateMetadata = !!$event; persistSwitch('mihon.library.autoUpdateMetadata', !!$event)" />
+      <Md3Switch :model-value="autoUpdateMetadata" class="pref-switch" label="Automatically refresh metadata" />
     </div>
     <div class="pref-item" role="button" tabindex="0" @click="openMulti('smartUpdate')" @keydown.enter="openMulti('smartUpdate')">
       <div class="pref-text">
@@ -280,7 +281,7 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
       <div class="pref-text">
         <div class="pref-title">Show unread count on Updates icon</div>
       </div>
-      <v-switch :model-value="newShowUpdatesCount" color="primary" hide-details density="compact" class="pref-switch" aria-label="Show unread count on Updates icon" @click.stop @update:model-value="newShowUpdatesCount = !!$event; persistSwitch('mihon.library.showUpdatesCount', !!$event)" />
+      <Md3Switch :model-value="newShowUpdatesCount" class="pref-switch" label="Show unread count on Updates icon" />
     </div>
 
     <div class="pref-group-gap"></div>
@@ -309,7 +310,7 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
       <div class="pref-text">
         <div class="pref-title">Hide missing chapter indicators</div>
       </div>
-      <v-switch :model-value="hideMissingChapters" color="primary" hide-details density="compact" class="pref-switch" aria-label="Hide missing chapter indicators" @click.stop @update:model-value="hideMissingChapters = !!$event; persistSwitch('mihon.library.hideMissingChapters', !!$event)" />
+      <Md3Switch :model-value="hideMissingChapters" class="pref-switch" label="Hide missing chapter indicators" />
     </div>
 
     <!-- Notices: honest statements about what the web client cannot do. -->
@@ -447,8 +448,7 @@ function commitMulti(kind: 'restrictions' | 'smartUpdate' | 'duplicate') {
   opacity: .78;
 }
 .pref-subtitle-multiline { white-space: pre-line; }
-.pref-switch { flex: 0 0 auto; margin-left: 16px; }
-.pref-switch :deep(.v-selection-control__wrapper) { min-height: 40px; }
+.pref-switch { pointer-events: none; }
 .pref-note { margin: 16px; font-size: 12px; line-height: 18px; color: rgb(var(--v-theme-on-surface-variant)); }
 .pref-note-error { color: rgb(var(--v-theme-error)); }
 .pref-dialog { overflow: hidden; }

@@ -35,12 +35,12 @@ describe('CategoryCreateDialog matches the Mihon reference', () => {
   const source = readFileSync('src/components/CategoryCreateDialog.vue', 'utf8')
 
   it('renders the reference title, labels and messages', () => {
-    expect(source).toContain('Add category')
-    expect(source).toContain('>Name</label>')
-    expect(source).toContain('*required')
-    expect(source).toContain('A category with this name already exists!')
-    expect(source).toContain('>Add')
-    expect(source).toContain('>Cancel')
+    expect(source).toContain('action_add_category')
+    expect(source).toContain('MR.strings.name')
+    expect(source).toContain('information_required_plain')
+    expect(source).toContain('error_category_exists')
+    expect(source).toContain('action_add')
+    expect(source).toContain('action_cancel')
   })
 
   it('keeps the reference enable rule for the confirm button', () => {

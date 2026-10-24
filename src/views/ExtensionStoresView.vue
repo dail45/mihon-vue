@@ -37,6 +37,12 @@ const server = useSuwayomiStore()
 const router = useRouter()
 const route = useRoute()
 
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
 function goBack() {
   if (route.query.from === 'settings') {
     void router.push('/settings/browse')
@@ -73,6 +79,15 @@ async function loadStores(isRefresh = false) {
     refreshing.value = false
   }
 }
+
+function onRefresh() {
+  void loadStores(true)
+}
+
+defineExpose({
+  onRefresh,
+  refreshing,
+})
 
 onMounted(() => { void loadStores() })
 watch(() => server.apiUrl, () => { void loadStores() })
@@ -249,7 +264,7 @@ watch(
 </script>
 
 <template>
-  <div class="extension-stores">
+  <div class="extension-stores" :class="{ 'extension-stores--embedded': embedded }">
     <!-- LoadingScreen: the reference renders it instead of the whole screen, without an app bar. -->
     <div v-if="loading" class="stores-loading" role="status" aria-label="Loading extension stores">
       <v-progress-circular indeterminate color="primary" size="40" width="4" />
@@ -257,7 +272,7 @@ watch(
 
     <template v-else>
       <!-- AppBar: navigateUp, title "Extension stores", refresh action. -->
-      <v-app-bar flat height="64" color="surface" class="stores-toolbar">
+      <v-app-bar v-if="!embedded" flat height="64" color="surface" class="stores-toolbar">
         <v-btn icon="arrow_back" aria-label="Back" @click="goBack" />
         <v-app-bar-title class="text-title-large font-weight-regular">Extension stores</v-app-bar-title>
         <!-- AppBar action: a plain IconButton that refreshes the store list. -->
@@ -329,7 +344,7 @@ watch(
       </div>
 
       <!-- CategoryFloatingActionButton: SmallExtendedFloatingActionButton "Add". -->
-      <CategoryFab :stub="false" :scroll-container="listEl" @create="openCreateDialog" />
+      <CategoryFab :manage-dialog="false" :scroll-container="listEl" @create="openCreateDialog" />
 
       <!-- ExtensionStoreCreateDialog -->
       <v-dialog v-model="createOpen" max-width="560">
@@ -471,6 +486,12 @@ watch(
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 8px 16px 16px;
+}
+
+.extension-stores--embedded .stores-list {
+  height: auto;
+  overflow-y: visible;
+  padding-bottom: 24px;
 }
 
 /* ElevatedCard: MD3 shape 12dp, container surfaceContainerLow, elevation level 1. */

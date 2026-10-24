@@ -61,7 +61,7 @@ const storeCountSubtitle = computed(() =>
 
 // --- "Extension stores" row ------------------------------------------------------------------
 /** Mihon pushes `ExtensionStoresScreen()`; the web equivalent is the extension stores view. */
-const EXTENSION_STORES_PATH = '/browse/extensions/stores'
+const EXTENSION_STORES_PATH = '/settings/browse/stores'
 const storesStubOpen = ref(false)
 /** The whole row is clickable in the reference (Switch(onCheckedChange = null)). */
 function toggleHideInLibrary() {
@@ -73,11 +73,7 @@ function setHideInLibrary(value: boolean) {
 }
 
 function openExtensionStores() {
-  if (router.getRoutes().some(route => route.path === EXTENSION_STORES_PATH)) {
-    void router.push({ path: EXTENSION_STORES_PATH, query: { from: 'settings' } })
-    return
-  }
-  storesStubOpen.value = true
+  void router.push(EXTENSION_STORES_PATH)
 }
 
 // --- "Allowed content warnings" multi-select dialog -------------------------------------------

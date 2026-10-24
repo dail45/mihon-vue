@@ -234,11 +234,7 @@ onMounted(() => {
             <!-- Switch(checked, onCheckedChange = null): 52x32 track, 16dp/24dp thumb. -->
             <span class="ef-switch" :class="{ 'is-on': isLanguageEnabled(language) }" aria-hidden="true">
               <span class="ef-switch-track">
-                <span class="ef-switch-thumb">
-                  <svg class="ef-switch-mark" viewBox="0 0 24 24" focusable="false">
-                    <path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z" fill="currentColor" />
-                  </svg>
-                </span>
+                <span class="ef-switch-thumb" />
               </span>
             </span>
           </span>
@@ -331,19 +327,15 @@ onMounted(() => {
 .ef-switch-thumb {
   position: absolute;
   left: 8px;
-  display: grid;
-  place-items: center;
+  top: 8px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: rgb(var(--v-theme-outline));
-  color: rgb(var(--v-theme-on-primary-container));
-  transition: transform .2s cubic-bezier(.2, 0, 0, 1), width .15s .05s cubic-bezier(0, 0, .2, 1), height .15s .05s cubic-bezier(0, 0, .2, 1), background-color .2s;
+  transition: transform .2s cubic-bezier(.2, 0, 0, 1), width .15s .05s cubic-bezier(0, 0, .2, 1), height .15s .05s cubic-bezier(0, 0, .2, 1), top .15s .05s cubic-bezier(0, 0, .2, 1), background-color .2s;
 }
-.ef-switch-mark { width: 16px; height: 16px; opacity: 0; transition: opacity .15s; }
-.ef-switch.is-on .ef-switch-track { background: rgb(var(--v-theme-primary)); box-shadow: none; }
-.ef-switch.is-on .ef-switch-thumb { width: 24px; height: 24px; transform: translateX(16px); background: rgb(var(--v-theme-on-primary)); }
-.ef-switch.is-on .ef-switch-mark { opacity: 1; }
+.ef-switch.is-on .ef-switch-track { background: rgb(var(--v-theme-primary)); box-shadow: inset 0 0 0 2px transparent; }
+.ef-switch.is-on .ef-switch-thumb { width: 24px; height: 24px; top: 4px; transform: translateX(16px); background: rgb(var(--v-theme-on-primary)); }
 
 /* LoadingScreen: Box(fillMaxSize) with a centered CircularProgressIndicator. */
 .ef-loading {

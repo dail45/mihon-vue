@@ -10,10 +10,10 @@
  */
 
 /** BuildConfig.VERSION_NAME — must match the "version" field of package.json. */
-export const appVersion = '0.5.1'
+export const appVersion = '0.5.2'
 
 /** BuildConfig.BUILD_TYPE — the web client ships as the stable channel. */
 export const appChannel = 'Stable'
 
 /** BuildConfig.BUILD_TIME — the build timestamp. */
-export const appBuildDate = new Date('2026-10-23T00:00:00Z')
+export const appBuildDate = new Date('2026-10-24T00:00:00Z')

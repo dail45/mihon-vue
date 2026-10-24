@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CategoryCreateDialog from './CategoryCreateDialog.vue'
+import { t, MR } from '../i18n'
 
 /**
  * Mihon reference: mihon/app/src/main/java/eu/kanade/presentation/category/components/CategoryFloatingActionButton.kt
@@ -49,12 +50,12 @@ const props = withDefaults(
     /** Existing category names, used by the create dialog for the duplicate check. */
     existingNames?: string[]
     /**
-     * When true (default) the built-in create dialog is opened by the FAB itself. When false the
+     * When true the built-in create dialog is opened by the FAB itself. When false (default) the
      * parent is notified through the `create` event and owns the dialog.
      */
     manageDialog?: boolean
   }>(),
-  { expanded: undefined, scrollContainer: null, existingNames: () => [], manageDialog: true },
+  { expanded: undefined, scrollContainer: null, existingNames: () => [], manageDialog: false },
 )
 
 const emit = defineEmits<{ (event: 'create', name: string): void }>()
@@ -184,12 +185,12 @@ function onCreated(name: string) {
       class="category-fab"
       :class="{ 'is-expanded': isExpanded }"
       :style="{ bottom: fabBottom }"
-      aria-label="Add"
+      :aria-label="t(MR.strings.action_add) || 'Add'"
       @click="onClickFab"
     >
       <!-- MaterialSymbols.Rounded.Add, contentDescription = null (decorative). -->
       <span class="material-symbols-rounded category-fab-icon" aria-hidden="true">add</span>
-      <span class="category-fab-label">Add</span>
+      <span class="category-fab-label">{{ t(MR.strings.action_add) || 'Add' }}</span>
     </button>
 
     <!-- Mihon's CategoryCreateDialog is a separate composable; the web port reuses its

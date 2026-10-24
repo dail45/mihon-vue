@@ -40,6 +40,12 @@ import MihonEmptyScreen from '../components/MihonEmptyScreen.vue'
 const router = useRouter()
 const server = useSuwayomiStore()
 
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
 /** `State.Loading` / `State.Ready` of ClearDatabaseViewModel. */
 const loading = ref(true)
 /** Non-library entries grouped per source (`SourceWithCount`). */
@@ -170,25 +176,29 @@ function goBack() {
 }
 
 onMounted(() => {
-  document.body.classList.add('clear-database-active')
+  if (!props.embedded) {
+    document.body.classList.add('clear-database-active')
+  }
   void load()
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('clear-database-active')
+  if (!props.embedded) {
+    document.body.classList.remove('clear-database-active')
+  }
   if (toastTimer) clearTimeout(toastTimer)
 })
 </script>
 
 <template>
-  <section class="cd-screen">
+  <section class="cd-screen" :class="{ 'cd-screen--embedded': embedded }">
     <!--
       AppBar.kt: TopAppBar (64.dp) with the up arrow, the screen title and the actions.
       Reference: 64dp, surface container (0dp elevation).
       Navigate up: arrow_back 24dp, 48x48dp target, 40dp circular state layer, aria-label="Navigate up", PlainTooltip.
       Actions: Select all and Select inverse with 48x48dp target, 40dp circular state layer, PlainTooltip.
     -->
-    <header class="cd-toolbar">
+    <header v-if="!embedded" class="cd-toolbar">
       <div class="cd-action-wrap">
         <button
           class="cd-icon-button"
@@ -529,6 +539,10 @@ body.clear-database-active .app-toolbar {
   flex-direction: column;
   min-height: calc(100dvh - 64px);
   padding-top: 64px;
+}
+.cd-screen--embedded .cd-body {
+  min-height: auto;
+  padding-top: 0;
 }
 
 /* LoadingScreen: Box(fillMaxSize) with centered CircularProgressIndicator */

@@ -4,6 +4,7 @@ import type { Category } from '../api/types'
 import { deleteCategory } from '../api/categories'
 import { apiErrorMessage } from '../api/client'
 import { useSuwayomiStore } from '../stores/suwayomi'
+import { t, MR } from '../i18n'
 
 /**
  * Pixel-parity port of `CategoryDeleteDialog` in
@@ -100,7 +101,7 @@ const apiUrl = computed(() => props.apiUrl ?? server.apiUrl)
 
 /** stringResource(MR.strings.delete_category_confirmation, category) */
 const message = computed(() =>
-  props.category ? `Do you wish to delete the category "${props.category.name}"?` : '',
+  props.category ? (t(MR.strings.delete_category_confirmation, props.category.name) || `Do you wish to delete the category "${props.category.name}"?`) : '',
 )
 
 watch(open, value => {
@@ -157,7 +158,7 @@ async function confirm() {
   <v-dialog v-model="open" max-width="560" aria-labelledby="category-delete-title">
     <div class="category-delete-dialog">
       <!-- DialogTokens.HeadlineFont = HeadlineSmall (24sp/32sp, w400), HeadlineColor = OnSurface. -->
-      <h2 id="category-delete-title" class="category-delete-title">Delete category</h2>
+      <h2 id="category-delete-title" class="category-delete-title">{{ t(MR.strings.delete_category) || 'Delete category' }}</h2>
 
       <!-- AlertDialogDefaults.textPadding = 24dp bottom below the text slot. -->
       <p class="category-delete-text">{{ message }}</p>
@@ -165,8 +166,8 @@ async function confirm() {
       <!-- Box(align = End) + AlertDialogFlowRow: the confirm button is composed first and the
            layout direction is flipped, so "OK" ends up rightmost and "Cancel" to its left. -->
       <div class="category-delete-actions">
-        <button type="button" class="category-delete-button" @click="confirm">OK</button>
-        <button type="button" class="category-delete-button" @click="dismiss">Cancel</button>
+        <button type="button" class="category-delete-button" @click="confirm">{{ t(MR.strings.action_ok) || 'OK' }}</button>
+        <button type="button" class="category-delete-button" @click="dismiss">{{ t(MR.strings.action_cancel) || 'Cancel' }}</button>
       </div>
     </div>
   </v-dialog>

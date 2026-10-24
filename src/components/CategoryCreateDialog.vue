@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { createCategory } from '../api/categoryCreate'
 import { apiErrorMessage, createSuwayomiApi } from '../api/client'
 import { useSuwayomiStore } from '../stores/suwayomi'
+import { t, MR } from '../i18n'
 
 /**
  * Pixel-parity port of `CategoryCreateDialog` in
@@ -126,7 +127,7 @@ const canConfirm = computed(() => name.value !== '' && !nameAlreadyExists.value)
 /** isError = name.isNotEmpty() && nameAlreadyExists */
 const isError = computed(() => name.value !== '' && nameAlreadyExists.value)
 const supportingText = computed(() =>
-  isError.value ? 'A category with this name already exists!' : '*required',
+  isError.value ? (t(MR.strings.error_category_exists) || 'A category with this name already exists!') : (t(MR.strings.information_required_plain) || '*required'),
 )
 const hasValue = computed(() => name.value !== '')
 
@@ -243,7 +244,7 @@ async function confirm() {
   >
     <form class="category-create-dialog" @submit.prevent="onEnter" @keydown.esc.prevent="dismiss">
       <!-- DialogTokens.HeadlineFont = HeadlineSmall (24sp/32sp, w400), HeadlineColor = OnSurface. -->
-      <h2 id="category-create-title" class="category-create-title">Add category</h2>
+      <h2 id="category-create-title" class="category-create-title">{{ t(MR.strings.action_add_category) || 'Add category' }}</h2>
 
       <!-- AlertDialogDefaults.textPadding = 24dp bottom; the text slot holds the OutlinedTextField. -->
       <div class="category-create-content">
@@ -267,7 +268,7 @@ async function confirm() {
             @keydown.enter.prevent="onEnter"
             @keydown.esc.prevent="dismiss"
           />
-          <label for="category-create-name" class="category-create-label">Name</label>
+          <label for="category-create-name" class="category-create-label">{{ t(MR.strings.name) || 'Name' }}</label>
         </div>
         <p
           id="category-create-support"
@@ -282,9 +283,9 @@ async function confirm() {
            layout direction is flipped, so "Add" ends up rightmost and "Cancel" to its left. -->
       <div class="category-create-actions">
         <button type="submit" class="category-create-button" :disabled="!canConfirm">
-          Add
+          {{ t(MR.strings.action_add) || 'Add' }}
         </button>
-        <button type="button" class="category-create-button" @click="dismiss">Cancel</button>
+        <button type="button" class="category-create-button" @click="dismiss">{{ t(MR.strings.action_cancel) || 'Cancel' }}</button>
       </div>
     </form>
   </v-dialog>
@@ -359,7 +360,7 @@ async function confirm() {
        16dp from the inner edge of the outline.
        Floating (focused or filled): the label moves into the outline notch and the input text
        drops below it (24dp from the top of the container, 8dp above the bottom). */
-    padding: 15px;
+    padding: 15px 16px;
     /* TextFieldDefaults.outlinedTextFieldColors: unfocusedBorderColor = colorScheme.outline
        (not outlineVariant), 1dp. Shape: CornerSmall (8dp). */
     border: 1px solid rgb(var(--v-theme-outline));
@@ -377,19 +378,14 @@ async function confirm() {
       border-width 0.15s cubic-bezier(0.2, 0, 0, 1),
       padding 0.15s cubic-bezier(0.2, 0, 0, 1);
   }
-  /* Floating state (filled, unfocused): the label occupies the top 16dp of the container and
-     the input text is centred in the remaining space, so the text sits 24dp below the top of
-     the container and 8dp above its bottom. The 1dp outline is compensated in the padding. */
+  /* Floating / Focused state: the label floats on the top outline, so the input text stays
+     vertically centred in the 56dp container. */
   .category-create-field.has-value:not(.is-focused) .category-create-input {
-    padding: 23px 15px 7px;
-  }
-  /* Focused: the same floating geometry with the 2dp outline (the 2dp border takes 2dp of the
-     space, so the content padding shrinks accordingly and the text does not move). */
-  .category-create-field.is-focused .category-create-input {
-    padding: 22px 14px 6px;
+    padding: 15px 16px;
   }
   /* Focused: the outline thickens to 2dp and turns primary. */
   .category-create-field.is-focused .category-create-input {
+    padding: 14px 15px;
     border-color: rgb(var(--v-theme-primary));
     border-width: 2px;
   }
@@ -435,7 +431,7 @@ async function confirm() {
     /* The floating label straddles the top border of the container: the 8dp cutout padding
        above the border and 8dp below it, with a 4dp gap on each side of the label text
        (OutlinedTextFieldInnerPadding). */
-    left: 12px;
+    left: 8px;
     top: 0;
     padding: 0 4px;
     background: rgb(var(--v-theme-surface-container-high));

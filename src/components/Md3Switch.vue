@@ -2,10 +2,16 @@
 /**
  * MD3 Switch (Material3 SwitchDefaults).
  *
- * Reference: mihon/app/src/main/java/mihon/feature/migration/config/MigrationConfigScreenSheet.kt
- * (`Switch(checked, onCheckedChange = null)`) and the material3 switch geometry:
- * track 52x32dp (radius 16), 2dp outline on the unselected track, thumb 16dp when off and
- * 24dp when on, 4dp inset from the track edge, the selected thumb carries the check mark.
+ * Reference: mihon/app/src/main/java/eu/kanade/presentation/more/settings/widget/SwitchPreferenceWidget.kt
+ * (`Switch(checked, onCheckedChange = null)`) and the Material 3 Switch specification:
+ * - Track: 52x32dp (radius 16dp / pill).
+ * - Unselected: track = surfaceContainerHighest with a 2dp outline border;
+ *   thumb = 16dp, centered in the left cap with 8dp inset from track edges ((32 - 16) / 2 = 8dp);
+ *   thumb color = outline.
+ * - Selected: track = primary with no border;
+ *   thumb = 24dp, centered in the right cap with 4dp inset from track edges ((32 - 24) / 2 = 4dp);
+ *   thumb color = onPrimary; translation = 16dp (8 + 16 + 24 = 48dp, 52 - 48 = 4dp).
+ * - The reference Switch has no thumbContent, so the thumb carries no check mark.
  *
  * Vuetify's own VSwitch is not MD3 sized (default track height 14dp, thumb 20dp), so the
  * reference geometry is reproduced here instead of reusing the component.
@@ -28,11 +34,7 @@ defineProps<{ label?: string; disabled?: boolean }>()
     @keydown.enter.prevent="disabled || (model = !model)"
   >
     <span class="md3-switch-track">
-      <span class="md3-switch-thumb">
-        <svg class="md3-switch-mark" viewBox="0 0 24 24" focusable="false">
-          <path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z" fill="currentColor" />
-        </svg>
-      </span>
+      <span class="md3-switch-thumb" />
     </span>
   </span>
 </template>
@@ -45,7 +47,10 @@ defineProps<{ label?: string; disabled?: boolean }>()
   cursor: pointer;
   touch-action: manipulation;
 }
-.md3-switch.is-disabled { cursor: default; opacity: .38; }
+.md3-switch.is-disabled {
+  cursor: default;
+  opacity: .38;
+}
 .md3-switch-track {
   position: relative;
   display: inline-flex;
@@ -53,25 +58,34 @@ defineProps<{ label?: string; disabled?: boolean }>()
   width: 52px;
   height: 32px;
   border-radius: 16px;
-  background: rgb(var(--v-theme-surface-variant));
+  background: rgb(var(--v-theme-surface-container-highest));
   box-shadow: inset 0 0 0 2px rgb(var(--v-theme-outline));
   box-sizing: border-box;
   transition: background-color .2s cubic-bezier(.2, 0, 0, 1), box-shadow .2s cubic-bezier(.2, 0, 0, 1);
 }
 .md3-switch-thumb {
   position: absolute;
-  left: 4px;
-  display: grid;
-  place-items: center;
+  left: 8px;
+  top: 8px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: rgb(var(--v-theme-outline));
-  color: rgb(var(--v-theme-primary));
-  transition: transform .2s cubic-bezier(.2, 0, 0, 1), width .15s .05s cubic-bezier(0, 0, .2, 1), height .15s .05s cubic-bezier(0, 0, .2, 1), background-color .2s;
+  transition: transform .2s cubic-bezier(.2, 0, 0, 1),
+              width .15s .05s cubic-bezier(0, 0, .2, 1),
+              height .15s .05s cubic-bezier(0, 0, .2, 1),
+              top .15s .05s cubic-bezier(0, 0, .2, 1),
+              background-color .2s cubic-bezier(.2, 0, 0, 1);
 }
-.md3-switch-mark { width: 18px; height: 18px; opacity: 0; transition: opacity .15s; }
-.md3-switch.is-on .md3-switch-track { background: rgb(var(--v-theme-primary)); box-shadow: inset 0 0 0 2px rgb(var(--v-theme-primary)); }
-.md3-switch.is-on .md3-switch-thumb { width: 24px; height: 24px; transform: translateX(20px); background: rgb(var(--v-theme-on-primary)); }
-.md3-switch.is-on .md3-switch-mark { opacity: 1; }
+.md3-switch.is-on .md3-switch-track {
+  background: rgb(var(--v-theme-primary));
+  box-shadow: inset 0 0 0 2px transparent;
+}
+.md3-switch.is-on .md3-switch-thumb {
+  width: 24px;
+  height: 24px;
+  top: 4px;
+  transform: translateX(16px);
+  background: rgb(var(--v-theme-on-primary));
+}
 </style>
