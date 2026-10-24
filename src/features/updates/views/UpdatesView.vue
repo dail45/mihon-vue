@@ -42,7 +42,7 @@
  *  - The search field of the app bar is an addition of this web client (Mihon's Updates screen
  *    has no search field); it filters the already loaded chapters only.
  */
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
@@ -229,14 +229,14 @@ const pullOffset = ref(0)
 function onTouchStart(event: TouchEvent) {
   if (selectionMode.value) return
   const container = event.currentTarget as HTMLElement
-  if (container.scrollTop > 0) return
+  if (container.scrollTop > 0 || window.scrollY > 0) return
   pullStart = event.touches[0]?.clientY ?? 0
   pullDistance = 0
 }
 function onTouchMove(event: TouchEvent) {
   if (selectionMode.value || !pullStart) return
   const container = feedRef.value ?? (event.currentTarget as HTMLElement)
-  if (container.scrollTop > 0) { pullStart = 0; pullDistance = 0; pullOffset.value = 0; return }
+  if (container.scrollTop > 0 || window.scrollY > 0) { pullStart = 0; pullDistance = 0; pullOffset.value = 0; return }
   const delta = (event.touches[0]?.clientY ?? 0) - pullStart
   if (delta <= 0) { pullDistance = 0; pullOffset.value = 0; return }
   pullDistance = Math.min(delta, PULL_THRESHOLD * 1.5)
@@ -270,17 +270,24 @@ let dragStartY = 0
 let dragStartScroll = 0
 let dragging = false
 
-function onFeedScroll() {
+function getScrollMetrics() {
   const el = feedRef.value
-  if (!el) return
-  const scrollable = el.scrollHeight - el.clientHeight
-  if (scrollable <= 0) {
+  const isInternal = !!(el && el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY !== 'visible')
+  const maxScroll = isInternal ? (el!.scrollHeight - el!.clientHeight) : (document.documentElement.scrollHeight - window.innerHeight)
+  const currentScroll = isInternal ? el!.scrollTop : window.scrollY
+  const viewport = isInternal ? el!.clientHeight : (window.innerHeight - 64)
+  const trackHeight = Math.max(1, viewport - 48)
+  return { isInternal, maxScroll, currentScroll, trackHeight }
+}
+
+function onFeedScroll() {
+  const { maxScroll, currentScroll, trackHeight } = getScrollMetrics()
+  if (maxScroll <= 0) {
     handleVisible.value = false
     return
   }
-  const ratio = el.scrollTop / scrollable
-  const trackHeight = el.clientHeight - 48
-  handleTop.value = Math.min(Math.max(ratio, 0), 1) * trackHeight
+  const ratio = Math.min(Math.max(currentScroll / maxScroll, 0), 1)
+  handleTop.value = ratio * trackHeight
   handleVisible.value = true
   if (handleTimer) window.clearTimeout(handleTimer)
   handleTimer = window.setTimeout(() => {
@@ -289,20 +296,26 @@ function onFeedScroll() {
 }
 
 function onHandlePointerDown(event: PointerEvent) {
-  const el = feedRef.value
-  if (!el) return
+  const { maxScroll, currentScroll } = getScrollMetrics()
+  if (maxScroll <= 0) return
   dragging = true
+  handleVisible.value = true
   dragStartY = event.clientY
-  dragStartScroll = el.scrollTop
+  dragStartScroll = currentScroll
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
 }
 
 function onHandlePointerMove(event: PointerEvent) {
-  const el = feedRef.value
-  if (!el || !dragging) return
-  const span = Math.max(1, el.clientHeight - 48)
-  const scale = (el.scrollHeight - el.clientHeight) / span
-  el.scrollTop = dragStartScroll + (event.clientY - dragStartY) * scale
+  if (!dragging) return
+  const { isInternal, maxScroll, trackHeight } = getScrollMetrics()
+  if (maxScroll <= 0) return
+  const delta = (event.clientY - dragStartY) * (maxScroll / trackHeight)
+  const target = Math.min(Math.max(dragStartScroll + delta, 0), maxScroll)
+  if (isInternal && feedRef.value) {
+    feedRef.value.scrollTop = target
+  } else {
+    window.scrollTo({ top: target })
+  }
 }
 
 function onHandlePointerUp(event: PointerEvent) {
@@ -383,9 +396,16 @@ function onKeydown(event: KeyboardEvent) {
     clearSelection()
   }
 }
+onMounted(() => {
+  window.addEventListener('scroll', onFeedScroll, { passive: true })
+  window.addEventListener('resize', onFeedScroll)
+})
 window.addEventListener('keydown', onKeydown)
 onUnmounted(() => {
+  window.removeEventListener('scroll', onFeedScroll)
+  window.removeEventListener('resize', onFeedScroll)
   window.removeEventListener('keydown', onKeydown)
+  if (handleTimer) window.clearTimeout(handleTimer)
   if (snackbarTimer) window.clearTimeout(snackbarTimer)
   updates.dispose()
 })
@@ -638,9 +658,9 @@ onUnmounted(() => {
 .updates-load-more { min-width: 140px; }
 /* FastScrollLazyColumn handle (VerticalFastScroller.kt) */
 .updates-fast-scroll {
-  position: absolute;
+  position: fixed;
   right: 2px;
-  top: 0;
+  top: 64px;
   width: 6px;
   height: 48px;
   border-radius: 3px;
@@ -651,7 +671,7 @@ onUnmounted(() => {
   transition: opacity 200ms ease-out;
   pointer-events: none;
   cursor: pointer;
-  z-index: 10;
+  z-index: 100;
 }
 .updates-fast-scroll.is-visible {
   opacity: 0.6;
@@ -679,7 +699,7 @@ onUnmounted(() => {
 .updates-snackbar {
   position: fixed;
   left: 50%;
-  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--v-layout-bottom, 0px) + 16px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 1200;
   max-width: min(560px, calc(100% - 32px));

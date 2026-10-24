@@ -81,6 +81,7 @@ const props = withDefaults(
 
 const currentStep = ref(0)
 const steps = ['theme', 'storage', 'permission', 'guides'] as const
+const stepTitles = ['Theme', 'Storage', 'Permissions', 'Guides']
 const isLastStep = computed(() => currentStep.value === steps.length - 1)
 
 /** Selected app theme (`AppTheme` enum name), owned by the theme step. */
@@ -107,23 +108,29 @@ const acceptText = computed(() => (isLastStep.value ? 'Get started' : 'Next'))
 const stepDirection = ref<'forward' | 'backward'>('forward')
 const stepTransitionName = computed(() => `onboarding-step-${stepDirection.value}`)
 
+let isFinishing = false
+
 function finishOnboarding() {
+  isFinishing = true
+  pushedStates = 0
   preferences.setOnboardingShown()
   if (props.onComplete) {
     props.onComplete()
   } else {
-    void router.push('/library')
+    void router.replace('/library')
   }
   emit('complete')
 }
 
 function handleRestoreBackup() {
+  isFinishing = true
+  pushedStates = 0
   preferences.setOnboardingShown()
   if (props.onRestoreBackup) {
     props.onRestoreBackup()
   } else {
     if (props.onComplete) props.onComplete()
-    void router.push('/settings/data')
+    void router.replace('/settings/data')
   }
   emit('restoreBackup')
 }
@@ -139,6 +146,13 @@ function accept() {
 }
 
 /** BackHandler(enabled = currentStep != 0) { currentStep-- } -> browser back button & key. */
+function goBack() {
+  if (currentStep.value > 0) {
+    stepDirection.value = 'backward'
+    currentStep.value -= 1
+  }
+}
+
 let pushedStates = 0
 function onPopState() {
   if (currentStep.value > 0) {
@@ -172,7 +186,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('popstate', onPopState)
   window.removeEventListener('keydown', onKeyDown)
   // Drop the guard states pushed for the steps the user walked through.
-  for (let i = 0; i < pushedStates; i += 1) window.history.back()
+  if (!isFinishing) {
+    for (let i = 0; i < pushedStates; i += 1) window.history.back()
+  }
 })
 </script>
 
@@ -183,6 +199,21 @@ onBeforeUnmount(() => {
       <div class="onboarding-content">
         <!-- icon: 48dp, tint primary, bottom padding 8dp -->
         <span class="material-symbols-rounded onboarding-icon" aria-hidden="true">rocket_launch</span>
+
+        <!-- Step indicator stepper -->
+        <div class="onboarding-stepper" role="tablist" aria-label="Onboarding steps">
+          <div
+            v-for="(stepName, index) in steps"
+            :key="stepName"
+            class="onboarding-step-indicator"
+            :class="{
+              'is-active': index === currentStep,
+              'is-complete': index < currentStep,
+            }"
+            :aria-label="`Step ${index + 1} of ${steps.length}: ${stepTitles[index]}`"
+            :aria-current="index === currentStep ? 'step' : undefined"
+          />
+        </div>
 
         <!-- heading: headlineLarge -->
         <h1 class="onboarding-heading">{{ props.headingText || 'Welcome!' }}</h1>
@@ -234,9 +265,20 @@ onBeforeUnmount(() => {
 
     <!-- bottom bar: background colour, 1dp hairline top border in `outline` -->
     <div class="onboarding-bottom">
-      <button type="button" class="onboarding-accept" :disabled="!canAccept" @click="accept">
+      <div class="onboarding-actions">
+        <button
+          v-if="currentStep > 0"
+          type="button"
+          class="onboarding-back"
+          aria-label="Previous step"
+          @click="goBack"
+        >
+          Back
+        </button>
+        <button type="button" class="onboarding-accept" :disabled="!canAccept" @click="accept">
         {{ acceptText }}
-      </button>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -253,11 +295,50 @@ onBeforeUnmount(() => {
     background: rgb(var(--v-theme-background));
   }
 
+  .onboarding-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 640px;
+    margin-inline: auto;
+  }
+  .onboarding-back {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 84px;
+    height: 40px;
+    padding: 8px 20px;
+    border: 1px solid rgb(var(--v-theme-outline));
+    border-radius: 20px;
+    background: transparent;
+    color: rgb(var(--v-theme-primary));
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+  }
+  @media (hover: hover) {
+    .onboarding-back:hover {
+      background: color-mix(in srgb, rgb(var(--v-theme-primary)) 8%, transparent);
+    }
+  }
+  .onboarding-back:focus-visible {
+    outline: 2px solid rgb(var(--v-theme-primary));
+    outline-offset: 2px;
+  }
+
   /* InfoScreen: scrollable Column with horizontal padding 16dp and top padding 48dp. */
   .onboarding-scroll {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+    align-items: center;
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -271,7 +352,8 @@ onBeforeUnmount(() => {
     flex-direction: column;
     flex: 1 1 auto;
     width: 100%;
-    max-width: 100%;
+    max-width: 640px;
+    margin-inline: auto;
     min-width: 0;
     padding: 48px 16px 16px;
   }
@@ -286,6 +368,29 @@ onBeforeUnmount(() => {
     color: rgb(var(--v-theme-primary));
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
     margin-bottom: 8px;
+  }
+
+  /* MD3 Step Indicator Stepper */
+  .onboarding-stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .onboarding-step-indicator {
+    height: 4px;
+    width: 20px;
+    border-radius: 2px;
+    background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 20%, transparent);
+    transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.3s ease;
+  }
+  .onboarding-step-indicator.is-complete {
+    width: 20px;
+    background: color-mix(in srgb, rgb(var(--v-theme-primary)) 60%, transparent);
+  }
+  .onboarding-step-indicator.is-active {
+    width: 36px;
+    background: rgb(var(--v-theme-primary));
   }
 
   /* headlineLarge: 32sp / 40sp, weight 400. */
@@ -368,6 +473,7 @@ onBeforeUnmount(() => {
   .onboarding-accept {
     box-sizing: border-box;
     display: flex;
+    flex: 1 1 auto;
     align-items: center;
     justify-content: center;
     width: 100%;

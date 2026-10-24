@@ -406,8 +406,8 @@ onBeforeUnmount(() => {
 .cd-toolbar {
   position: fixed;
   top: 0;
-  left: var(--v-layout-left, 0);
-  right: var(--v-layout-right, 0);
+  inset-inline-start: var(--v-layout-left, 0px);
+  inset-inline-end: var(--v-layout-right, 0px);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -937,8 +937,8 @@ onBeforeUnmount(() => {
 /* Android toast simulation */
 .cd-toast {
   position: fixed;
-  left: 50%;
-  bottom: 24px;
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
+  bottom: calc(var(--v-layout-bottom, 0px) + 24px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 20;
   max-width: min(560px, calc(100vw - 32px));

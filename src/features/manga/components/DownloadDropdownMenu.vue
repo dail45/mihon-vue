@@ -58,6 +58,8 @@ const defaultDownloadMenuOffset = { x: 8, y: -56 }
 const props = withDefaults(defineProps<{
   /** `expanded` of the Kotlin composable. */
   expanded?: boolean
+  /** Support v-model on component (used in MangaToolbar.vue). */
+  modelValue?: boolean
   /**
    * `DpOffset` of the Kotlin composable, in dp. `null` keeps the default offset of the
    * wrapper menu (`DpOffset(8.dp, (-56).dp)`), an explicit value replaces it — the
@@ -78,6 +80,7 @@ const props = withDefaults(defineProps<{
   downloadUnsupported?: boolean
 }>(), {
   expanded: false,
+  modelValue: undefined,
   offset: null,
   options: undefined,
   downloadUnsupported: false,
@@ -85,15 +88,17 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   (event: 'update:expanded', value: boolean): void
+  (event: 'update:modelValue', value: boolean): void
   (event: 'download', action: DownloadAction): void
   (event: 'downloadClicked', action: DownloadAction): void
   (event: 'dismissRequest'): void
 }>()
 
 const open = computed({
-  get: () => props.expanded,
+  get: () => props.modelValue ?? props.expanded,
   set: (value: boolean) => {
     emit('update:expanded', value)
+    emit('update:modelValue', value)
     if (!value) emit('dismissRequest')
   },
 })
@@ -121,6 +126,7 @@ function select(action: DownloadAction) {
     stubOpen.value = true
   }
   emit('update:expanded', false)
+  emit('update:modelValue', false)
   emit('dismissRequest')
 }
 

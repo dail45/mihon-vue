@@ -114,6 +114,7 @@ function onPointerDown(event: PointerEvent) {
     longPressed = true
     emit('range', props.manga.id)
     try { navigator.vibrate?.(20) } catch { /* haptics are optional */ }
+    window.setTimeout(() => { longPressed = false }, 400)
   }, LONG_PRESS_MS)
 }
 
@@ -133,8 +134,6 @@ function onPointerUp() {
 function onContextMenu(event: MouseEvent) {
   event.preventDefault()
   if (props.catalogue) return
-  if (longPressed) return
-  longPressed = true
   emit('range', props.manga.id)
 }
 
@@ -142,10 +141,12 @@ function onLinkClick(event: MouseEvent) {
   if (longPressed) {
     longPressed = false
     event.preventDefault()
+    event.stopPropagation()
     return
   }
   if (props.selectionMode) {
     event.preventDefault()
+    event.stopPropagation()
     emit('toggle', props.manga.id)
   }
 }
@@ -210,7 +211,7 @@ onBeforeUnmount(onPointerUp)
       :tabindex="selectionMode ? 0 : undefined"
       :aria-pressed="selectionMode ? (selected ? 'true' : 'false') : undefined"
       :aria-label="manga.title"
-      @click.stop="onLinkClick"
+      @click.capture.stop="onLinkClick"
       @keydown.space="onSpaceKey"
       @keydown.enter="onEnterKey"
     >

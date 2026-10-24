@@ -290,9 +290,19 @@ function confirmDeleteAll() {
  * `HistoryViewModel.addFavorite(mangaId)`: duplicates are looked up first and the
  * DuplicateMangaDialog is shown if duplicates exist in library.
  */
-function requestFavorite(mangaId: number) {
-  const manga = uniqueLibraryManga.value.find(item => item.id === mangaId) ?? null
-  if (!manga) return
+async function requestFavorite(mangaId: number) {
+  let manga = uniqueLibraryManga.value.find(item => item.id === mangaId) ?? null
+  if (!manga) {
+    try {
+      manga = await createSuwayomiApi(server.apiUrl).manga(mangaId)
+    } catch {
+      /* Fallback to direct library addition if manga detail fetch fails */
+    }
+  }
+  if (!manga) {
+    void addToLibrary(mangaId)
+    return
+  }
   if (findDuplicateManga(manga, uniqueLibraryManga.value).length) {
     duplicateTarget.value = manga
     duplicateOpen.value = true

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { stringResource } from '@/core/i18n'
 
 export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,8 +17,8 @@ export const router = createRouter({
     { path: '/browse/global-search', component: () => import('@/features/browse/views/GlobalSearchView.vue'), meta: { title: 'Global search', detail: true, catalogue: true } },
     // The app bar actions of the Browse tabs open their own screens
     // (`SourcesTab.kt`: "Filter", `ExtensionsTab.kt`: "Filter" / "Extension stores").
-    { path: '/browse/sources/filter', component: () => import('@/features/browse/views/SourcesFilterView.vue'), meta: { title: 'Sources', detail: true } },
-    { path: '/browse/extensions/filter', component: () => import('@/features/browse/views/ExtensionFilterView.vue'), meta: { title: 'Extensions', detail: true } },
+    { path: '/browse/sources/filter', component: () => import('@/features/browse/views/SourcesFilterView.vue'), meta: { title: 'label_sources', detail: true } },
+    { path: '/browse/extensions/filter', component: () => import('@/features/browse/views/ExtensionFilterView.vue'), meta: { title: 'label_extensions', detail: true } },
     {
       path: '/browse/extensions/stores',
       component: () => import('@/features/browse/views/ExtensionStoresView.vue'),
@@ -175,4 +176,7 @@ export const router = createRouter({
   ],
   scrollBehavior: () => ({ top: 0 }),
 })
-router.afterEach(to => { document.title = `${String(to.meta.title || 'Mihon')} · Mihon` })
+router.afterEach(to => {
+  const title = to.meta.title ? stringResource(String(to.meta.title)) : 'Mihon'
+  document.title = `${title} · Mihon`
+})

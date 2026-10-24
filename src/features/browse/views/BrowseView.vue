@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { readPreference, writePreference } from '@/features/settings/stores/preferences'
 import { pinnedSourceIds, setSourcePinned } from '@/core/utils/sourcePins'
@@ -32,6 +32,7 @@ import type { Source } from '@/core/api/types'
  */
 const server = useSuwayomiStore()
 const router = useRouter()
+const route = useRoute()
 
 /* Mihon keeps pinned sources and the last used source in local preferences
    (SourcePreferences.pinnedSources / lastUsedSource). Suwayomi-Server has no REST
@@ -140,11 +141,43 @@ const groups = computed<Group[]>(() => {
    is cleared when the tab changes. */
 
 
-const activeTab = ref('sources')
+const VALID_TABS = ['sources', 'extensions', 'migrate'] as const
+type BrowseTab = (typeof VALID_TABS)[number]
+
+const initialTab = computed<BrowseTab>(() => {
+  const tab = route.query.tab
+  return typeof tab === 'string' && (VALID_TABS as readonly string[]).includes(tab)
+    ? (tab as BrowseTab)
+    : 'sources'
+})
+
+const activeTab = ref<BrowseTab>(initialTab.value)
 function onTabChange(value: unknown) {
-  const next = typeof value === 'string' ? value : 'sources'
+  const next = typeof value === 'string' && (VALID_TABS as readonly string[]).includes(value)
+    ? (value as BrowseTab)
+    : 'sources'
   activeTab.value = next
+  if ((route.query.tab ?? 'sources') !== next) {
+    void router.replace({
+      query: {
+        ...route.query,
+        tab: next !== 'sources' ? next : undefined,
+      },
+    })
+  }
 }
+
+watch(
+  () => route.query.tab,
+  tab => {
+    const next = typeof tab === 'string' && (VALID_TABS as readonly string[]).includes(tab)
+      ? (tab as BrowseTab)
+      : 'sources'
+    if (activeTab.value !== next) {
+      activeTab.value = next
+    }
+  },
+)
 const searchQuery = ref('')
 /* `TabContent.searchEnabled` — only the Extensions tab has it (ExtensionsTab.kt). */
 const searchEnabled = computed(() => activeTab.value === 'extensions')
@@ -670,8 +703,8 @@ onBeforeUnmount(() => {
 /* MD3 snackbar: inverse surface container, 4dp radius, 14sp/20sp label. */
 .sources-snackbar {
   position: fixed;
-  left: 50%;
-  bottom: calc(80px + 16px);
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
+  bottom: calc(var(--v-layout-bottom, 0px) + 16px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 1000;
   display: flex;

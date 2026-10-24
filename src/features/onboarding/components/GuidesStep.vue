@@ -126,24 +126,24 @@ function confirmStub() {
     <button type="button" class="guides-step-button" @click="handleRestoreBackup">
       Restore backup
     </button>
-  </div>
 
-  <!-- Stub for the Android-only backup restore flow (Mihon reads a local .backup file). -->
-  <v-dialog v-model="stubOpen" max-width="560">
-    <div class="guides-step-dialog">
-      <h2 class="guides-step-dialog-title">Restore backup</h2>
-      <div class="guides-step-dialog-text">
-        <p class="guides-step-text">
-          Restoring a backup is not supported in the web version: Mihon restores the library from a
-          local <code>.backup</code> file, while this client keeps no local database and the
-          Suwayomi REST API exposes no backup restore endpoint.
-        </p>
+    <!-- Stub for the Android-only backup restore flow (Mihon reads a local .backup file). -->
+    <v-dialog v-model="stubOpen" max-width="560">
+      <div class="guides-step-dialog">
+        <h2 class="guides-step-dialog-title">Restore backup</h2>
+        <div class="guides-step-dialog-text">
+          <p class="guides-step-text">
+            Restoring a backup is not supported in the web version: Mihon restores the library from a
+            local <code>.backup</code> file, while this client keeps no local database and the
+            Suwayomi REST API exposes no backup restore endpoint.
+          </p>
+        </div>
+        <div class="guides-step-dialog-actions">
+          <button type="button" class="guides-step-dialog-button" @click="confirmStub">OK</button>
+        </div>
       </div>
-      <div class="guides-step-dialog-actions">
-        <button type="button" class="guides-step-dialog-button" @click="confirmStub">OK</button>
-      </div>
-    </div>
-  </v-dialog>
+    </v-dialog>
+  </div>
 </template>
 
 <style scoped>

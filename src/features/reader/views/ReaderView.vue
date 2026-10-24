@@ -233,6 +233,13 @@ function turn(delta: number) {
   void goPage(target)
 }
 function goChapter(index: number) { chaptersOpen.value = false; pagerTransition.value = null; void router.replace(`/manga/${route.params.id}/read/${index}`) }
+function navigateUp() {
+  if (typeof window.history.state?.back === 'string' && window.history.state.back.includes('/manga/')) {
+    router.back()
+  } else {
+    void router.push(`/manga/${route.params.id}`)
+  }
+}
 function scheduleScroll() {
   if (!modeIsWebtoon.value || resumePage.value !== null || animationFrame) return
   animationFrame = requestAnimationFrame(() => {
@@ -399,7 +406,7 @@ function onViewerClick(event: MouseEvent) {
     return
   }
   const target = event.target as HTMLElement | null
-  if (target?.closest('button, a, input, select, textarea, [role="button"], [role="slider"], .reader-bars, .reader-vertical-navigator, .v-overlay, .v-dialog, .v-bottom-sheet, .v-snackbar')) {
+  if (target?.closest('button:not(.reader-page-surface), a, input, select, textarea, [role="button"]:not(.reader-page-surface), [role="slider"], .reader-bars, .reader-vertical-navigator, .v-overlay, .v-dialog, .v-bottom-sheet, .v-snackbar')) {
     return
   }
 
@@ -494,11 +501,12 @@ onBeforeUnmount(() => {
           <p class="mt-2 mb-4">The source or server may be unavailable. Check your connection and the Suwayomi logs, or retry this page.</p>
           <v-btn color="primary" variant="flat" rounded="pill" @click.stop="retryImage(reader.pageIndex)">Retry page</v-btn>
         </div>
-        <button
+        <div
           v-else
           class="reader-page-surface"
           :class="{ 'reader-page-surface--animated': animatePages }"
-          aria-label="Toggle reading controls"
+          role="region"
+          aria-label="Manga page surface"
           @contextmenu.prevent="onContextMenu"
         >
           <img
@@ -514,7 +522,7 @@ onBeforeUnmount(() => {
             <v-progress-circular indeterminate color="primary" size="48" width="4" />
             <span class="reader-loading-text">Loading page {{ reader.pageIndex + 1 }}…</span>
           </div>
-        </button>
+        </div>
       </template>
       <div v-else class="reader-strip" @contextmenu.prevent="onContextMenu">
         <!-- Webtoon chapter transition (Prev) at top of strip (WebtoonAdapter.kt) -->
@@ -581,7 +589,7 @@ onBeforeUnmount(() => {
           :can-bookmark="canBookmark"
           :chapter-url="chapterUrl"
           @bookmark="toggleBookmark"
-          @back="router.back()"
+          @back="navigateUp"
           @manga="router.push(`/manga/${route.params.id}`)"
           @unsupported="showToast"
         />

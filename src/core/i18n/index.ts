@@ -121,6 +121,10 @@ if (initialEffective !== 'en' && initialEffective !== 'ru') {
 export function stringResource(key: string, ...args: (string | number)[]): string {
   if (!key) return ''
   try {
+    const globalI18n = i18n.global as any
+    if (typeof globalI18n.te === 'function' && !globalI18n.te(key)) {
+      return key
+    }
     if (args.length > 0) {
       // vue-i18n supports array of params: $t('unlock_app_title', ['Mihon'])
       return i18n.global.t(key, args as unknown as Record<string, unknown>)

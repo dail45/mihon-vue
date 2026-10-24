@@ -34,7 +34,7 @@ function goBack() {
     router.back()
     return
   }
-  void router.push('/browse')
+  void router.push({ path: '/browse', query: { tab: 'extensions' } })
 }
 
 defineExpose({

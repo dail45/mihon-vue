@@ -48,17 +48,16 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Backup schema',
+  title: undefined,
 })
 
 /** BackupSchemaScreen.TITLE in Mihon: "Backup file schema" */
 const BACKUP_FILE_SCHEMA = 'Backup file schema'
-void BACKUP_FILE_SCHEMA
 
 /** Screen title: "Backup schema" (per checklist prompt) */
 const TITLE = 'Backup schema'
 
-const displayTitle = computed(() => props.title || TITLE)
+const displayTitle = computed(() => props.title || BACKUP_FILE_SCHEMA || TITLE)
 
 /** MR.strings.action_bar_up_description */
 const NAVIGATE_UP_LABEL = 'Navigate up'
@@ -410,7 +409,7 @@ async function copyToClipboard() {
 
 function goBack() {
   if (typeof window.history.state?.back === 'string') { router.back(); return }
-  void router.push('/settings')
+  void router.push('/settings/advanced/debug')
 }
 
 onBeforeUnmount(() => {

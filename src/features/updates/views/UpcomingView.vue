@@ -25,7 +25,7 @@
  * The screen owns its own top bar (Mihon's UpcomingScreen renders UpcomingToolbar in the
  * Scaffold topBar slot), so the shared shell bar is hidden while this screen is mounted.
  */
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { createSuwayomiApi } from '@/core/api/client'
@@ -315,36 +315,56 @@ let dragStartY = 0
 let dragStartScroll = 0
 let dragging = false
 
-function onScrolled() {
+function getScrollMetrics() {
   const element = scroller.value
-  if (!element) return
-  const ratio = element.scrollTop / Math.max(1, element.scrollHeight - element.clientHeight)
-  handleTop.value = Math.min(Math.max(ratio, 0), 1) * Math.max(0, element.clientHeight - 48)
+  const isInternal = !!(element && element.scrollHeight > element.clientHeight && getComputedStyle(element).overflowY !== 'visible')
+  const maxScroll = isInternal ? (element!.scrollHeight - element!.clientHeight) : (document.documentElement.scrollHeight - window.innerHeight)
+  const currentScroll = isInternal ? element!.scrollTop : window.scrollY
+  const viewport = isInternal ? element!.clientHeight : (window.innerHeight - TOOLBAR_HEIGHT)
+  const trackHeight = Math.max(1, viewport - 48)
+  return { isInternal, maxScroll, currentScroll, trackHeight }
+}
+
+function onScrolled() {
+  const { maxScroll, currentScroll, trackHeight } = getScrollMetrics()
+  if (maxScroll <= 0) {
+    handleVisible.value = false
+    return
+  }
+  handleTop.value = Math.min(Math.max(currentScroll / maxScroll, 0), 1) * trackHeight
   handleVisible.value = true
   if (handleTimer) window.clearTimeout(handleTimer)
   handleTimer = window.setTimeout(() => { handleVisible.value = false }, 2000)
 }
 
 function onHandlePointerDown(event: PointerEvent) {
-  const element = scroller.value
-  if (!element) return
+  const { maxScroll, currentScroll } = getScrollMetrics()
+  if (maxScroll <= 0) return
   dragging = true
+  handleVisible.value = true
   dragStartY = event.clientY
-  dragStartScroll = element.scrollTop
+  dragStartScroll = currentScroll
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
 }
 
 function onHandlePointerMove(event: PointerEvent) {
-  const element = scroller.value
-  if (!element || !dragging) return
-  const span = Math.max(1, element.clientHeight - 48)
-  const scale = (element.scrollHeight - element.clientHeight) / span
-  element.scrollTop = dragStartScroll + (event.clientY - dragStartY) * scale
+  if (!dragging) return
+  const { isInternal, maxScroll, trackHeight } = getScrollMetrics()
+  if (maxScroll <= 0) return
+  const delta = (event.clientY - dragStartY) * (maxScroll / trackHeight)
+  const target = Math.min(Math.max(dragStartScroll + delta, 0), maxScroll)
+  if (isInternal && scroller.value) {
+    scroller.value.scrollTop = target
+  } else {
+    window.scrollTo({ top: target })
+  }
 }
 
 function onHandlePointerUp(event: PointerEvent) {
   dragging = false
   ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
+  if (handleTimer) window.clearTimeout(handleTimer)
+  handleTimer = window.setTimeout(() => { handleVisible.value = false }, 2000)
 }
 
 /* ------------------------------------------------------------------ filter sheet -- */
@@ -394,7 +414,14 @@ function categoryName(category: Category) {
   return category.default || category.isDefaultCategory ? 'Default' : category.name
 }
 
+onMounted(() => {
+  window.addEventListener('scroll', onScrolled, { passive: true })
+  window.addEventListener('resize', onScrolled)
+})
+
 onBeforeUnmount(() => {
+  window.removeEventListener('scroll', onScrolled)
+  window.removeEventListener('resize', onScrolled)
   if (handleTimer) window.clearTimeout(handleTimer)
 })
 </script>
@@ -581,8 +608,8 @@ onBeforeUnmount(() => {
 .upcoming-toolbar {
   position: fixed;
   top: 0;
-  left: var(--v-layout-left);
-  right: var(--v-layout-right);
+  inset-inline-start: var(--v-layout-left, 0px);
+  inset-inline-end: var(--v-layout-right, 0px);
   z-index: 3;
   display: flex;
   align-items: center;

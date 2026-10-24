@@ -103,7 +103,7 @@ const label = computed(() => pageIndicatorLabel(props.currentPage, props.totalPa
   position: absolute;
   z-index: 2;
   left: 50%;
-  bottom: env(safe-area-inset-bottom, 0px);
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   margin: 0;
   padding: 0;

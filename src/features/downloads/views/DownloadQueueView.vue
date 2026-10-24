@@ -215,6 +215,14 @@ function onDropSection(targetSectionId: string) {
   }
   overSectionId.value = null
 }
+
+function navigateUp() {
+  if (typeof window.history.state?.back === 'string') {
+    router.back()
+  } else {
+    void router.push('/more')
+  }
+}
 </script>
 
 <template>
@@ -226,7 +234,7 @@ function onDropSection(targetSectionId: string) {
         type="button"
         aria-label="Navigate up"
         title="Navigate up"
-        @click="router.back()"
+        @click="navigateUp"
       >
         <v-icon icon="arrow_back" size="24" />
       </button>
@@ -542,8 +550,8 @@ function onDropSection(targetSectionId: string) {
 .queue-toolbar {
   position: fixed;
   top: 0;
-  left: var(--v-layout-left, 0px);
-  right: var(--v-layout-right, 0px);
+  inset-inline-start: var(--v-layout-left, 0px);
+  inset-inline-end: var(--v-layout-right, 0px);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -872,7 +880,7 @@ function onDropSection(targetSectionId: string) {
    Elevation Level 3, Hover Level 4. */
 .queue-fab {
   position: fixed;
-  right: 16px;
+  inset-inline-end: calc(16px + var(--v-layout-right, 0px));
   bottom: calc(16px + env(safe-area-inset-bottom));
   z-index: 5;
   display: inline-flex;
@@ -973,8 +981,8 @@ function onDropSection(targetSectionId: string) {
 
 .queue-snackbar {
   position: fixed;
-  left: 50%;
-  bottom: calc(72px + env(safe-area-inset-bottom));
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
+  bottom: calc(var(--v-layout-bottom, 0px) + 16px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 12;
 }

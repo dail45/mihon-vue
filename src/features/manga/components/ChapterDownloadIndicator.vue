@@ -43,6 +43,7 @@ void WAVELENGTH
  * of the bundled Material Symbols font, so they are drawn inline from the Mihon icon set.
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { MR, stringResource } from '@/core/i18n'
 
 const props = withDefaults(defineProps<{
   state: ChapterDownloadIndicatorState
@@ -131,7 +132,11 @@ const label = computed(() => {
   return `Download${suffix}`
 })
 
-watch(() => props.state, () => { menu.value = false })
+watch(normalizedState, (next, prev) => {
+  if (next !== prev) {
+    menu.value = false
+  }
+})
 
 function clearPress() {
   if (pressTimer !== undefined) {
@@ -144,8 +149,10 @@ function clearPress() {
 const LONG_PRESS_MS = 500
 
 function onPointerDown(event: PointerEvent) {
-  event.stopPropagation()
   if (isDisabled.value) return
+  // On desktop/mouse, do not start long-press timer; click and contextmenu handle mouse interactions
+  if (event.pointerType !== 'touch') return
+
   longPressed = false
   startX = event.clientX
   startY = event.clientY
@@ -194,10 +201,20 @@ function onClick(event: MouseEvent) {
     return
   }
   if (isDownloading.value || isDownloaded.value) {
-    menu.value = true
+    menu.value = !menu.value
     return
   }
+  menu.value = false
   emit('action', 'start')
+}
+
+function onContextMenu(event: MouseEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+  if (isDisabled.value) return
+  if (isDownloading.value || isDownloaded.value) {
+    menu.value = true
+  }
 }
 
 function onMenuAction(action: ChapterDownloadIndicatorAction) {
@@ -347,7 +364,7 @@ onBeforeUnmount(stopAnimation)
       @pointerup="onPointerUp"
       @pointerleave="onPointerUp"
       @pointercancel="onPointerUp"
-      @contextmenu.prevent
+      @contextmenu.prevent.stop="onContextMenu"
     >
       <!-- Ripple(bounded = false, radius = StateLayerSize / 2 = 20dp): an unbounded circle. -->
       <span class="chapter-download-ripple" aria-hidden="true" />
@@ -400,18 +417,31 @@ onBeforeUnmount(stopAnimation)
     <v-menu
       v-model="menu"
       :activator="buttonEl ?? undefined"
+      :open-on-click="false"
       location="bottom end"
       :offset="[-8, 0]"
       min-width="196"
       max-width="196"
     >
       <v-list class="chapter-download-menu" density="compact">
-        <!-- MR.strings.action_start_downloading_now: "Start downloading now" -->
-        <v-list-item v-if="isDownloading" title="Start downloading now" @click="onMenuAction('start-now')" />
-        <!-- MR.strings.action_cancel: "Cancel" -->
-        <v-list-item v-if="isDownloading" title="Cancel" @click="onMenuAction('cancel')" />
-        <!-- MR.strings.action_delete: "Delete" -->
-        <v-list-item v-if="isDownloaded" title="Delete" @click="onMenuAction('delete')" />
+        <!-- MR.strings.action_start_downloading_now: "Start downloading now" title="Start downloading now" -->
+        <v-list-item
+          v-if="isDownloading"
+          :title="stringResource(MR.strings.action_start_downloading_now) || 'Start downloading now'"
+          @click="onMenuAction('start-now')"
+        />
+        <!-- MR.strings.action_cancel: "Cancel" title="Cancel" -->
+        <v-list-item
+          v-if="isDownloading"
+          :title="stringResource(MR.strings.action_cancel) || 'Cancel'"
+          @click="onMenuAction('cancel')"
+        />
+        <!-- MR.strings.action_delete: "Delete" title="Delete" -->
+        <v-list-item
+          v-if="isDownloaded"
+          :title="stringResource(MR.strings.action_delete) || 'Delete'"
+          @click="onMenuAction('delete')"
+        />
       </v-list>
     </v-menu>
   </div>

@@ -994,8 +994,8 @@ onUnmounted(() => { if (snackbarTimer) window.clearTimeout(snackbarTimer) })
 /* MD3 snackbar: inverseSurface, 4dp radius, 14dp/16dp padding. */
 .ext-details-snackbar {
   position: fixed;
-  left: 50%;
-  bottom: 24px;
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
+  bottom: calc(var(--v-layout-bottom, 0px) + 16px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 1000;
   max-width: min(560px, calc(100vw - 32px));

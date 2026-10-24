@@ -102,7 +102,7 @@ const SECTION_STRING_MAP: Record<string, { title: string; subtitle?: string }> =
   downloads: { title: 'pref_category_downloads', subtitle: 'pref_downloads_summary' },
   tracking: { title: 'pref_category_tracking', subtitle: 'pref_tracking_summary' },
   browse: { title: 'browse', subtitle: 'pref_browse_summary' },
-  data: { title: 'label_data_storage', subtitle: 'pref_data_summary' },
+  data: { title: 'label_data_storage', subtitle: 'pref_backup_summary' },
   security: { title: 'pref_category_security', subtitle: 'pref_security_summary' },
   advanced: { title: 'pref_category_advanced', subtitle: 'pref_advanced_summary' },
   about: { title: 'pref_category_about' },

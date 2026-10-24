@@ -60,6 +60,8 @@ watch(bannerColor, color => {
 /* ------------------------------------------------------------------ deep links -- */
 const restoreBackupNotice = ref(false)
 function applyDeepLink() {
+  // Only process launcher intent deep links at the root entry points (/ or /library)
+  if (window.location.pathname !== '/' && window.location.pathname !== '/library') return
   const target = resolveDeepLink(window.location.search)
   if (!target) return
   window.history.replaceState({}, '', window.location.pathname)
@@ -91,6 +93,9 @@ const onboardingVisible = ref(!preferences.onboardingShown)
 function finishOnboarding() {
   preferences.setOnboardingShown()
   onboardingVisible.value = false
+  if (route.path === '/onboarding') {
+    void router.replace('/library')
+  }
 }
 function restoreBackupFromOnboarding() {
   finishOnboarding()

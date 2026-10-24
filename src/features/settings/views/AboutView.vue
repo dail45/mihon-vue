@@ -126,7 +126,7 @@ function debugInfo(): string {
   return [
     `App ID: app.mihon.vue`,
     `App version: ${appVersion} (${channel}, ${appBuildDate.toISOString()})`,
-    `Server address: ${server.apiUrl.value || 'None'}`,
+    `Server address: ${server.apiUrl || 'None'}`,
     `User agent: ${navigator.userAgent}`,
     `Current time: ${now.toISOString()}`,
   ].join('\n')

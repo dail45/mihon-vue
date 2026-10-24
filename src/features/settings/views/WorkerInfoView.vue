@@ -79,7 +79,7 @@ async function copyToClipboard() {
 
 function goBack() {
   if (typeof window.history.state?.back === 'string') { router.back(); return }
-  void router.push('/settings/advanced')
+  void router.push('/settings/advanced/debug')
 }
 
 onBeforeUnmount(() => {
@@ -227,8 +227,8 @@ onBeforeUnmount(() => {
 /* ContextExtensions.copyToClipboard() toast, rendered as an MD3 snackbar (inverseSurface, 4dp shape). */
 .worker-toast {
   position: fixed;
-  left: 50%;
-  bottom: 24px;
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
+  bottom: calc(var(--v-layout-bottom, 0px) + 24px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 2400;
   max-width: min(560px, calc(100vw - 32px));

@@ -375,8 +375,8 @@ function onPointerDown(event: PointerEvent, action: Action) {
 /* AnimatedVisibility(visible, enter = expandVertically(expandFrom = Bottom), exit = shrinkVertically(shrinkTowards = Bottom)) */
 .updates-bottom-bar {
   position: fixed;
-  left: var(--v-layout-left, 0px);
-  right: 0;
+  inset-inline-start: var(--v-layout-left, 0px);
+  inset-inline-end: var(--v-layout-right, 0px);
   bottom: 0;
   z-index: 1100;
   display: grid;
@@ -548,7 +548,7 @@ function onPointerDown(event: PointerEvent, action: Action) {
 .updates-action-snackbar {
   position: fixed;
   left: 50%;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--v-layout-bottom, 0px) + 16px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 1200;
   box-sizing: border-box;

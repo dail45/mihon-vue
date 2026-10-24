@@ -215,6 +215,14 @@ watch(
   { immediate: true },
 )
 
+function navigateUp() {
+  if (typeof window.history.state?.back === 'string' && window.history.state.back.includes(`/manga/${mangaId.value}`)) {
+    router.back()
+  } else {
+    void router.push(`/manga/${mangaId.value}`)
+  }
+}
+
 watch(() => manga.value?.title ?? '', () => { void nextTick(() => updateMarquee()) })
 </script>
 
@@ -223,7 +231,7 @@ watch(() => manga.value?.title ?? '', () => { void nextTick(() => updateMarquee(
     <!-- AppBar.kt: TopAppBar, 64dp, pinned scroll behaviour (the container colour stays surface). -->
     <header class="notes-app-bar">
       <!-- TopAppBar navigation icon: IconButton with the arrow back icon. -->
-      <button class="notes-back" type="button" aria-label="Navigate up" @click="router.back()">
+      <button class="notes-back" type="button" aria-label="Navigate up" @click="navigateUp">
         <span class="material-symbols-rounded">arrow_back</span>
       </button>
       <!-- AppBarTitle: titleLarge title + bodyMedium subtitle. -->
@@ -298,10 +306,9 @@ watch(() => manga.value?.title ?? '', () => { void nextTick(() => updateMarquee(
   .notes-screen {
     position: fixed;
     top: 0;
-    right: 0;
     bottom: 0;
-    left: var(--v-layout-left);
-    right: var(--v-layout-right);
+    inset-inline-start: var(--v-layout-left, 0px);
+    inset-inline-end: var(--v-layout-right, 0px);
     z-index: 5;
     display: flex;
     flex-direction: column;

@@ -69,6 +69,8 @@ function back() {
   if (route.path.startsWith('/settings/')) { void router.push('/settings'); return }
   if (route.path === '/settings' || route.path === '/about' || route.path === '/categories' || route.path === '/download-queue' || route.path === '/support-us' || route.path === '/stats') { void router.push('/more'); return }
   if (route.meta.catalogue) { void router.push('/browse'); return }
+  if (route.path.startsWith('/browse/extensions')) { void router.push({ path: '/browse', query: { tab: 'extensions' } }); return }
+  if (route.path.startsWith('/browse/sources')) { void router.push({ path: '/browse', query: { tab: 'sources' } }); return }
   if (route.path.startsWith('/browse/')) { void router.push('/browse'); return }
   if (typeof window.history.state?.back === 'string' && window.history.state.back.startsWith('/browse/source/')) { router.back(); return }
   void router.push('/library')

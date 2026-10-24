@@ -1230,8 +1230,8 @@ onBeforeUnmount(() => {
 /* MD3 snackbar: inverseSurface container, inverseOnSurface text, 4dp radius, 48dp min height. */
 .extensions-snackbar {
   position: fixed;
-  left: 50%;
-  bottom: calc(80px + 16px);
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
+  bottom: calc(var(--v-layout-bottom, 0px) + 16px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 1000;
   display: flex;

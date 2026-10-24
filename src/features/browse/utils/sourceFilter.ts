@@ -102,7 +102,26 @@ export function toRawSourceFilters(filters: SourceFilter[]): RawSourceFilterObje
   })
 }
 
-/** Deep copy of a filter list; filter states are plain data, so `structuredClone` is safe. */
+/** Deep copy of a filter list; safely handles Vue reactive proxies without throwing DataCloneError. */
 export function cloneSourceFilters(filters: SourceFilter[]): SourceFilter[] {
-  return structuredClone(filters)
+  if (!filters || !Array.isArray(filters)) return []
+  return filters.map(item => {
+    const copy: SourceFilter = {
+      type: item.type,
+      name: item.name,
+    }
+    if (item.values) copy.values = [...item.values]
+    if (item.displayValues) copy.displayValues = [...item.displayValues]
+    if (item.children) copy.children = cloneSourceFilters(item.children)
+    if (item.state !== undefined) {
+      if (Array.isArray(item.state)) {
+        copy.state = [...item.state]
+      } else if (item.state !== null && typeof item.state === 'object') {
+        copy.state = { ...(item.state as Record<string, unknown>) }
+      } else {
+        copy.state = item.state
+      }
+    }
+    return copy
+  })
 }

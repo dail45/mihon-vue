@@ -103,6 +103,7 @@ function onPointerDown(event: PointerEvent) {
     longPressed = true
     emit('range', props.manga.id)
     try { navigator.vibrate?.(20) } catch { /* haptics are optional */ }
+    window.setTimeout(() => { longPressed = false }, 400)
   }, LONG_PRESS_MS)
 }
 
@@ -121,8 +122,6 @@ function onPointerUp() {
 
 function onContextMenu(event: MouseEvent) {
   event.preventDefault()
-  if (longPressed) return
-  longPressed = true
   emit('range', props.manga.id)
 }
 
@@ -131,11 +130,13 @@ function onClick(event: MouseEvent) {
     // The long press already handled this gesture; the tap must not open the item.
     longPressed = false
     event.preventDefault()
+    event.stopPropagation()
     return
   }
   if (props.selectionMode) {
     // `LibraryContent.kt`: a tap toggles the selection while one exists.
     event.preventDefault()
+    event.stopPropagation()
     emit('toggle', props.manga.id)
   }
 }
@@ -163,7 +164,7 @@ onBeforeUnmount(onPointerUp)
       class="comfortable-tile-link"
       :aria-label="`${manga.title}, ${manga.unreadCount ?? 'unknown'} unread chapters`"
       :aria-pressed="selected ? 'true' : undefined"
-      @click="onClick"
+      @click.capture="onClick"
       @keydown.space="onSpaceKey"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"

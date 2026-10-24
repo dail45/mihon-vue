@@ -525,7 +525,8 @@ const DONE_PREVIOUS_PATH = 'M790 -730C779.8 -730 769.5 -726.1 761.7 -718.3L360 -
 /* AnimatedVisibility(expandVertically(expandFrom = Bottom) / shrinkVertically(towards Bottom)). */
 .manga-bottom-action {
   position: fixed;
-  inset-inline: 0;
+  inset-inline-start: var(--v-layout-left, 0px);
+  inset-inline-end: var(--v-layout-right, 0px);
   bottom: 0;
   z-index: 1100;
   display: grid;

@@ -243,8 +243,8 @@ onBeforeUnmount(() => {
 .create-backup-toolbar {
   position: fixed;
   top: 0;
-  left: var(--v-layout-left);
-  right: var(--v-layout-right);
+  inset-inline-start: var(--v-layout-left, 0px);
+  inset-inline-end: var(--v-layout-right, 0px);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -307,6 +307,20 @@ onBeforeUnmount(() => {
 .create-backup-dialog-button:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; }
 
 /* Android toast: small dark rounded panel near the bottom of the screen. */
-.create-backup-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 20; max-width: min(560px, calc(100vw - 32px)); padding: 14px 16px; border-radius: 4px; background: rgb(var(--v-theme-inverse-surface)); color: rgb(var(--v-theme-inverse-on-surface)); font-size: 14px; line-height: 20px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28); }
+.create-backup-toast {
+  position: fixed;
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
+  bottom: calc(var(--v-layout-bottom, 0px) + 24px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 4px;
+  background: rgb(var(--v-theme-inverse-surface));
+  color: rgb(var(--v-theme-inverse-on-surface));
+  font-size: 14px;
+  line-height: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+}
 }
 </style>

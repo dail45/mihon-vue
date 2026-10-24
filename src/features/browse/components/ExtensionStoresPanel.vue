@@ -602,8 +602,8 @@ watch(
 
 .stores-snackbar {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
+  bottom: calc(var(--v-layout-bottom, 0px) + 16px + env(safe-area-inset-bottom, 0px));
+  left: calc((100% + var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2);
   transform: translateX(-50%);
   background: rgb(var(--v-theme-inverse-surface));
   color: rgb(var(--v-theme-inverse-on-surface));

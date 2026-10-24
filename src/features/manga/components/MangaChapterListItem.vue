@@ -224,6 +224,10 @@ function onKeySelect() {
   emit('click')
 }
 
+function onContextMenu() {
+  emit('longpress')
+}
+
 const activeAction = computed<ChapterSwipeAction>(() => {
   if (offset.value > 0) return props.swipeStartAction
   if (offset.value < 0) return props.swipeEndAction
@@ -264,7 +268,7 @@ const swipeIcon = computed<string | null>(() => {
     @pointerleave="onPointerUp"
     @keydown.space.prevent="onKeySelect"
     @keydown.enter.prevent="onKeySelect"
-    @contextmenu.prevent
+    @contextmenu.prevent="onContextMenu"
   >
     <!-- Swipe action background (revealed during drag/swipe) -->
     <div
