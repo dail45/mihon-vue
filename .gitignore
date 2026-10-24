@@ -6,6 +6,8 @@ playwright-report/
 test-results/
 *.tsbuildinfo
 mihon
+TachiyomiSY
+komikku
 
 # Private live acceptance output must remain outside Git.
 live-ui-qa/
