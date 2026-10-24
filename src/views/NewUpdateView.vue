@@ -203,8 +203,6 @@ function skipUpdate() {
 }
 
 onMounted(() => {
-  document.body.classList.add('new-update-screen-active')
-
   // Check props or route / history state first
   const state = typeof window !== 'undefined' ? window.history?.state : undefined
   const queryVersion = typeof route?.query?.version === 'string' ? route.query.version : ''
@@ -236,7 +234,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('new-update-screen-active')
   if (progressTimer) window.clearInterval(progressTimer)
 })
 </script>
@@ -333,21 +330,6 @@ onBeforeUnmount(() => {
     </v-dialog>
   </section>
 </template>
-
-<style>
-/* InfoScreen owns no top app bar and no navigation bar: the reference screen is a single
-   Scaffold whose only chrome is the bottom action bar rendered by the screen itself.
-   The shared shell bars are hidden and the layout space they reserved is released. */
-body.new-update-screen-active .app-toolbar { display: none; }
-body.new-update-screen-active .mihon-navigation { display: none; }
-body.new-update-screen-active .mihon-rail { display: none; }
-/* The inline style of v-main sets the layout insets; the important declaration wins. */
-body.new-update-screen-active .v-main {
-  --v-layout-top: 0px !important;
-  --v-layout-bottom: 0px !important;
-  --v-layout-left: 0px !important;
-}
-</style>
 
 <style scoped>
 .new-update {

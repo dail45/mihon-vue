@@ -252,14 +252,12 @@ function goBack() {
 }
 
 onMounted(() => {
-  document.body.classList.add('stats-screen-active')
   window.addEventListener('scroll', onWindowScroll, { passive: true })
   onWindowScroll()
   void loadStats()
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('stats-screen-active')
   window.removeEventListener('scroll', onWindowScroll)
 })
 </script>
@@ -393,12 +391,6 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
-
-<style>
-/* When StatsView owns the top bar, hide shell bar and reset main top padding. */
-body.stats-screen-active .app-toolbar { display: none; }
-body.stats-screen-active .v-main { padding-top: 0; }
-</style>
 
 <style scoped>
 @layer app-components {

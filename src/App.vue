@@ -202,7 +202,7 @@ function dismissDonation() { preferences.setDonationCampaignShown() }
       The manga detail screen renders its own MangaToolbar (Mihon: MangaToolbar.kt) and the notes
       screen renders its own app bar, so the global one is hidden for those routes.
     -->
-    <v-app-bar v-if="!onboardingVisible && !route.meta.reader && !route.meta.catalogue && !route.meta.ownToolbar && !['/library', '/browse', '/updates', '/history', '/more'].includes(route.path)" flat height="64" color="surface" class="app-toolbar">
+    <v-app-bar v-if="!onboardingVisible && !route.meta.reader && !route.meta.catalogue && !route.meta.ownToolbar && !route.meta.hideToolbar && !['/library', '/browse', '/updates', '/history', '/more'].includes(route.path)" flat height="64" color="surface" class="app-toolbar">
       <v-btn v-if="route.meta.detail" icon="arrow_back" :aria-label="route.meta.catalogue ? 'Back to sources' : 'Back'" @click="back" />
       <v-app-bar-title class="text-title-large font-weight-regular">
         {{ toolbarTitle }}

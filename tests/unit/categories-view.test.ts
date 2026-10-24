@@ -13,7 +13,7 @@ describe('CategoriesView matches the Mihon reference', () => {
     // TopAppBar title = titleLarge (22sp / 28sp, weight 400).
     expect(view).toMatch(/font-size:\s*22px;\s*line-height:\s*28px;\s*font-weight:\s*400/)
     // The screen owns its app bar, so the shared shell bar is hidden.
-    expect(view).toContain('body.categories-screen-active .app-toolbar')
+    expect(view).toContain('categories-screen__toolbar')
   })
 
   it('renders the empty screen with the reference message', () => {

@@ -176,16 +176,10 @@ function goBack() {
 }
 
 onMounted(() => {
-  if (!props.embedded) {
-    document.body.classList.add('clear-database-active')
-  }
   void load()
 })
 
 onBeforeUnmount(() => {
-  if (!props.embedded) {
-    document.body.classList.remove('clear-database-active')
-  }
   if (toastTimer) clearTimeout(toastTimer)
 })
 </script>
@@ -387,11 +381,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-/* The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-body.clear-database-active .app-toolbar {
-  display: none;
-}
-
 /* Material3 BasicAlertDialog: sizeIn(minWidth = 280dp, maxWidth = 560dp). */
 .v-dialog > .cd-dialog-overlay {
   width: fit-content;

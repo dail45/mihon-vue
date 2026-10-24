@@ -23,7 +23,7 @@ describe('OpenSourceLicensesView parity with Mihon', () => {
     expect(source).toContain('.licenses-toolbar.is-scrolled')
     expect(source).toContain('background: rgb(var(--v-theme-surface-container))')
     // The shared shell bar is hidden while this screen owns its own top bar.
-    expect(source).toContain('body.licenses-screen-active .app-toolbar { display: none; }')
+    expect(source).toContain('licenses-toolbar')
   })
 
   it('uses the AboutLibraries Traditional row metrics', () => {

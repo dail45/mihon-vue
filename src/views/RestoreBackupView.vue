@@ -35,7 +35,7 @@
  * endpoint, so the "Restore" action opens an explicit "not supported in the web version" dialog
  * instead of silently doing nothing.
  */
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { listTrackers, type Tracker } from '../api/trackers'
 import { readBackupFile } from '../api/backupFile'
@@ -275,16 +275,7 @@ function goBack() {
   void router.push('/settings/data')
 }
 
-/** The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-onMounted(() => {
-  if (!props.embedded) {
-    document.body.classList.add('restore-backup-active')
-  }
-})
 onBeforeUnmount(() => {
-  if (!props.embedded) {
-    document.body.classList.remove('restore-backup-active')
-  }
   if (toastTimer) window.clearTimeout(toastTimer)
 })
 </script>
@@ -417,11 +408,6 @@ onBeforeUnmount(() => {
     <div v-if="toast" class="restore-backup-toast" role="status" aria-live="polite">{{ toast }}</div>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-body.restore-backup-active .app-toolbar { display: none; }
-</style>
 
 <style scoped>
 @layer app-components {

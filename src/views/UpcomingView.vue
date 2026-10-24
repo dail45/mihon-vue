@@ -25,7 +25,7 @@
  * The screen owns its own top bar (Mihon's UpcomingScreen renders UpcomingToolbar in the
  * Scaffold topBar slot), so the shared shell bar is hidden while this screen is mounted.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { createSuwayomiApi } from '../api/client'
@@ -394,12 +394,7 @@ function categoryName(category: Category) {
   return category.default || category.isDefaultCategory ? 'Default' : category.name
 }
 
-onMounted(() => {
-  document.body.classList.add('upcoming-screen-active')
-})
-
 onBeforeUnmount(() => {
-  document.body.classList.remove('upcoming-screen-active')
   if (handleTimer) window.clearTimeout(handleTimer)
 })
 </script>
@@ -574,13 +569,6 @@ onBeforeUnmount(() => {
     </AdaptiveSettingsSheet>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (see UpcomingScreen.kt). */
-body.upcoming-screen-active .app-toolbar { display: none; }
-/* The screen owns the area below its own top bar; the shell must not reserve space for its bar. */
-body.upcoming-screen-active .v-main { padding-top: 0; }
-</style>
 
 <style scoped>
 .upcoming-screen {

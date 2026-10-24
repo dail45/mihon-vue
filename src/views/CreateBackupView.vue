@@ -25,7 +25,7 @@
  * "Create" action opens an explicit "not supported in the web version" dialog instead of silently
  * doing nothing.
  */
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -132,16 +132,7 @@ function goBack() {
   void router.push('/settings/data')
 }
 
-/** The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-onMounted(() => {
-  if (!props.embedded) {
-    document.body.classList.add('create-backup-active')
-  }
-})
 onBeforeUnmount(() => {
-  if (!props.embedded) {
-    document.body.classList.remove('create-backup-active')
-  }
   if (toastTimer) window.clearTimeout(toastTimer)
 })
 </script>
@@ -243,11 +234,6 @@ onBeforeUnmount(() => {
     <div v-if="toast" class="create-backup-toast" role="status" aria-live="polite">{{ toast }}</div>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-body.create-backup-active .app-toolbar { display: none; }
-</style>
 
 <style scoped>
 @layer app-components {

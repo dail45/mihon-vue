@@ -72,13 +72,11 @@ watch(() => server.apiUrl, () => {
 })
 
 onMounted(() => {
-  document.body.classList.add('download-queue-active')
   void queue.refresh()
   queue.poll()
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('download-queue-active')
   queue.dispose()
 })
 
@@ -529,13 +527,6 @@ function onDropSection(targetSectionId: string) {
     </v-snackbar>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-body.download-queue-active .app-toolbar {
-  display: none;
-}
-</style>
 
 <style scoped>
 @layer app-components {

@@ -24,7 +24,7 @@
  * Suwayomi-Server counterpart, so every section shows the reference's own empty marker ("-") and a
  * short note explains the limitation.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -82,12 +82,7 @@ function goBack() {
   void router.push('/settings/advanced')
 }
 
-onMounted(() => {
-  document.body.classList.add('worker-info-active')
-})
-
 onBeforeUnmount(() => {
-  document.body.classList.remove('worker-info-active')
   if (toastTimer) clearTimeout(toastTimer)
 })
 </script>
@@ -129,11 +124,6 @@ onBeforeUnmount(() => {
     <div v-if="toast" class="worker-toast" role="status" aria-live="polite">{{ toast }}</div>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (WorkerInfoScreen.kt). */
-body.worker-info-active .app-toolbar { display: none; }
-</style>
 
 <style scoped>
 .worker-info {

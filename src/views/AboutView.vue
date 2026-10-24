@@ -36,10 +36,6 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSuwayomiStore } from '../stores/suwayomi'
 import { appBuildDate, appChannel, appVersion } from '../constants/appInfo'
-// Registers the "/about/licenses" route of the OpenSourceLicensesScreen (see aboutLicensesRoute.ts).
-import './aboutLicensesRoute'
-// Registers the "/about/update" & "/new-update" route of the NewUpdateScreen (see aboutUpdateRoute.ts).
-import './aboutUpdateRoute'
 
 const props = withDefaults(defineProps<{
   standalone?: boolean

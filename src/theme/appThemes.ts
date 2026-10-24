@@ -1010,3 +1010,39 @@ export const appThemes: AppTheme[] = [
       },
   },
 ]
+
+export interface AppThemeScheme {
+  name: string
+  title: string
+  light: AppThemeColors
+  dark: AppThemeColors
+  unsupported?: boolean
+}
+
+const ID_TO_NAME: Record<string, string> = {
+  default: 'DEFAULT',
+  catppuccin: 'CATPPUCCIN',
+  greenApple: 'GREEN_APPLE',
+  lavender: 'LAVENDER',
+  midnightDusk: 'MIDNIGHT_DUSK',
+  nord: 'NORD',
+  strawberryDaiquiri: 'STRAWBERRY_DAIQUIRI',
+  tako: 'TAKO',
+  tealTurquoise: 'TEALTURQUOISE',
+  tidalWave: 'TIDAL_WAVE',
+  yinYang: 'YINYANG',
+  yotsuba: 'YOTSUBA',
+  tokyoNight: 'TOKYONIGHT',
+  monochrome: 'MONOCHROME',
+}
+
+export const APP_THEME_SCHEMES: AppThemeScheme[] = [
+  ...appThemes.slice(0, 1).map(t => ({ name: 'DEFAULT', title: t.title, light: t.light, dark: t.dark })),
+  { name: 'MONET', title: 'Dynamic', unsupported: true, light: {}, dark: {} },
+  ...appThemes.slice(1).map(t => ({ name: ID_TO_NAME[t.id] ?? t.id.toUpperCase(), title: t.title, light: t.light, dark: t.dark })),
+]
+
+export function findAppThemeScheme(name: string): AppThemeScheme | undefined {
+  return APP_THEME_SCHEMES.find(scheme => scheme.name === name)
+}
+

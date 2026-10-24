@@ -38,7 +38,7 @@
  *   - the sealed `PreferenceValue` hierarchy is a message of its own holding the polymorphic
  *     `type`/`value` pair plus the `// decoded as message with one of these types:` comment.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -413,12 +413,7 @@ function goBack() {
   void router.push('/settings')
 }
 
-onMounted(() => {
-  document.body.classList.add('backup-schema-active')
-})
-
 onBeforeUnmount(() => {
-  document.body.classList.remove('backup-schema-active')
   if (toastTimer) clearTimeout(toastTimer)
 })
 </script>
@@ -460,13 +455,6 @@ onBeforeUnmount(() => {
     <div v-if="toast" class="backup-toast" role="status" aria-live="polite">{{ toast }}</div>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (BackupSchemaScreen.kt). */
-body.backup-schema-active .app-toolbar { display: none; }
-/* The screen brings its own top bar, so the shell must not reserve space for the hidden one. */
-body.backup-schema-active .v-main { padding-top: 0; }
-</style>
 
 <style scoped>
 .backup-schema {

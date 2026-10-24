@@ -29,7 +29,6 @@
  *   - Title: Column(weight = 1f, padding vertical = 16dp) > Text(horizontal padding = 16dp, titleLarge, fontSize = 16sp).
  *   - Trailing widget: Box(padding end = 16dp) with 24dp OpenInNew icon, onSurfaceVariant color.
  */
-import { onBeforeUnmount, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -67,14 +66,6 @@ function goBack() {
   }
   void router.push('/more')
 }
-
-onMounted(() => {
-  document.body.classList.add('support-screen-active')
-})
-
-onBeforeUnmount(() => {
-  document.body.classList.remove('support-screen-active')
-})
 </script>
 
 <template>
@@ -137,14 +128,6 @@ onBeforeUnmount(() => {
     </div>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (SupportUsScreen.kt). */
-body.support-screen-active .app-toolbar { display: none; }
-/* The screen owns the full viewport height below the shell bar: the app bar overlays the
-   scroll area (Scaffold content), so the shell must not reserve space for its own bar. */
-body.support-screen-active .v-main { padding-top: 0; }
-</style>
 
 <style scoped>
 @layer app-components {

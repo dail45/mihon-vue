@@ -375,17 +375,11 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  if (!props.embedded) {
-    document.body.classList.add('licenses-screen-active')
-  }
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
-  if (!props.embedded) {
-    document.body.classList.remove('licenses-screen-active')
-  }
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('keydown', onKeydown)
 })
@@ -517,11 +511,6 @@ onBeforeUnmount(() => {
     </v-bottom-sheet>
   </section>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (OpenSourceLicensesScreen.kt). */
-body.licenses-screen-active .app-toolbar { display: none; }
-</style>
 
 <style scoped>
 .licenses-screen {

@@ -75,7 +75,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import { usePreferencesStore, type ThemeMode } from '../../stores/preferences'
-import { APP_THEME_SCHEMES, findAppThemeScheme, type AppThemeColors, type AppThemeScheme } from './appThemeSchemes'
+import { APP_THEME_SCHEMES, findAppThemeScheme, type AppThemeColors, type AppThemeScheme } from '../../theme/appThemes'
 import { ENUM_TO_THEME_ID, THEME_ID_TO_ENUM } from '../../composables/useAppearancePreferences'
 
 const preferences = usePreferencesStore()

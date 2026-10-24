@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { APP_THEME_SCHEMES } from '../../src/components/onboarding/appThemeSchemes'
+import { APP_THEME_SCHEMES } from '../../src/theme/appThemes'
 
 const source = readFileSync('src/components/onboarding/ThemeStep.vue', 'utf8')
 

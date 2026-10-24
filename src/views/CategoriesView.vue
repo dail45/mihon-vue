@@ -102,18 +102,12 @@ async function loadCategories() {
 }
 
 onMounted(() => {
-  if (!props.embedded) {
-    document.body.classList.add('categories-screen-active')
-  }
   window.addEventListener('scroll', onWindowScroll, { passive: true })
   onWindowScroll()
   void loadCategories()
 })
 
 onBeforeUnmount(() => {
-  if (!props.embedded) {
-    document.body.classList.remove('categories-screen-active')
-  }
   window.removeEventListener('scroll', onWindowScroll)
   if (snackbarTimer) window.clearTimeout(snackbarTimer)
 })
@@ -382,12 +376,6 @@ function goBack() {
     </div>
   </div>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-body.categories-screen-active .app-toolbar { display: none; }
-body.categories-screen-active .v-main { padding-top: 0; }
-</style>
 
 <style scoped>
 @layer app-components {

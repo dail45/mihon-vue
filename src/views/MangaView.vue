@@ -211,12 +211,10 @@ onMounted(() => {
   window.addEventListener('scroll', onWindowScroll, { passive: true })
   window.addEventListener('keydown', onKeydown)
   onWindowScroll()
-  document.body.classList.add('manga-detail-screen')
 })
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', onWindowScroll)
   window.removeEventListener('keydown', onKeydown)
-  document.body.classList.remove('manga-detail-screen')
 })
 
 // --- Toolbar actions -------------------------------------------------------------------------------
@@ -1448,7 +1446,4 @@ function onTouchEnd() {
   letter-spacing: 0.5px !important;
   color: rgb(var(--v-theme-on-surface)) !important;
 }
-
-/* The `MangaToolbar` of this screen replaces the global app bar of the shell. */
-body.manga-detail-screen .app-toolbar { display: none; }
 </style>

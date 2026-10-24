@@ -196,7 +196,6 @@ function updateKeyboardInset() {
 /* -------------------------------------------------------------- lifecycle */
 
 onMounted(() => {
-  document.body.classList.add('manga-notes-active')
   updateKeyboardInset()
   window.visualViewport?.addEventListener('resize', updateKeyboardInset)
   window.visualViewport?.addEventListener('scroll', updateKeyboardInset)
@@ -206,7 +205,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('manga-notes-active')
   window.visualViewport?.removeEventListener('resize', updateKeyboardInset)
   window.visualViewport?.removeEventListener('scroll', updateKeyboardInset)
   window.removeEventListener('resize', updateKeyboardInset)
@@ -298,13 +296,6 @@ watch(() => manga.value?.title ?? '', () => { void nextTick(() => updateMarquee(
     </div>
   </div>
 </template>
-
-<style>
-/* The shared shell bar is hidden while this screen provides its own top bar (see AppBar.kt). */
-body.manga-notes-active .app-toolbar { display: none; }
-/* The reference notes screen is a standalone destination without the navigation bar. */
-body.manga-notes-active .mihon-navigation { display: none; }
-</style>
 
 <style scoped>
 @layer app-components {
