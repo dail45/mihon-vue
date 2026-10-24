@@ -95,5 +95,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
   watch(categorySorts, v => writePreference('mihon.library.categorySorts', JSON.stringify(v)), { deep: true })
   watch(libraryDisplay, v => writePreference('mihon.library.display', v))
   watch(downloadedOnly, v => writePreference('mihon.library.downloadedOnly', String(v)))
-  return { tabletUiMode, themeMode, libraryDisplay, catalogueDisplay, downloadedOnly, incognitoMode, onboardingShown, setOnboardingShown, donationCampaignShown, setDonationCampaignShown, installTime, downloadBadge, unreadBadge, localBadge, languageBadge, showContinue, categoryTabs, categoryCounts, portraitColumns, landscapeColumns, categorizedSort, filters, globalSort, categorySorts, getLibrarySort, chooseLibrarySort, chapterSwipeStartAction, chapterSwipeEndAction }
+  const migrationSmartSearchSingleEntry = bool('mihon.migration.smartSearchSingleEntry', false)
+  return { tabletUiMode, themeMode, libraryDisplay, catalogueDisplay, downloadedOnly, incognitoMode, onboardingShown, setOnboardingShown, donationCampaignShown, setDonationCampaignShown, installTime, downloadBadge, unreadBadge, localBadge, languageBadge, showContinue, categoryTabs, categoryCounts, portraitColumns, landscapeColumns, categorizedSort, filters, globalSort, categorySorts, getLibrarySort, chooseLibrarySort, chapterSwipeStartAction, chapterSwipeEndAction, migrationSmartSearchSingleEntry }
 })

@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { stringResource, MR } from '@/core/i18n'
+import type { GlobalSearchPinnedState } from '../stores/browsePreferences'
 
 /**
  * Port of Mihon's GlobalSearchToolbar.kt
  * (mihon/app/src/main/java/eu/kanade/presentation/browse/components/GlobalSearchToolbar.kt)
+ * and Komikku 3-way cycle filter (PinnedOnly -> Unpinned -> All -> PinnedOnly).
  *
  * Layout, top to bottom:
  *   1. Column background = colorScheme.surface
  *   2. Box: SearchToolbar (TopAppBar) + LinearProgressIndicator aligned BottomStart
- *   3. Horizontally scrollable Row of FilterChips (Pinned / All | Has results)
+ *   3. Horizontally scrollable Row of FilterChips (3-way cycle filter | Has results)
  *   4. HorizontalDivider
  *
  * The bar itself is `eu.kanade.presentation.components.SearchToolbar` (AppBar.kt), which is a
@@ -28,7 +31,7 @@ const props = withDefaults(
     progress: number
     /** Number of searched sources. */
     total: number
-    sourceFilter: 'All' | 'PinnedOnly'
+    sourceFilter: GlobalSearchPinnedState
     onlyShowHasResults: boolean
     hideSourceFilter?: boolean
   }>(),
@@ -39,7 +42,7 @@ const emit = defineEmits<{
   (event: 'navigate-up'): void
   (event: 'update:searchQuery', value: string | null): void
   (event: 'search', value: string): void
-  (event: 'change-source-filter', value: 'All' | 'PinnedOnly'): void
+  (event: 'change-source-filter', value: GlobalSearchPinnedState): void
   (event: 'toggle-results'): void
 }>()
 
@@ -47,8 +50,43 @@ const draft = ref(props.searchQuery ?? '')
 const input = ref<HTMLInputElement | null>(null)
 
 const searchOpen = computed(() => props.searchQuery !== null)
-const pinnedSelected = computed(() => props.sourceFilter === 'PinnedOnly')
-const allSelected = computed(() => props.sourceFilter === 'All')
+
+const filterConfig = computed(() => {
+  switch (props.sourceFilter) {
+    case 'PinnedOnly':
+      return {
+        label: stringResource(MR.strings.pinned_sources) || 'Pinned',
+        symbol: 'keep',
+        mdiClass: 'mdi-pin',
+        selected: true,
+      }
+    case 'Unpinned':
+      return {
+        label: stringResource('unpinned_sources') || 'Unpinned',
+        symbol: 'keep_off',
+        mdiClass: 'mdi-pin-off-outline',
+        selected: true,
+      }
+    case 'All':
+    default:
+      return {
+        label: stringResource(MR.strings.all) || 'All',
+        symbol: 'done_all',
+        mdiClass: 'mdi-check-all',
+        selected: false,
+      }
+  }
+})
+
+function cycleSourceFilter() {
+  const nextMap: Record<GlobalSearchPinnedState, GlobalSearchPinnedState> = {
+    PinnedOnly: 'Unpinned',
+    Unpinned: 'All',
+    All: 'PinnedOnly',
+  }
+  const next = nextMap[props.sourceFilter] || 'PinnedOnly'
+  emit('change-source-filter', next)
+}
 // Kotlin: `if (progress in 1..<total)`
 const progressRatio = computed(() => {
   const { progress, total } = props
@@ -171,27 +209,21 @@ function openSearch() {
     <!-- Row(horizontalScroll, padding(horizontal = padding.small = 8dp), spacedBy(8dp)). -->
     <div class="gst-filters" role="group" aria-label="Search filters">
       <template v-if="!hideSourceFilter">
-        <!-- FilterChip(selected = sourceFilter == PinnedOnly) { Icon(Keep) } -->
+        <!-- 3-state cycling filter chip: PinnedOnly -> Unpinned -> All -> PinnedOnly -->
         <button
           type="button"
           class="gst-chip"
-          :class="{ 'gst-chip--selected': pinnedSelected }"
-          :aria-pressed="pinnedSelected"
-          @click="emit('change-source-filter', 'PinnedOnly')"
+          :class="[{ 'gst-chip--selected': filterConfig.selected }, filterConfig.mdiClass]"
+          :aria-pressed="filterConfig.selected"
+          :aria-label="filterConfig.label"
+          @click="cycleSourceFilter"
         >
-          <span class="material-symbols-rounded gst-chip-icon" aria-hidden="true">keep</span>
-          <span class="gst-chip-label">Pinned</span>
-        </button>
-        <!-- FilterChip(selected = sourceFilter == All) { Icon(DoneAll) } -->
-        <button
-          type="button"
-          class="gst-chip"
-          :class="{ 'gst-chip--selected': allSelected }"
-          :aria-pressed="allSelected"
-          @click="emit('change-source-filter', 'All')"
-        >
-          <span class="material-symbols-rounded gst-chip-icon" aria-hidden="true">done_all</span>
-          <span class="gst-chip-label">All</span>
+          <span
+            class="material-symbols-rounded gst-chip-icon"
+            :class="filterConfig.mdiClass"
+            aria-hidden="true"
+          >{{ filterConfig.symbol }}</span>
+          <span class="gst-chip-label">{{ filterConfig.label }}</span>
         </button>
 
         <!-- VerticalDivider(Modifier.height(FilterChipDefaults.Height)) -->

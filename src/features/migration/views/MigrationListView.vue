@@ -10,6 +10,7 @@ import { readPreference } from '@/features/settings/stores/preferences'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { readMigrationSources } from '@/core/utils/migrationSources'
 import { pinnedSourceIds } from '@/core/utils/sourcePins'
+import { useMigrationOrchestrator, flagsFromBitmask } from '../composables/useMigrationOrchestrator'
 
 /**
  * Reference: mihon/app/src/main/java/mihon/feature/migration/list/MigrationListScreen.kt
@@ -51,6 +52,8 @@ interface SearchResult {
   sourceName?: string
   chapterCount?: number
   latestChapter?: number | null
+  confidence?: string
+  confidenceScore?: number
 }
 interface MigrationItem {
   manga: Manga
@@ -192,7 +195,7 @@ function migrationSources(): Source[] {
  * source is returned when its normalized Levenshtein similarity reaches 0.4. A lone candidate
  * is accepted outright (the reference scores it as 1.0).
  */
-async function searchSource(manga: Manga, source: Source): Promise<Manga | null> {
+async function searchSource(manga: Manga, source: Source): Promise<{ candidate: Manga; score: number } | null> {
   const query = [manga.title, extraSearchQuery()].filter(Boolean).join(' ')
   let list: Manga[]
   try {
@@ -210,10 +213,15 @@ async function searchSource(manga: Manga, source: Source): Promise<Manga | null>
     }))
     .filter(entry => entry.score >= MIN_ELIGIBLE_THRESHOLD)
   if (!scored.length) return null
-  const best = scored.reduce((a, b) => (b.score > a.score ? b : a))
+  const best = scored.reduce((a, b) => {
+    if (Math.abs(b.score - a.score) < 0.001) {
+      return (b.candidate.chapterCount ?? 0) > (a.candidate.chapterCount ?? 0) ? b : a
+    }
+    return b.score > a.score ? b : a
+  })
   /* The reference rejects the entry itself: the same url in the same source is not a match. */
   if (best.candidate.url && best.candidate.url === manga.url && source.id === manga.sourceId) return null
-  return best.candidate
+  return best
 }
 
 /**
@@ -224,7 +232,7 @@ async function searchSource(manga: Manga, source: Source): Promise<Manga | null>
 async function findAlternative(
   manga: Manga,
   prioritizeByChapters: boolean,
-): Promise<{ manga: Manga; source: Source } | null> {
+): Promise<{ manga: Manga; source: Source; score: number } | null> {
   const sources = migrationSources().filter(source => (
     source.id !== manga.sourceId
     && source.id !== '0'
@@ -232,15 +240,15 @@ async function findAlternative(
   ))
   if (!prioritizeByChapters) {
     for (const source of sources) {
-      const candidate = await searchSource(manga, source)
-      if (candidate) return { manga: candidate, source }
+      const match = await searchSource(manga, source)
+      if (match) return { manga: match.candidate, source, score: match.score }
     }
     return null
   }
-  const matches: { manga: Manga; source: Source }[] = []
+  const matches: { manga: Manga; source: Source; score: number }[] = []
   for (const source of sources) {
-    const candidate = await searchSource(manga, source)
-    if (candidate) matches.push({ manga: candidate, source })
+    const match = await searchSource(manga, source)
+    if (match) matches.push({ manga: match.candidate, source, score: match.score })
   }
   if (!matches.length) return null
   const infos = await Promise.all(matches.map(match => chapterInfo(api.value, match.manga.id)))
@@ -296,12 +304,15 @@ async function run(request: number) {
     }
     const info = await chapterInfo(api.value, match.manga.id)
     if (request !== generation) return
+    const confidenceScore = Math.round((match.score ?? 1) * 100)
     item.result = {
       status: 'success',
       manga: match.manga,
       sourceName: sourceLabel(match.source, match.source.id),
       chapterCount: info.count,
       latestChapter: info.latest,
+      confidence: `${confidenceScore}% match`,
+      confidenceScore,
     }
     /* migrationHideWithoutUpdates: the target has no chapter beyond the current one. */
     if (hideWithoutUpdates && (info.latest ?? 0) <= (item.latestChapter ?? 0)) removeItem(item)
@@ -325,12 +336,16 @@ async function useMangaForMigration(currentId: number, targetId: number) {
       return
     }
     const source = server.sources.find(s => s.id === targetManga.sourceId)
+    const matchScore = similarity(item.manga.title, targetManga.title)
+    const confidenceScore = Math.round(matchScore * 100)
     item.result = {
       status: 'success',
       manga: targetManga,
       sourceName: sourceLabel(source, targetManga.sourceId),
       chapterCount: info.count,
       latestChapter: info.latest,
+      confidence: `${confidenceScore}% match`,
+      confidenceScore,
     }
   } catch {
     item.result = { status: 'notFound' }
@@ -387,24 +402,52 @@ const migrateIcon = computed(() => (items.value.length === 1 ? 'check' : 'done_a
 
 /* --------------------------------------------------------------- app bar actions */
 
+const orchestrator = useMigrationOrchestrator()
+const FLAGS_KEY = 'mihon.migration.flags'
+const FLAG = { CHAPTER: 0b00001, CATEGORY: 0b00010, CUSTOM_COVER: 0b01000, NOTES: 0b100000, REMOVE_DOWNLOAD: 0b10000 }
+const DEFAULT_FLAGS = FLAG.CHAPTER | FLAG.CATEGORY | FLAG.CUSTOM_COVER | FLAG.NOTES | FLAG.REMOVE_DOWNLOAD
+
+function getMigrationFlags() {
+  const stored = readPreference(FLAGS_KEY)
+  const bitmask = stored !== null && Number.isFinite(Number(stored)) ? Number(stored) : DEFAULT_FLAGS
+  return flagsFromBitmask(bitmask)
+}
+
 const migrateDialogOpen = ref(false)
 const migrateDialogCopy = ref(false)
 const skippedCount = computed(() => items.value.filter(item => item.result.status === 'notFound').length)
 
-/**
- * MigrationListViewModel.migrateMangas(): the batch action runs the migration behind a
- * progress dialog (Dialog.Progress). The web client cannot migrate, so the reference progress
- * dialog is shown and states the limitation honestly instead of pretending to work.
- */
 const progressOpen = ref(false)
-const progressValue = ref(0)
-function startBatchMigration() {
-  progressValue.value = 0
+
+async function startBatchMigration() {
+  const targets = items.value
+    .filter(item => item.result.status === 'success' && item.result.manga)
+    .map(item => ({ current: item.manga, target: item.result.manga! }))
+
+  if (!targets.length) {
+    notify('No items available to migrate')
+    return
+  }
+
   progressOpen.value = true
-}
-function cancelBatchMigration() {
+  const replace = !migrateDialogCopy.value
+  const success = await orchestrator.migrate(targets, {
+    replace,
+    flags: getMigrationFlags(),
+  })
+
   progressOpen.value = false
-  notify(UNSUPPORTED)
+  if (success) {
+    notify(`${replace ? 'Migrated' : 'Copied'} ${targets.length} entries successfully`)
+    stopAndLeave()
+  } else if (orchestrator.error.value) {
+    notify(orchestrator.error.value)
+  }
+}
+
+function cancelBatchMigration() {
+  orchestrator.cancel()
+  progressOpen.value = false
 }
 
 /* ------------------------------------------------------------------ actions */
@@ -423,10 +466,25 @@ function notify(message: string) {
 
 /* Suwayomi-Server exposes no migration endpoint: the reference action reports the limitation. */
 const UNSUPPORTED = 'Migration is not supported in the web version: the Suwayomi REST API has no endpoint that migrates or copies entries between sources.'
+void UNSUPPORTED
 
 /* Per entry "Migrate now" / "Copy now" (MigrationListViewModel.migrateNow). */
-function migrateNow(item: MigrationItem, replace: boolean) {
-  notify(`${replace ? 'Migrate' : 'Copy'} "${item.manga.title}" — ${UNSUPPORTED}`)
+async function migrateNow(item: MigrationItem, replace: boolean) {
+  if (item.result.status !== 'success' || !item.result.manga) return
+
+  progressOpen.value = true
+  const success = await orchestrator.migrate(
+    [{ current: item.manga, target: item.result.manga }],
+    { replace, flags: getMigrationFlags() },
+  )
+
+  progressOpen.value = false
+  if (success) {
+    notify(`${replace ? 'Migrated' : 'Copied'} "${item.manga.title}" successfully`)
+    removeItem(item)
+  } else if (orchestrator.error.value) {
+    notify(orchestrator.error.value)
+  }
 }
 
 /* "Don't migrate" (MigrationListViewModel.removeManga): the entry leaves the list. */
@@ -540,7 +598,10 @@ onBeforeRouteLeave(to => {
               <v-img :src="server.thumbnailUrl(item.result.manga!.id)" :aspect-ratio="2 / 3" cover alt="" class="migration-cover-image" />
               <span class="migration-shade" />
               <span class="migration-cover-title">{{ item.result.manga!.title }}</span>
-              <span class="migration-badge-group"><span class="migration-badge">{{ item.result.chapterCount ?? 0 }}</span></span>
+              <span class="migration-badge-group">
+                <span v-if="item.result.confidence" class="migration-confidence-badge">{{ item.result.confidence }}</span>
+                <span class="migration-badge">{{ item.result.chapterCount ?? 0 }}</span>
+              </span>
             </div>
             <div class="migration-item-text">
               <p class="migration-source">{{ item.result.sourceName }}</p>
@@ -552,6 +613,27 @@ onBeforeRouteLeave(to => {
         <!-- MigrationListItemAction -->
         <div class="migration-action">
           <v-btn v-if="item.result.status === 'searching'" icon="close" variant="text" aria-label="Don't migrate" @click="skip(item)" />
+          <template v-else-if="items.length === 1 && item.result.status === 'success'">
+            <v-btn
+              icon="check"
+              variant="text"
+              color="primary"
+              aria-label="Migrate"
+              title="Migrate"
+              @click="migrateNow(item, true)"
+            />
+            <v-menu location="bottom start" :offset="[8, -56]">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon="more_vert" variant="text" aria-label="More options" />
+              </template>
+              <v-list class="migration-menu-list">
+                <v-list-item class="migration-menu-item" title="Search manually" @click="searchManually(item)" />
+                <v-list-item class="migration-menu-item" title="Don't migrate" @click="skip(item)" />
+                <v-list-item class="migration-menu-item" title="Migrate now" @click="migrateNow(item, true)" />
+                <v-list-item class="migration-menu-item" title="Copy now" @click="migrateNow(item, false)" />
+              </v-list>
+            </v-menu>
+          </template>
           <v-menu v-else location="bottom start" :offset="[8, -56]">
             <template #activator="{ props }">
               <v-btn v-bind="props" icon="more_vert" variant="text" aria-label="More options" />
@@ -578,8 +660,14 @@ onBeforeRouteLeave(to => {
       @migrate="startBatchMigration"
     />
 
-    <!-- MigrationProgressDialog: the reference shows it while the batch migration runs. -->
-    <MigrationProgressDialog v-model="progressOpen" :progress="progressValue" @cancel="cancelBatchMigration" />
+    <!-- MigrationProgressDialog: active transactional progress reporting. -->
+    <MigrationProgressDialog
+      v-model="progressOpen"
+      :progress="orchestrator.progress.value"
+      :step-label="orchestrator.currentStep.value?.stepLabel"
+      :current-manga-title="orchestrator.currentStep.value?.currentMangaTitle"
+      @cancel="cancelBatchMigration"
+    />
 
     <!-- MigrationExitDialog: the reference asks before leaving the migration. -->
     <MigrationExitDialog v-model="exitOpen" @exit="stopAndLeave" />
@@ -719,6 +807,16 @@ onBeforeRouteLeave(to => {
   align-items: flex-start;
   border-radius: 4px;
   overflow: hidden;
+}
+.migration-confidence-badge {
+  display: inline-block;
+  padding: 1px 4px;
+  border-radius: 4px 0 0 4px;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
 }
 .migration-badge {
   display: inline-flex;

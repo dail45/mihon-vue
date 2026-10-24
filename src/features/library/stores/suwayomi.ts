@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { useConnectionStore } from './connection'
-import { useLibraryStore } from './library'
+import { useLibraryStore, type BatchDownloadAction } from './library'
 import { useSourcesStore } from '@/features/browse/stores/sources'
 import { useMangaDetail } from '@/features/manga/composables/useMangaDetail'
 import type { Category, Chapter, Manga, Source } from '@/core/api/types'
+
+export type { BatchDownloadAction }
 
 /**
  * Composite store facade maintaining full backwards compatibility.
@@ -97,6 +99,26 @@ export const useSuwayomiStore = defineStore('suwayomi', () => {
     return libraryStore.markMangasRead(mangas, read)
   }
 
+  function updateMangaCategoriesLocally(
+    mangaIds: number[],
+    addToCategories: number[],
+    removeFromCategories: number[],
+  ) {
+    libraryStore.updateMangaCategoriesLocally(mangaIds, addToCategories, removeFromCategories)
+  }
+
+  async function setMangaCategories(
+    mangaIds: number[],
+    addToCategories: number[],
+    removeFromCategories: number[],
+  ) {
+    return libraryStore.setMangaCategories(mangaIds, addToCategories, removeFromCategories)
+  }
+
+  async function batchDownloadChapters(mangaList: Manga[], action: BatchDownloadAction) {
+    return libraryStore.batchDownloadChapters(mangaList, action)
+  }
+
   // Sources state & actions
   const sources = computed({
     get: () => sourcesStore.sources,
@@ -176,6 +198,9 @@ export const useSuwayomiStore = defineStore('suwayomi', () => {
     setLibraryMembership,
     removeMangas,
     markMangasRead,
+    updateMangaCategoriesLocally,
+    setMangaCategories,
+    batchDownloadChapters,
     sources,
     loadingSources,
     sourcesLoaded,

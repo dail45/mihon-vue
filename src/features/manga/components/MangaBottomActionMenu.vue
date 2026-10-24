@@ -87,7 +87,7 @@ const props = withDefaults(defineProps<{
   canMarkAsRead: false,
   canMarkAsUnread: false,
   canMarkPreviousAsRead: false,
-  canDownload: false,
+  canDownload: undefined,
   canDelete: false,
   fillFraction: 1,
   downloadUnsupported: undefined,
@@ -107,7 +107,11 @@ const emit = defineEmits<{
   (event: 'migrate'): void
 }>()
 
-const downloadUnsupported = computed(() => props.downloadUnsupported ?? true)
+const downloadUnsupported = computed(() => {
+  if (props.downloadUnsupported !== undefined) return props.downloadUnsupported
+  if (props.variant === 'library') return false
+  return true
+})
 const deleteUnsupported = computed(() => props.deleteUnsupported ?? false)
 const migrateUnsupported = computed(() => props.migrateUnsupported ?? true)
 
@@ -144,7 +148,8 @@ const actions = computed<Action[]>(() => {
     { key: 'mark-as-read', index: 1, title: 'Mark as read', icon: 'done_all', confirmable: true },
     { key: 'mark-as-unread', index: 2, title: 'Mark as unread', icon: 'remove_done', confirmable: true },
   ]
-  if (props.canDownload) {
+  const downloadAllowed = props.variant === 'library' ? (props.canDownload ?? true) : Boolean(props.canDownload)
+  if (downloadAllowed) {
     list.push({ key: 'download', index: 3, title: 'Download', icon: 'download', confirmable: true })
     // `itemOverflow` is `onDownloadClicked != null`: Migrate and Delete move into the overflow menu.
     list.push({ key: 'more', index: -1, title: 'More', icon: 'more_vert', confirmable: false })

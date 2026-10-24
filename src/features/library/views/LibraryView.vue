@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
-import { useSuwayomiStore } from '../stores/suwayomi'
+import { useSuwayomiStore, type BatchDownloadAction } from '../stores/suwayomi'
 import type { Manga } from '@/core/api/types'
 import { useLibraryDetails } from '../stores/libraryDetails'
 import { isLocal, matchesLibrary, sortLibrary } from '@/core/utils/library'
-import { categoryVisualName, stateSelection, type CategorySelection } from '@/core/utils/categorySelection'
+import { categoryVisualName, stateSelection, triSelection, type CategorySelection } from '@/core/utils/categorySelection'
 import LibraryToolbar from '../components/LibraryToolbar.vue'
 import LibraryCategoryTabs from '../components/LibraryCategoryTabs.vue'
 import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'
@@ -240,16 +240,82 @@ async function onMarkAsUnread() {
   notify('Marked as unread')
 }
 /**
- * `ChangeCategoryDialog(initialSelection, …)`. The current category of every selected
- * entry is checked, the other categories are unchecked.
+ * `ChangeCategoryDialog(initialSelection, …)`.
+ * Mihon: LibraryViewModel.openChangeCategoryDialog()
+ * - Hide default category (id 0)
+ * - Map common categories (in all selected manga) to Checked
+ * - Map mix categories (in some selected manga) to TriState.Exclude (Indeterminate)
+ * - Map remaining categories to None (Unchecked)
  */
-const categorySelection = computed<CategorySelection[]>(() => categories.value.map(category => {
-  const checked = selectedManga.value.length > 0 && selectedManga.value.every(m => (server.libraryByCategory[category.id] || []).some(item => item.id === m.id))
-  return stateSelection(category, checked)
-}))
-function onChangeCategoryConfirmed() {
-  selection.value = []
-  notify('Setting categories is not supported in the web version: the Suwayomi REST API exposes no per-manga category endpoint.')
+const categorySelection = computed<CategorySelection[]>(() => {
+  const mangaList = selectedManga.value
+  if (mangaList.length === 0) return []
+  const cats = categories.value.filter(c => c.id !== 0)
+
+  if (mangaList.length === 1) {
+    const single = mangaList[0]!
+    return cats.map(category => {
+      const checked = (server.libraryByCategory[category.id] || []).some(m => m.id === single.id)
+      return stateSelection(category, checked)
+    })
+  }
+
+  const mangaCategoryIds = mangaList.map(m => {
+    const ids = new Set<number>()
+    for (const cat of cats) {
+      if ((server.libraryByCategory[cat.id] || []).some(item => item.id === m.id)) {
+        ids.add(cat.id)
+      }
+    }
+    return ids
+  })
+
+  const common = mangaCategoryIds.reduce<Set<number>>((acc, curr) => {
+    return new Set([...acc].filter(x => curr.has(x)))
+  }, mangaCategoryIds[0] ? new Set(mangaCategoryIds[0]) : new Set<number>())
+
+  const allIds = new Set(mangaCategoryIds.flatMap(s => [...s]))
+  const mix = new Set([...allIds].filter(x => !common.has(x)))
+
+  return cats.map(category => {
+    if (common.has(category.id)) {
+      return triSelection(category, 'include')
+    }
+    if (mix.has(category.id)) {
+      return triSelection(category, 'exclude')
+    }
+    return triSelection(category, 'none')
+  })
+})
+
+async function onChangeCategoryConfirmed(include: number[], exclude: number[]) {
+  const targets = [...selectedManga.value]
+  const targetIds = targets.map(m => m.id)
+  clearSelection()
+
+  const success = await server.setMangaCategories(targetIds, include, exclude)
+  if (success) {
+    notify('Categories updated')
+  } else {
+    notify('Failed to update categories')
+  }
+}
+
+async function onBatchDownload(action?: string) {
+  if (!action) return
+  const targets = [...selectedManga.value]
+  clearSelection()
+
+  try {
+    const count = await server.batchDownloadChapters(targets, action as BatchDownloadAction)
+    if (count > 0) {
+      notify(`Queued ${count} chapter${count === 1 ? '' : 's'} for download`)
+    } else {
+      notify('No eligible chapters to download')
+    }
+  } catch (error) {
+    notify(error instanceof Error ? error.message : 'Failed to queue chapters for download')
+  }
 }
 /** `onClickSelectAll` — every entry of the current page is selected. */
 function selectAll() {
@@ -519,10 +585,11 @@ onMounted(() => {
     <MangaBottomActionMenu
       variant="library"
       :visible="selection.length > 0"
-      :can-download="false"
+      :can-download="true"
       @set-categories="changeCategoryOpen = true"
       @mark-as-read="onMarkAsRead"
       @mark-as-unread="onMarkAsUnread"
+      @download="onBatchDownload"
       @delete="openDeleteDialog"
     />
     <!-- DeleteLibraryMangaDialog.kt -->

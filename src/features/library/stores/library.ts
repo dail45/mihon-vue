@@ -1,11 +1,20 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiErrorMessage, createSuwayomiApi } from '@/core/api/client'
-import { deleteChapterDownload } from '@/core/api/chapterDownloads'
+import { deleteChapterDownload, enqueueChapterDownloadsBatch } from '@/core/api/chapterDownloads'
 import { updateChaptersBatch } from '@/core/api/chaptersBatch'
+import { updateMangasCategoriesBatch } from '@/core/api/categoriesBatch'
 import { pLimit } from '@/core/utils/pLimit'
 import type { Category, Manga } from '@/core/api/types'
 import { useConnectionStore } from './connection'
+
+export type BatchDownloadAction =
+  | 'NEXT_1_CHAPTER'
+  | 'NEXT_5_CHAPTERS'
+  | 'NEXT_10_CHAPTERS'
+  | 'NEXT_25_CHAPTERS'
+  | 'UNREAD_CHAPTERS'
+  | 'BOOKMARKED_CHAPTERS'
 
 export const useLibraryStore = defineStore('library', () => {
   const connection = useConnectionStore()
@@ -154,6 +163,167 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
+  /**
+   * Optimistically updates the reactive libraryByCategory map.
+   */
+  function updateMangaCategoriesLocally(
+    mangaIds: number[],
+    addToCategories: number[],
+    removeFromCategories: number[],
+  ) {
+    const next: Record<number, Manga[]> = {}
+    for (const [k, v] of Object.entries(libraryByCategory.value)) {
+      next[Number(k)] = [...v]
+    }
+
+    const mangaMap = new Map<number, Manga>()
+    for (const list of Object.values(next)) {
+      for (const m of list) {
+        if (mangaIds.includes(m.id)) {
+          mangaMap.set(m.id, m)
+        }
+      }
+    }
+
+    for (const catId of removeFromCategories) {
+      if (next[catId]) {
+        next[catId] = next[catId].filter(m => !mangaIds.includes(m.id))
+      }
+    }
+
+    for (const catId of addToCategories) {
+      if (!next[catId]) next[catId] = []
+      const existingIds = new Set(next[catId].map(m => m.id))
+      for (const id of mangaIds) {
+        const m = mangaMap.get(id)
+        if (m && !existingIds.has(id)) {
+          next[catId].push(m)
+        }
+      }
+    }
+
+    // Default category (id 0) maintenance
+    const nonDefaultCats = categories.value.filter(c => c.id !== 0).map(c => c.id)
+    if (next[0]) {
+      next[0] = next[0].filter(m => {
+        if (!mangaIds.includes(m.id)) return true
+        const inCustom = nonDefaultCats.some(cid => (next[cid] || []).some(item => item.id === m.id))
+        return !inCustom
+      })
+      for (const id of mangaIds) {
+        const inCustom = nonDefaultCats.some(cid => (next[cid] || []).some(item => item.id === id))
+        if (!inCustom) {
+          const m = mangaMap.get(id)
+          if (m && !next[0].some(item => item.id === id)) {
+            next[0].push(m)
+          }
+        }
+      }
+    }
+
+    libraryByCategory.value = next
+  }
+
+  /**
+   * Sets categories for multiple manga entries with optimistic update,
+   * GraphQL batch mutation, and fallback to single-entry mutations.
+   */
+  async function setMangaCategories(
+    mangaIds: number[],
+    addToCategories: number[],
+    removeFromCategories: number[],
+  ): Promise<boolean> {
+    if (!mangaIds.length || mutatingLibrary.value) return false
+    const gen = connection.serverGeneration
+    mutatingLibrary.value = true
+    mutationError.value = null
+
+    const currentCategoriesByManga: Record<number, number[]> = {}
+    for (const id of mangaIds) {
+      currentCategoriesByManga[id] = categories.value
+        .filter(c => (libraryByCategory.value[c.id] || []).some(m => m.id === id))
+        .map(c => c.id)
+    }
+
+    updateMangaCategoriesLocally(mangaIds, addToCategories, removeFromCategories)
+
+    try {
+      const success = await updateMangasCategoriesBatch(
+        connection.apiUrl,
+        mangaIds,
+        { addToCategories, removeFromCategories },
+        currentCategoriesByManga,
+      )
+
+      if (!success) {
+        throw new Error('Failed to update manga categories.')
+      }
+
+      if (gen === connection.serverGeneration) {
+        await loadLibrary()
+      }
+      return true
+    } catch (error) {
+      if (gen === connection.serverGeneration) {
+        mutationError.value = `${apiErrorMessage(error)} Category changes may not have persisted; refreshing.`
+        await loadLibrary()
+      }
+      return false
+    } finally {
+      mutatingLibrary.value = false
+    }
+  }
+
+  /**
+   * Batch queues chapters for download across selected manga.
+   */
+  async function batchDownloadChapters(mangaList: Manga[], action: BatchDownloadAction): Promise<number> {
+    if (!mangaList.length) return 0
+    const api = createSuwayomiApi(connection.apiUrl)
+    const chapterIdsToQueue: number[] = []
+
+    for (const manga of mangaList) {
+      try {
+        const chapters = await api.chapters(manga.id)
+        const sorted = [...chapters].sort((a, b) => {
+          if (a.chapterNumber >= 0 && b.chapterNumber >= 0) {
+            return a.chapterNumber - b.chapterNumber
+          }
+          return a.index - b.index
+        })
+
+        const eligible = sorted.filter(c => !c.downloaded)
+
+        let targets: typeof eligible = []
+        if (action === 'NEXT_1_CHAPTER') {
+          targets = eligible.filter(c => !c.read).slice(0, 1)
+        } else if (action === 'NEXT_5_CHAPTERS') {
+          targets = eligible.filter(c => !c.read).slice(0, 5)
+        } else if (action === 'NEXT_10_CHAPTERS') {
+          targets = eligible.filter(c => !c.read).slice(0, 10)
+        } else if (action === 'NEXT_25_CHAPTERS') {
+          targets = eligible.filter(c => !c.read).slice(0, 25)
+        } else if (action === 'UNREAD_CHAPTERS') {
+          targets = eligible.filter(c => !c.read)
+        } else if (action === 'BOOKMARKED_CHAPTERS') {
+          targets = eligible.filter(c => c.bookmarked)
+        }
+
+        for (const ch of targets) {
+          chapterIdsToQueue.push(ch.id)
+        }
+      } catch (e) {
+        console.warn(`Failed to retrieve chapters for manga ${manga.id}:`, e)
+      }
+    }
+
+    if (chapterIdsToQueue.length > 0) {
+      await enqueueChapterDownloadsBatch(connection.apiUrl, chapterIdsToQueue)
+    }
+
+    return chapterIdsToQueue.length
+  }
+
   function reset() {
     libraryRequest++
     categories.value = []
@@ -179,6 +349,9 @@ export const useLibraryStore = defineStore('library', () => {
     setLibraryMembership,
     removeMangas,
     markMangasRead,
+    updateMangaCategoriesLocally,
+    setMangaCategories,
+    batchDownloadChapters,
     reset,
   }
 })

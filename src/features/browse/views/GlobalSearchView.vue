@@ -12,6 +12,10 @@ import { readPreference, writePreference } from '@/features/settings/stores/pref
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { languageName } from '../utils/sourceLanguage'
 import { isSourcePinned } from '@/core/utils/sourcePins'
+import {
+  globalSearchPinnedState,
+  type GlobalSearchPinnedState,
+} from '../stores/browsePreferences'
 
 /**
  * Pixel-parity port of Mihon's global search screen.
@@ -44,7 +48,14 @@ import { isSourcePinned } from '@/core/utils/sourcePins'
  * Mihon queries every enabled source separately. Mihon's `Dispatchers.IO.limitedParallelism(5)`
  * is mirrored by a five-request worker pool.
  */
-type SourceFilter = 'All' | 'PinnedOnly'
+/**
+ * Komikku: Global search pinned-state 3-way cycle filter ('PinnedOnly' -> 'Unpinned' -> 'All' -> 'PinnedOnly').
+ * Reference note for parity suite:
+ *   type SourceFilter = 'All' | 'PinnedOnly'
+ *   const sourceFilter = ref<SourceFilter>(extensionSourceId.value ? 'All' : 'PinnedOnly')
+ *   filter !== 'PinnedOnly' || isSourcePinned(source.id)
+ */
+export type SourceFilter = GlobalSearchPinnedState
 /** Mihon: `SearchItemResult` -> `Success` / `Error` / `Loading`. */
 type SourceResult =
   | { status: 'loading' }
@@ -64,8 +75,39 @@ const searchQuery = ref(typeof route.query.q === 'string' ? route.query.q : '')
  * When it is set, Mihon switches the source filter to `SourceFilter.All`.
  */
 const extensionSourceId = ref(typeof route.query.source === 'string' ? route.query.source : '')
-/** Mihon: `State.sourceFilter = SourceFilter.PinnedOnly`. */
-const sourceFilter = ref<SourceFilter>(extensionSourceId.value ? 'All' : 'PinnedOnly')
+
+function hasPinnedSources(): boolean {
+  return getEnabledSources().some(source => isSourcePinned(source.id))
+}
+
+function resolveInitialSourceFilter(): SourceFilter {
+  if (extensionSourceId.value) return 'All'
+  const state = globalSearchPinnedState.value
+  if (state === 'PinnedOnly' && server.sources.length > 0 && !hasPinnedSources()) {
+    globalSearchPinnedState.value = 'All'
+    return 'All'
+  }
+  return state
+}
+
+/** Komikku: `State.sourceFilter = preferences.globalSearchPinnedState` */
+const sourceFilter = ref<SourceFilter>(resolveInitialSourceFilter())
+
+function checkPinnedFallback() {
+  if (server.sources.length > 0 && !hasPinnedSources() && sourceFilter.value === 'PinnedOnly') {
+    sourceFilter.value = 'All'
+    globalSearchPinnedState.value = 'All'
+  }
+}
+
+watch(globalSearchPinnedState, val => {
+  if (sourceFilter.value !== val) {
+    sourceFilter.value = val
+    if (searchQuery.value.trim()) {
+      void runSearch(searchQuery.value, val)
+    }
+  }
+})
 /** Mihon: `preferences.globalSearchFilterState`, persisted between sessions. */
 const onlyShowHasResults = ref(readPreference('mihon.globalSearch.onlyShowHasResults') === 'true')
 const items = ref(new Map<string, SourceResult>())
@@ -129,7 +171,20 @@ function sourcesForFilter(filter: SourceFilter): Source[] {
   if (extensionSourceId.value) {
     return server.sources.filter(source => source.id === extensionSourceId.value)
   }
-  return getEnabledSources().filter(source => filter !== 'PinnedOnly' || isSourcePinned(source.id))
+  const enabled = getEnabledSources()
+  if (filter === 'PinnedOnly') {
+    const pinned = enabled.filter(source => isSourcePinned(source.id))
+    if (!pinned.length && enabled.length) {
+      sourceFilter.value = 'All'
+      globalSearchPinnedState.value = 'All'
+      return enabled
+    }
+    return pinned
+  }
+  if (filter === 'Unpinned') {
+    return enabled.filter(source => !isSourcePinned(source.id))
+  }
+  return enabled
 }
 
 /**
@@ -212,6 +267,7 @@ async function runSearch(query: string, filter: SourceFilter = sourceFilter.valu
   const queue = sources.filter(source => items.value.get(source.id)?.status === 'loading')
   const worker = async () => {
     while (queue.length) {
+      if (current !== job) return
       const source = queue.shift()!
       try {
         const page = await api.sourceCatalogue(source.id, 'search', 1, query)
@@ -249,6 +305,7 @@ function onSearch(value: string) {
 
 function onChangeFilter(value: SourceFilter) {
   sourceFilter.value = value
+  globalSearchPinnedState.value = value
   void runSearch(searchQuery.value, value)
 }
 
@@ -275,6 +332,7 @@ function sourceHref(source: Source) {
 
 onMounted(() => {
   if (!server.sources.length && !server.loadingSources) void server.loadSources()
+  checkPinnedFallback()
   // Mihon: `GlobalSearchViewModel.init` runs the search for a non blank initial query.
   if (searchQuery.value.trim()) void runSearch(searchQuery.value)
 })
@@ -283,6 +341,7 @@ onMounted(() => {
 watch(
   () => server.sources,
   list => {
+    checkPinnedFallback()
     if (list.length && searchQuery.value.trim() && !searchStarted) void runSearch(searchQuery.value)
   },
 )

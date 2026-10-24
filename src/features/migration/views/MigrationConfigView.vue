@@ -328,11 +328,13 @@ const HIDE_UNMATCHED_KEY = 'mihon.migration.hideUnmatched'
 const HIDE_WITHOUT_UPDATES_KEY = 'mihon.migration.hideWithoutUpdates'
 const DEEP_SEARCH_KEY = 'mihon.migration.deepSearchMode'
 const PRIORITIZE_KEY = 'mihon.migration.prioritizeByChapters'
+const SMART_SEARCH_SINGLE_KEY = 'mihon.migration.smartSearchSingleEntry'
 
 const hideUnmatched = ref(readBool(HIDE_UNMATCHED_KEY, false))
 const hideWithoutUpdates = ref(readBool(HIDE_WITHOUT_UPDATES_KEY, false))
 const deepSearchMode = ref(readBool(DEEP_SEARCH_KEY, false))
 const prioritizeByChapters = ref(readBool(PRIORITIZE_KEY, false))
+const smartSearchSingleEntry = ref(readBool(SMART_SEARCH_SINGLE_KEY, false))
 
 function setPref(key: string, value: boolean) {
   writeBool(key, value)
@@ -343,6 +345,7 @@ watch(hideUnmatched, value => setPref(HIDE_UNMATCHED_KEY, value))
 watch(hideWithoutUpdates, value => setPref(HIDE_WITHOUT_UPDATES_KEY, value))
 watch(deepSearchMode, value => setPref(DEEP_SEARCH_KEY, value))
 watch(prioritizeByChapters, value => setPref(PRIORITIZE_KEY, value))
+watch(smartSearchSingleEntry, value => setPref(SMART_SEARCH_SINGLE_KEY, value))
 
 /* ------------------------------------------------------------------- flow */
 
@@ -360,19 +363,29 @@ function routeExists(path: string) {
  * screen, several entries open the configuration sheet first.
  */
 function continueMigration(openSheet: boolean, extraQuery: string | null) {
-  const id = singleMangaId.value
-  if (id === null && openSheet) {
+  if (openSheet) {
     sheetOpen.value = true
     return
   }
+  const id = singleMangaId.value
   if (id !== null) {
-    if (routeExists(MIGRATE_SEARCH_PATH)) {
-      void router.push({ path: MIGRATE_SEARCH_PATH.replace(':mangaId', encodeURIComponent(String(id))) })
+    if (smartSearchSingleEntry.value) {
+      if (routeExists(MIGRATE_LIST_PATH)) {
+        void router.push({
+          path: MIGRATE_LIST_PATH,
+          query: extraQuery ? { ids: String(id), extraSearchQuery: extraQuery } : { ids: String(id) },
+        })
+        return
+      }
+    } else {
+      if (routeExists(MIGRATE_SEARCH_PATH)) {
+        void router.push({ path: MIGRATE_SEARCH_PATH.replace(':mangaId', encodeURIComponent(String(id))) })
+        return
+      }
+      stubText.value = 'Searching for a manual match of the entry in another source is not available in the web version yet.'
+      stubOpen.value = true
       return
     }
-    stubText.value = 'Searching for a manual match of the entry in another source is not available in the web version yet.'
-    stubOpen.value = true
-    return
   }
   if (routeExists(MIGRATE_LIST_PATH)) {
     void router.push({
@@ -605,6 +618,28 @@ watch(() => server.sources, () => {
             <Md3Switch
               :model-value="hideWithoutUpdates"
               label="Hide entries without newer chapters"
+              tabindex="-1"
+              aria-hidden="true"
+            />
+          </div>
+
+          <!-- Switch: Smart search for single entry (Komikku) -->
+          <div
+            v-if="singleMangaId !== null"
+            class="migration-config-switch-item has-subtitle"
+            role="button"
+            tabindex="0"
+            @click="smartSearchSingleEntry = !smartSearchSingleEntry"
+            @keydown.space.prevent="smartSearchSingleEntry = !smartSearchSingleEntry"
+            @keydown.enter.prevent="smartSearchSingleEntry = !smartSearchSingleEntry"
+          >
+            <div class="migration-config-switch-content">
+              <span class="migration-config-switch-title">Smart search for single entry</span>
+              <span class="migration-config-switch-subtitle">If enabled, automatically picks the best match result. Otherwise, shows all search results for manual selection.</span>
+            </div>
+            <Md3Switch
+              :model-value="smartSearchSingleEntry"
+              label="Smart search for single entry"
               tabindex="-1"
               aria-hidden="true"
             />

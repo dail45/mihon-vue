@@ -15,6 +15,14 @@ export interface UpdateChaptersPatch {
   lastPageRead?: number
 }
 
+export interface ChapterProgressSyncItem {
+  id: number
+  index: number
+  isRead?: boolean
+  lastPageRead?: number
+  bookmarked?: boolean
+}
+
 const updateChaptersMutation = `mutation UpdateChapters($input: UpdateChaptersInput!) {
   updateChapters(input: $input) {
     chapters {

@@ -10,8 +10,8 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 //     properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
 //   )
 //
-// The reference has NO title, NO icon and NO dismiss button: the body of the dialog is the linear
-// progress indicator and the only action is the "Cancel" TextButton, which is the confirmButton
+// The reference has NO title, NO icon and NO dismiss button: the body of the dialog
+// is the linear progress indicator and the only action is the "Cancel" TextButton, which is the confirmButton
 // and therefore renders rightmost (Box(align = End) around the AlertDialogFlowRow).
 // The text slot is skipped only when `progress` is NaN, but the slot itself (and its 24dp bottom
 // padding) is always part of the layout, so the button keeps the same position in both cases.
@@ -38,8 +38,11 @@ const props = withDefaults(
      * endpoint, so the dialog reports the limitation instead of pretending the work is running.
      */
     supported?: boolean
+    title?: string
+    stepLabel?: string
+    currentMangaTitle?: string
   }>(),
-  { supported: false },
+  { supported: true },
 )
 
 const emit = defineEmits<{ (event: 'cancel'): void }>()
@@ -183,10 +186,16 @@ function cancel() {
   <v-dialog v-model="open" persistent max-width="560">
     <div class="migration-progress-dialog">
       <!--
-        The text slot of the reference: only the linear progress indicator. The 24dp bottom padding
-        of the slot is kept even when the indicator is not composed (NaN progress).
+        The text slot of the reference: linear progress indicator, step label and optional title.
+        The 24dp bottom padding of the slot is kept even when the indicator is not composed.
       -->
       <div class="migration-progress-text">
+        <p v-if="currentMangaTitle || title" class="migration-progress-title">
+          {{ currentMangaTitle || title }}
+        </p>
+        <p v-if="stepLabel" class="migration-progress-step">
+          {{ stepLabel }}
+        </p>
         <div
           v-if="showIndicator"
           ref="indicatorEl"
@@ -241,6 +250,28 @@ function cancel() {
     align-items: flex-start;
     gap: 8px;
     padding-bottom: 24px;
+    width: 100%;
+  }
+  .migration-progress-title {
+    margin: 0;
+    max-width: 100%;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 500;
+    letter-spacing: .15px;
+    color: rgb(var(--v-theme-on-surface));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .migration-progress-step {
+    margin: 0;
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    letter-spacing: .25px;
+    color: rgb(var(--v-theme-on-surface-variant));
   }
   /* LinearProgressIndicator canvas: 240dp wide, coerced by the parent to the 232dp content width,
      4dp high. */
@@ -250,6 +281,7 @@ function cancel() {
     max-width: 240px;
     height: 4px;
     flex: none;
+    margin-top: 4px;
   }
   .migration-progress-track {
     position: absolute;
