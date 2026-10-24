@@ -6,6 +6,7 @@ import { useSuwayomiStore } from '../stores/suwayomi'
 import { useTabletUi } from '@/core/composables/useTabletUi'
 import { sourceOf } from '@/core/utils/library'
 import { findDuplicateManga, type DuplicateManga } from '@/core/utils/duplicates'
+import { t } from '@/core/i18n'
 
 defineOptions({ name: 'DuplicateMangaDialog' })
 
@@ -35,10 +36,19 @@ const props = withDefaults(defineProps<{
    * so the migration action falls back to an explicit "not supported" stub.
    */
   migrateSupported?: boolean
-}>(), { migrateSupported: false })
+  /** Whether the dialog is invoked in bulk favorite / batch addition mode. */
+  bulk?: boolean
+}>(), {
+  migrateSupported: false,
+  bulk: false,
+})
 const open = defineModel<boolean>({ required: true })
 const emit = defineEmits<{
   (event: 'confirm'): void
+  (event: 'allow-all'): void
+  (event: 'skip'): void
+  (event: 'skip-all'): void
+  (event: 'cancel'): void
   (event: 'open-manga', manga: Manga): void
   (event: 'migrate', manga: Manga): void
 }>()
@@ -354,19 +364,63 @@ watch(open, value => {
             </div>
           </div>
 
-          <!-- Column(horizontalPadding) { HorizontalDivider(); TextPreferenceWidget("Add anyway", Add) } -->
-          <div class="duplicate-actions">
+          <!-- Bulk mode: 4 buttons (Add anyway, Allow all, Skip it, Skip all) + Cancel -->
+          <div v-if="bulk" class="duplicate-bulk-container">
             <div class="duplicate-divider" />
-            <button type="button" class="duplicate-add" @click="open = false; emit('confirm')">
-              <span class="duplicate-add-icon-box">
-                <span class="material-symbols-rounded duplicate-add-icon" aria-hidden="true">add</span>
-              </span>
-              <span class="duplicate-add-text">Add anyway</span>
+            <div class="duplicate-bulk-grid">
+              <button
+                type="button"
+                class="duplicate-bulk-btn duplicate-bulk-btn--filled"
+                @click="open = false; emit('confirm')"
+              >
+                {{ t('action_add_anyway') || 'Add anyway' }}
+              </button>
+              <button
+                type="button"
+                class="duplicate-bulk-btn duplicate-bulk-btn--tonal"
+                @click="open = false; emit('allow-all')"
+              >
+                {{ t('action_allow_all_duplicate_manga') || 'Allow all' }}
+              </button>
+              <button
+                type="button"
+                class="duplicate-bulk-btn duplicate-bulk-btn--outlined"
+                @click="open = false; emit('skip')"
+              >
+                {{ t('action_skip_duplicate_manga') || 'Skip it' }}
+              </button>
+              <button
+                type="button"
+                class="duplicate-bulk-btn duplicate-bulk-btn--outlined"
+                @click="open = false; emit('skip-all')"
+              >
+                {{ t('action_skip_all_duplicate_manga') || 'Skip all' }}
+              </button>
+            </div>
+            <button
+              type="button"
+              class="duplicate-cancel"
+              @click="open = false; emit('cancel')"
+            >
+              {{ t('action_cancel') || 'Cancel' }}
             </button>
           </div>
 
-          <!-- OutlinedButton(action_cancel, horizontalPadding + padding(bottom = 16dp), heightIn(min = 56dp)) -->
-          <button type="button" class="duplicate-cancel" @click="open = false">Cancel</button>
+          <!-- Single mode: Column(horizontalPadding) { HorizontalDivider(); TextPreferenceWidget("Add anyway", Add) } -->
+          <template v-else>
+            <div class="duplicate-actions">
+              <div class="duplicate-divider" />
+              <button type="button" class="duplicate-add" @click="open = false; emit('confirm')">
+                <span class="duplicate-add-icon-box">
+                  <span class="material-symbols-rounded duplicate-add-icon" aria-hidden="true">add</span>
+                </span>
+                <span class="duplicate-add-text">{{ t('action_add_anyway') || 'Add anyway' }}</span>
+              </button>
+            </div>
+
+            <!-- OutlinedButton(action_cancel, horizontalPadding + padding(bottom = 16dp), heightIn(min = 56dp)) -->
+            <button type="button" class="duplicate-cancel" @click="open = false; emit('cancel')">{{ t('action_cancel') || 'Cancel' }}</button>
+          </template>
         </div>
       </div>
     </v-card>
@@ -515,6 +569,66 @@ watch(open, value => {
 }
 /* Material Symbols "RoundedFilled" variants are drawn with the filled axis. */
 .duplicate-icon-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+/* Bulk duplicate actions */
+.duplicate-bulk-container {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.duplicate-bulk-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+.duplicate-bulk-btn {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.duplicate-bulk-btn:active {
+  transform: scale(0.98);
+}
+.duplicate-bulk-btn--filled {
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  border: none;
+}
+.duplicate-bulk-btn--filled:hover {
+  filter: brightness(0.92);
+}
+.duplicate-bulk-btn--tonal {
+  background: rgb(var(--v-theme-secondary-container));
+  color: rgb(var(--v-theme-on-secondary-container));
+  border: none;
+}
+.duplicate-bulk-btn--tonal:hover {
+  filter: brightness(0.92);
+}
+.duplicate-bulk-btn--outlined {
+  background: transparent;
+  color: rgb(var(--v-theme-primary));
+  border: 1px solid rgb(var(--v-theme-outline));
+}
+.duplicate-bulk-btn--outlined:hover {
+  background: color-mix(in srgb, rgb(var(--v-theme-primary)) 8%, transparent);
+}
+.duplicate-bulk-container .duplicate-cancel {
+  margin: 0;
+  width: 100%;
+}
 
 /* Column(horizontalPadding = 24dp) { HorizontalDivider(); TextPreferenceWidget("Add anyway", Add) } */
 .duplicate-actions { padding: 0 24px; }

@@ -124,6 +124,25 @@ const relativeTime = ref(read('relativeTime') === 'true')
 const imagesInDescription = ref(read('imagesInDescription') === 'true')
 const language = ref(read('language') ?? '')
 
+function getInitialPanorama(): boolean {
+  try {
+    const raw = localStorage.getItem('mihon.ui.usePanoramaCover') ?? read('usePanoramaCover')
+    if (raw !== null) return raw === 'true'
+  } catch { /* private mode */ }
+  return true
+}
+
+function getInitialTopAlign(): boolean {
+  try {
+    const raw = localStorage.getItem('mihon.ui.topAlignCover') ?? read('topAlignCover')
+    if (raw !== null) return raw === 'true'
+  } catch { /* private mode */ }
+  return false
+}
+
+const usePanoramaCover = ref(getInitialPanorama())
+const topAlignCover = ref(getInitialTopAlign())
+
 watch(appThemeId, v => {
   write('appTheme', v)
   try {
@@ -142,6 +161,14 @@ watch(timeFormat, v => write('timeFormat', v))
 watch(relativeTime, v => write('relativeTime', String(v)))
 watch(imagesInDescription, v => write('imagesInDescription', String(v)))
 watch(language, v => write('language', v))
+watch(usePanoramaCover, v => {
+  write('usePanoramaCover', String(v))
+  try { localStorage.setItem('mihon.ui.usePanoramaCover', String(v)) } catch { /* private mode */ }
+})
+watch(topAlignCover, v => {
+  write('topAlignCover', String(v))
+  try { localStorage.setItem('mihon.ui.topAlignCover', String(v)) } catch { /* private mode */ }
+})
 
 function hexToRgbTriplet(hex: string): string {
   const clean = hex.replace('#', '')
@@ -409,6 +436,8 @@ export function useAppearancePreferences() {
     relativeTime,
     imagesInDescription,
     language,
+    usePanoramaCover,
+    topAlignCover,
     currentTheme,
     isDark,
     appThemes,

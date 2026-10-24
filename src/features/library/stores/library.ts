@@ -7,6 +7,7 @@ import { updateMangasCategoriesBatch } from '@/core/api/categoriesBatch'
 import { pLimit } from '@/core/utils/pLimit'
 import type { Category, Manga } from '@/core/api/types'
 import { useConnectionStore } from './connection'
+import { useMangaOverridesStore } from '@/features/manga/stores/mangaOverrides'
 
 export type BatchDownloadAction =
   | 'NEXT_1_CHAPTER'
@@ -18,9 +19,10 @@ export type BatchDownloadAction =
 
 export const useLibraryStore = defineStore('library', () => {
   const connection = useConnectionStore()
+  const overridesStore = useMangaOverridesStore()
 
   const categories = ref<Category[]>([])
-  const libraryByCategory = ref<Record<number, Manga[]>>({})
+  const rawLibraryByCategory = ref<Record<number, Manga[]>>({})
   const activeCategoryId = ref<number | null>(null)
   const loadingLibrary = ref(false)
   const libraryError = ref<string | null>(null)
@@ -28,6 +30,19 @@ export const useLibraryStore = defineStore('library', () => {
   const mutationError = ref<string | null>(null)
 
   let libraryRequest = 0
+
+  const libraryByCategory = computed({
+    get: () => {
+      const result: Record<number, Manga[]> = {}
+      for (const [k, v] of Object.entries(rawLibraryByCategory.value)) {
+        result[Number(k)] = v.map(m => overridesStore.applyOverride(m))
+      }
+      return result
+    },
+    set: (val: Record<number, Manga[]>) => {
+      rawLibraryByCategory.value = val
+    },
+  })
 
   const library = computed(() =>
     activeCategoryId.value === null ? [] : libraryByCategory.value[activeCategoryId.value] || [],

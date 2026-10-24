@@ -23,6 +23,11 @@ import SetIntervalDialog from '../components/SetIntervalDialog.vue'
 import DuplicateMangaDialog from '@/features/library/components/DuplicateMangaDialog.vue'
 import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'
 import TrackInfoDialog from '@/features/trackers/components/TrackInfoDialog.vue'
+import EditMangaDialog from '../components/EditMangaDialog.vue'
+import EditMergedSettingsDialog from '../components/EditMergedSettingsDialog.vue'
+import { useMangaOverridesStore } from '../stores/mangaOverrides'
+import { useMergedMangaStore, deduplicateMergedChapters } from '../stores/mergedManga'
+import { useI18n } from 'vue-i18n'
 import { useChapterSettings } from '../stores/chapterSettings'
 import { usePreferencesStore, readPreference } from '@/features/settings/stores/preferences'
 import { chapterTitle, sortChapters } from '@/core/utils/chapters'
@@ -36,6 +41,8 @@ import { useMangaDownloads } from '../composables/useMangaDownloads'
 import { stateSelection, type CategorySelection } from '@/core/utils/categorySelection'
 import { findDuplicateManga, type DuplicateManga } from '@/core/utils/duplicates'
 import { availableScanlators, loadExcludedScanlators } from '@/core/utils/scanlatorFilter'
+import { fetchMangaTrackRecords, listTrackers } from '@/core/api/trackers'
+import { updateChaptersBatch } from '@/core/api/chaptersBatch'
 
 /**
  * Manga detail screen.
@@ -64,14 +71,24 @@ import { availableScanlators, loadExcludedScanlators } from '@/core/utils/scanla
  *  - `EmptyScreen`: MihonEmptyScreen with kaomoji face and retry action.
  */
 const route = useRoute(), router = useRouter(), server = useSuwayomiStore()
+const { t } = useI18n()
+const overridesStore = useMangaOverridesStore()
 const chapterSettingsOpen = ref(false), coverOpen = ref(false)
 const removeOpen = ref(false), deleteChaptersOpen = ref(false)
 const changeCategoryOpen = ref(false), setIntervalOpen = ref(false)
 const duplicateOpen = ref(false), duplicateEntries = ref<DuplicateManga[]>([])
+const editMergedDialogOpen = ref(false)
+const editInfoOpen = ref(false)
+const mergedMangaStore = useMergedMangaStore()
+const secondaryChaptersByMangaId = ref<Record<number, Chapter[]>>({})
+const mergedGroup = computed(() => mergedMangaStore.getGroup(Number(route.params.id)))
 
 const preferences = usePreferencesStore(), chapterPreferences = useChapterSettings()
 const chapterSettings = computed(() => chapterPreferences.forManga(server.apiUrl, Number(route.params.id)))
-const detail = computed(() => server.manga)
+const detail = computed(() => {
+  if (!server.manga) return null
+  return overridesStore.applyOverride(server.manga)
+})
 
 const STORAGE_KEY_INTERVAL = 'mihon-vue:manga-interval'
 const storedFetchInterval = ref(0)
@@ -233,7 +250,61 @@ watch(() => [route.params.id, server.apiUrl], startDownloadPolling, { immediate:
 function handleDownload(action: DownloadAction) {
   void onDownload(action, orderedChapters.value)
 }
-function onRefresh() { void server.loadManga(detail.value?.id ?? Number(route.params.id), true) }
+async function onRefresh() {
+  const mangaId = detail.value?.id ?? Number(route.params.id)
+  if (!mangaId) return
+  await server.loadManga(mangaId, true)
+
+  if (preferences.autoSyncProgressFromTrackers) {
+    try {
+      const records = await fetchMangaTrackRecords(server.apiUrl, mangaId)
+      if (records.length > 0) {
+        let highestReadChapter = 0
+        for (const rec of records) {
+          if (rec.lastChapterRead && rec.lastChapterRead > highestReadChapter) {
+            highestReadChapter = rec.lastChapterRead
+          }
+        }
+
+        if (highestReadChapter > 0) {
+          const chaptersToMark = (server.chapters || []).filter(ch => {
+            const num = ch.chapterNumber
+            return num > 0 && num <= highestReadChapter && !ch.read
+          })
+
+          if (chaptersToMark.length > 0) {
+            const ids = chaptersToMark.map(c => c.id)
+            const success = await updateChaptersBatch(server.apiUrl, ids, { isRead: true })
+            if (success) {
+              await server.loadManga(mangaId, false, true)
+              const template = t('sync_progress_from_trackers_up_to_chapter')
+              const msg = template && template.includes('{0}')
+                ? template.replace('{0}', String(highestReadChapter))
+                : `Progress synced from tracker up to chapter ${highestReadChapter}`
+              notify(msg)
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to auto-sync tracker progress:', e)
+    }
+  }
+}
+
+async function handleAddToLibrary() {
+  await server.setLibraryMembership(true)
+  if (preferences.trackOnAddingToLibrary) {
+    try {
+      const allTrackers = await listTrackers(server.apiUrl)
+      if (allTrackers.some(t => t.isLoggedIn)) {
+        trackingOpen.value = true
+      }
+    } catch {
+      // Non-blocking
+    }
+  }
+}
 
 function onMigrate() {
   const id = detail.value?.id ?? Number(route.params.id)
@@ -280,12 +351,12 @@ function onToggleLibrary() {
       return
     }
   }
-  void server.setLibraryMembership(true)
+  void handleAddToLibrary()
 }
 
 function onConfirmDuplicate() {
   duplicateOpen.value = false
-  void server.setLibraryMembership(true)
+  void handleAddToLibrary()
 }
 
 function onMigrateDuplicate(target: Manga) {
@@ -373,9 +444,60 @@ function onOpenWebView() {
 
 // --- Chapter list ----------------------------------------------------------------------------------
 
-const visibleChapters = computed(() => sortChapters(server.chapters, chapterSettings.value, preferences.downloadedOnly, ''))
+async function loadMergedChapters() {
+  const currentId = detail.value?.id ?? Number(route.params.id)
+  const group = mergedMangaStore.getGroup(currentId)
+  if (!group || group.references.length <= 1) {
+    secondaryChaptersByMangaId.value = {}
+    return
+  }
+  for (const ref of group.references) {
+    if (ref.mangaId !== currentId && ref.getChapterUpdates) {
+      try {
+        const chs = await api.value.chapters(ref.mangaId, false)
+        secondaryChaptersByMangaId.value[ref.mangaId] = chs
+      } catch (e) {
+        console.warn(`Failed to fetch chapters for merged manga ${ref.mangaId}:`, e)
+      }
+    }
+  }
+}
+
+watch([() => route.params.id, () => server.chapters], () => {
+  void loadMergedChapters()
+}, { immediate: true })
+
+const aggregatedChapters = computed(() => {
+  const currentId = detail.value?.id ?? Number(route.params.id)
+  const group = mergedGroup.value
+  const primaryRef = group?.references.find(r => r.mangaId === currentId)
+  const primarySourceName = primaryRef?.sourceName || (detail.value?.source as any)?.name || ''
+
+  const baseChapters = (server.chapters || []).map(c => ({
+    ...c,
+    sourceName: group && group.references.length > 1 ? primarySourceName : undefined,
+  }))
+
+  if (!group || group.references.length <= 1) {
+    return baseChapters
+  }
+
+  const combined = [...baseChapters]
+  for (const ref of group.references) {
+    if (ref.mangaId === currentId) continue
+    const secondary = secondaryChaptersByMangaId.value[ref.mangaId] || []
+    combined.push(...secondary.map(c => ({
+      ...c,
+      sourceName: ref.sourceName,
+    })))
+  }
+
+  return deduplicateMergedChapters(combined, group)
+})
+
+const visibleChapters = computed(() => sortChapters(aggregatedChapters.value, chapterSettings.value, preferences.downloadedOnly, ''))
 /** The chapters in reading order (oldest first), used by download actions and resume logic. */
-const orderedChapters = computed(() => server.chapters.slice().sort((a, b) => a.index - b.index))
+const orderedChapters = computed(() => aggregatedChapters.value.slice().sort((a, b) => a.index - b.index))
 /**
  * Mihon: `libraryPreferences.hideMissingChapters` (`MangaViewModel.kt:1134`).
  */
@@ -416,15 +538,24 @@ function chapterScanlator(chapter: { scanlator: string | null }) {
 // --- Chapter selection and mutations ----------------------------------------------------------------
 
 const api = computed(() => createSuwayomiApi(server.apiUrl))
-async function patchChapter(index: number, patch: { read?: boolean, bookmarked?: boolean, markPrevRead?: boolean, lastPageRead?: number }) {
-  const mangaId = detail.value?.id ?? Number(route.params.id)
-  server.updateChapterLocally(index, patch)
+async function patchChapter(chapterOrIndex: number | { index: number, mangaId?: number }, patch: { read?: boolean, bookmarked?: boolean, markPrevRead?: boolean, lastPageRead?: number }) {
+  const index = typeof chapterOrIndex === 'number' ? chapterOrIndex : chapterOrIndex.index
+  const currentId = detail.value?.id ?? Number(route.params.id)
+  const mangaId = (typeof chapterOrIndex === 'object' && chapterOrIndex.mangaId) ? chapterOrIndex.mangaId : currentId
+  if (mangaId === currentId) {
+    server.updateChapterLocally(index, patch)
+  }
   try {
     await api.value.modifyChapter(mangaId, index, patch)
-    void server.loadManga(mangaId, false, true)
+    if (mangaId === currentId) {
+      void server.loadManga(mangaId, false, true)
+    }
+    void loadMergedChapters()
   } catch (error) {
     notify(error instanceof Error ? error.message : 'The server rejected the request.')
-    void server.loadManga(mangaId, false, true)
+    if (mangaId === currentId) {
+      void server.loadManga(mangaId, false, true)
+    }
   }
 }
 const selectedChapterList = computed(() => visibleChapters.value.filter(c => selectedChapters.value.has(c.id)))
@@ -432,47 +563,56 @@ const bottomFlags = computed(() => mangaBottomActionFlags(selectedChapterList.va
 
 async function onBulkBookmark(bookmarked: boolean) {
   const chaptersToUpdate = [...selectedChapterList.value]
-  const mangaId = detail.value?.id ?? Number(route.params.id)
+  const currentMangaId = detail.value?.id ?? Number(route.params.id)
   cancelSelection()
   for (const chapter of chaptersToUpdate) {
-    server.updateChapterLocally(chapter.index, { bookmarked })
+    if (chapter.mangaId === currentMangaId) {
+      server.updateChapterLocally(chapter.index, { bookmarked })
+    }
   }
   try {
-    await Promise.all(chaptersToUpdate.map(c => api.value.modifyChapter(mangaId, c.index, { bookmarked })))
-    void server.loadManga(mangaId, false, true)
+    await Promise.all(chaptersToUpdate.map(c => api.value.modifyChapter(c.mangaId || currentMangaId, c.index, { bookmarked })))
+    void server.loadManga(currentMangaId, false, true)
+    void loadMergedChapters()
   } catch (error) {
     notify(error instanceof Error ? error.message : 'The server rejected the request.')
-    void server.loadManga(mangaId, false, true)
+    void server.loadManga(currentMangaId, false, true)
   }
 }
 async function onBulkRead(read: boolean) {
   const chaptersToUpdate = [...selectedChapterList.value]
-  const mangaId = detail.value?.id ?? Number(route.params.id)
+  const currentMangaId = detail.value?.id ?? Number(route.params.id)
   cancelSelection()
   const patch = read ? { read: true } : { read: false, lastPageRead: 0 }
   for (const chapter of chaptersToUpdate) {
-    server.updateChapterLocally(chapter.index, patch)
+    if (chapter.mangaId === currentMangaId) {
+      server.updateChapterLocally(chapter.index, patch)
+    }
   }
   try {
-    await Promise.all(chaptersToUpdate.map(c => api.value.modifyChapter(mangaId, c.index, patch)))
-    void server.loadManga(mangaId, false, true)
+    await Promise.all(chaptersToUpdate.map(c => api.value.modifyChapter(c.mangaId || currentMangaId, c.index, patch)))
+    void server.loadManga(currentMangaId, false, true)
+    void loadMergedChapters()
   } catch (error) {
     notify(error instanceof Error ? error.message : 'The server rejected the request.')
-    void server.loadManga(mangaId, false, true)
+    void server.loadManga(currentMangaId, false, true)
   }
 }
 async function onBulkMarkPreviousRead() {
   const chapter = selectedChapterList.value[0]
   if (!chapter) return
-  const mangaId = detail.value?.id ?? Number(route.params.id)
+  const mangaId = chapter.mangaId || (detail.value?.id ?? Number(route.params.id))
   cancelSelection()
-  server.updateChapterLocally(chapter.index, { markPrevRead: true })
+  if (mangaId === (detail.value?.id ?? Number(route.params.id))) {
+    server.updateChapterLocally(chapter.index, { markPrevRead: true })
+  }
   try {
     await api.value.modifyChapter(mangaId, chapter.index, { markPrevRead: true })
-    void server.loadManga(mangaId, false, true)
+    void server.loadManga(detail.value?.id ?? Number(route.params.id), false, true)
+    void loadMergedChapters()
   } catch (error) {
     notify(error instanceof Error ? error.message : 'The server rejected the request.')
-    void server.loadManga(mangaId, false, true)
+    void server.loadManga(detail.value?.id ?? Number(route.params.id), false, true)
   }
 }
 
@@ -480,6 +620,7 @@ function onChaptersDeleted() {
   cancelSelection()
   void server.loadManga(Number(route.params.id), false, true)
   void refreshDownloadInfos()
+  void loadMergedChapters()
   notify('Chapters deleted.')
 }
 
@@ -488,10 +629,11 @@ function onChapterDeleteError(message: string) {
 }
 
 /** Mihon `onChapterItemClick` (MangaScreen.kt:797-808). */
-function onChapterClick(chapter: { id: number, index: number }) {
+function onChapterClick(chapter: { id: number, mangaId?: number, index: number }) {
   if (selectedChapters.value.has(chapter.id)) { toggleChapterSelection(chapter.id); return }
   if (isActionMode.value) { toggleChapterSelection(chapter.id); return }
-  void router.push(`/manga/${detail.value?.id ?? Number(route.params.id)}/read/${chapter.index}`)
+  const targetMangaId = chapter.mangaId ?? (detail.value?.id ?? Number(route.params.id))
+  void router.push(`/manga/${targetMangaId}/read/${chapter.index}`)
 }
 
 /** Mihon: `onLongClick = { onChapterSelected(item, !item.selected, true) }` with range selection. */
@@ -500,9 +642,9 @@ function onChapterLongPress(chapter: { id: number }) {
 }
 
 /** Mihon `executeChapterSwipeAction` (MangaViewModel.kt:619-646). */
-async function onChapterSwipe(chapter: { id: number, index: number, read: boolean, bookmarked: boolean }, action: ChapterSwipeAction) {
-  if (action === 'toggle-read') await patchChapter(chapter.index, { read: !chapter.read })
-  else if (action === 'toggle-bookmark') await patchChapter(chapter.index, { bookmarked: !chapter.bookmarked })
+async function onChapterSwipe(chapter: { id: number, mangaId?: number, index: number, read: boolean, bookmarked: boolean }, action: ChapterSwipeAction) {
+  if (action === 'toggle-read') await patchChapter(chapter, { read: !chapter.read })
+  else if (action === 'toggle-bookmark') await patchChapter(chapter, { bookmarked: !chapter.bookmarked })
   else if (action === 'download') await onDownloadAction(chapter, 'start')
 }
 
@@ -642,10 +784,12 @@ function onTouchEnd() {
       @download="handleDownload"
       @open-filters="chapterSettingsOpen = true"
       @refresh="onRefresh"
+      @edit-info="editInfoOpen = true"
       @edit-categories="onEditCategories"
       @migrate="onMigrate"
       @share="onShare"
       @edit-notes="onEditNotes"
+      @merge-manga="editMergedDialogOpen = true"
     />
 
     <!--
@@ -657,7 +801,7 @@ function onTouchEnd() {
       <section ref="infoPane" class="manga-start-pane" aria-label="Manga information">
         <MangaInfoHeader
           :manga="detail"
-          :cover-url="server.thumbnailUrl(detail.id)"
+          :cover-url="detail.hasCustomCover ? (detail.thumbnailUrl || server.thumbnailUrl(detail.id)) : server.thumbnailUrl(detail.id)"
           :api-url="server.apiUrl"
           :source-name="sourceName"
           :source-id="detail.sourceId"
@@ -699,6 +843,7 @@ function onTouchEnd() {
               :date="chapterDate(chapterOf(entry)!.uploadDate)"
               :read-progress="chapterProgress(chapterOf(entry)!)"
               :scanlator="chapterScanlator(chapterOf(entry)!)"
+              :source-name="(chapterOf(entry) as any)?.sourceName"
               :read="chapterOf(entry)!.read"
               :bookmark="chapterOf(entry)!.bookmarked"
               :selected="selectedChapters.has(chapterOf(entry)!.id)"
@@ -707,7 +852,7 @@ function onTouchEnd() {
               :download-progress="downloadInfo(chapterOf(entry)!).progress"
               :swipe-start-action="preferences.chapterSwipeStartAction"
               :swipe-end-action="preferences.chapterSwipeEndAction"
-              :href="`/manga/${detail.id}/read/${chapterOf(entry)!.index}`"
+              :href="`/manga/${chapterOf(entry)!.mangaId || detail.id}/read/${chapterOf(entry)!.index}`"
               :intercept="isActionMode"
               @click="onChapterClick(chapterOf(entry)!)"
               @longpress="onChapterLongPress(chapterOf(entry)!)"
@@ -802,10 +947,22 @@ function onTouchEnd() {
   <MangaCoverDialog
     v-if="detail"
     v-model="coverOpen"
-    :src="server.thumbnailUrl(detail.id)"
+    :src="detail.hasCustomCover ? (detail.thumbnailUrl || server.thumbnailUrl(detail.id)) : server.thumbnailUrl(detail.id)"
     :title="detail.title"
     :in-library="detail.inLibrary"
     :is-local="isLocalSource"
+    :is-custom-cover="Boolean(detail.hasCustomCover)"
+    @edit="editInfoOpen = true"
+  />
+
+  <EditMangaDialog
+    v-if="detail"
+    v-model="editInfoOpen"
+    :manga="detail"
+    :source-name="sourceName"
+    :api-url="server.apiUrl"
+    @saved="notify(t('custom_info_saved'))"
+    @reset="notify(t('custom_info_reset'))"
   />
 
   <ChapterSettingsSheet
@@ -820,6 +977,13 @@ function onTouchEnd() {
     :manga-id="Number(route.params.id)"
     :manga-title="detail.title"
     @search="onTrackerSearch"
+  />
+
+  <EditMergedSettingsDialog
+    v-if="detail"
+    v-model="editMergedDialogOpen"
+    :primary-manga="detail"
+    @updated="loadMergedChapters"
   />
 
   <v-snackbar v-model="snackbar" timeout="3000">{{ snackbarText }}</v-snackbar>

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import type { Manga } from '@/core/api/types'
 import MarkdownRender from '@/core/components/MarkdownRender.vue'
 import MangaNotesSection from './MangaNotesSection.vue'
+import NamespaceTags from './NamespaceTags.vue'
 import { useMangaNotesStore } from '../stores/mangaNotes'
+import { useAppearanceStore } from '@/features/settings/stores/appearancePreferences'
 
 /**
  * Pixel-parity port of Mihon's
@@ -114,6 +117,20 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const appearance = useAppearanceStore()
+const coverNaturalRatio = ref<number>(1.5)
+
+function onCoverImageLoad(event: Event) {
+  const img = event.target as HTMLImageElement
+  if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+    coverNaturalRatio.value = img.naturalHeight / img.naturalWidth
+  }
+}
+
+const isPanoramaCover = computed(() => {
+  return appearance.usePanoramaCover && coverNaturalRatio.value <= 0.75
+})
+const isTopAlignCover = computed(() => appearance.topAlignCover)
 const descriptionExpanded = ref(props.defaultExpandState || props.large)
 const tagMenuOpen = ref(false)
 const selectedTag = ref('')
@@ -124,6 +141,42 @@ const stubQuery = ref('')
 // Clipboard toast / feedback
 const snackbar = ref(false)
 const snackbarText = ref('')
+
+const { t } = useI18n()
+
+// Subtle override indicators
+const isTitleOverridden = computed(() => {
+  const og = (props.manga as any).ogTitle
+  return Boolean(og && og !== props.manga.title)
+})
+
+const isAuthorOverridden = computed(() => {
+  const og = (props.manga as any).ogAuthor
+  return Boolean(og && og !== props.manga.author)
+})
+
+const isArtistOverridden = computed(() => {
+  const og = (props.manga as any).ogArtist
+  return Boolean(og && og !== props.manga.artist)
+})
+
+const isCoverOverridden = computed(() => {
+  const mAny = props.manga as any
+  return Boolean(
+    mAny.hasCustomCover ||
+    (mAny.ogThumbnailUrl && mAny.ogThumbnailUrl !== (props.coverUrl || props.manga.thumbnailUrl)),
+  )
+})
+
+const isStatusOverridden = computed(() => {
+  const og = (props.manga as any).ogStatus
+  return Boolean(og !== undefined && og !== props.manga.status)
+})
+
+const isDescriptionOverridden = computed(() => {
+  const og = (props.manga as any).ogDescription
+  return Boolean(og && og !== props.manga.description)
+})
 
 // Reactive notes tracking from Pinia store
 const notesStore = useMangaNotesStore()
@@ -336,12 +389,6 @@ const webViewButtonHandler = createLongPressHandler(
   },
 )
 
-function onTagClick(tag: string, event: MouseEvent) {
-  selectedTag.value = tag
-  selectedTagTarget.value = event.currentTarget as HTMLElement
-  tagMenuOpen.value = true
-}
-
 function searchTag() {
   tagMenuOpen.value = false
   searchGlobal(selectedTag.value)
@@ -371,11 +418,19 @@ async function copyTag() {
       <!-- MangaAndSourceTitlesSmall / MangaAndSourceTitlesLarge -->
       <div
         class="manga-info-titles"
+        :class="{
+          'manga-info-titles--top-align': isTopAlignCover,
+          'manga-info-titles--center-align': !isTopAlignCover,
+        }"
         :style="appBarPadding ? { paddingTop: `calc(${appBarPadding}px + 16px)` } : undefined"
       >
-        <!-- MangaCover.Book (aspect ratio 2:3, CornerExtraSmall = 4dp) -->
+        <!-- MangaCover.Book (aspect ratio 2:3, CornerExtraSmall = 4dp) or MangaCover.Panorama (aspect ratio 16:9) -->
         <button
           class="manga-info-cover"
+          :class="{
+            'manga-info-cover--panorama': isPanoramaCover,
+            'manga-info-cover--top-align': isTopAlignCover,
+          }"
           type="button"
           aria-label="Manga cover"
           @click="$emit('open-cover')"
@@ -385,7 +440,15 @@ async function copyTag() {
             :src="coverUrl || manga.thumbnailUrl || ''"
             :alt="title"
             loading="eager"
+            @load="onCoverImageLoad"
           />
+          <span
+            v-if="isCoverOverridden"
+            class="manga-info-cover-override-badge"
+            title="Custom cover"
+          >
+            <v-icon icon="edit" size="12" />
+          </span>
         </button>
 
         <!-- MangaContentInfo -->
@@ -402,6 +465,13 @@ async function copyTag() {
             @click="titleHandler.handleClick"
           >
             {{ title }}
+            <v-icon
+              v-if="isTitleOverridden"
+              icon="edit"
+              size="14"
+              class="manga-info-override-icon"
+              :title="t('source_value_hint', [(props.manga as any).ogTitle])"
+            />
           </h1>
 
           <!-- Spacer 2dp -->
@@ -421,6 +491,13 @@ async function copyTag() {
               @click="authorHandler.handleClick"
             >
               {{ author }}
+              <v-icon
+                v-if="isAuthorOverridden"
+                icon="edit"
+                size="12"
+                class="manga-info-override-icon"
+                :title="t('source_value_hint', [(props.manga as any).ogAuthor])"
+              />
             </span>
           </div>
 
@@ -438,6 +515,13 @@ async function copyTag() {
               @click="artistHandler.handleClick"
             >
               {{ artist }}
+              <v-icon
+                v-if="isArtistOverridden"
+                icon="edit"
+                size="12"
+                class="manga-info-override-icon"
+                :title="t('source_value_hint', [(props.manga as any).ogArtist])"
+              />
             </span>
           </div>
 
@@ -453,7 +537,16 @@ async function copyTag() {
             >
               {{ status.icon }}
             </span>
-            <span class="manga-info-status">{{ status.label }}</span>
+            <span class="manga-info-status">
+              {{ status.label }}
+              <v-icon
+                v-if="isStatusOverridden"
+                icon="edit"
+                size="12"
+                class="manga-info-override-icon"
+                title="Custom status"
+              />
+            </span>
             <span class="manga-info-dot" aria-hidden="true"> • </span>
             <span
               v-if="isStubSource"
@@ -571,6 +664,13 @@ async function copyTag() {
               dimmed
               eol-as-new-line
             />
+            <v-icon
+              v-if="isDescriptionOverridden"
+              icon="edit"
+              size="12"
+              class="manga-info-override-icon"
+              title="Custom description"
+            />
           </div>
         </div>
 
@@ -589,22 +689,14 @@ async function copyTag() {
         </div>
       </div>
 
-      <!-- Tags: SuggestionChips in LazyRow (collapsed) or FlowRow (expanded) -->
-      <div
+      <!-- Namespaced Color Tags (NamespaceTags.vue) -->
+      <NamespaceTags
         v-if="tags.length"
-        class="manga-tags"
-        :class="{ 'manga-tags--expanded': descriptionExpanded }"
-      >
-        <button
-          v-for="tag in tags"
-          :key="tag"
-          type="button"
-          class="manga-tag-chip"
-          @click="onTagClick(tag, $event)"
-        >
-          {{ tag }}
-        </button>
-      </div>
+        :tags="tags"
+        :expanded="descriptionExpanded"
+        @search="searchGlobal"
+        @copy="tag => copyToClipboard(tag)"
+      />
     </div>
 
     <!-- DropdownMenu of the tag chip: "Search" / "Copy to clipboard", anchored to chip -->
@@ -716,6 +808,13 @@ async function copyTag() {
   box-sizing: border-box;
 }
 
+.manga-info-titles--top-align {
+  align-items: flex-start;
+}
+.manga-info-titles--center-align {
+  align-items: center;
+}
+
 /* MangaCover.Book: aspectRatio 2/3, clip(MaterialTheme.shapes.extraSmall = 4dp). */
 .manga-info-cover {
   flex: none;
@@ -728,7 +827,19 @@ async function copyTag() {
   overflow: hidden;
   background: rgba(136, 136, 136, 0.12);
   cursor: pointer;
+  align-self: center;
+}
+
+.manga-info-cover--top-align {
   align-self: flex-start;
+}
+
+/* MangaCover.Panorama: wide 16:9 landscape card when ratio <= 0.75 */
+.manga-info-cover--panorama {
+  aspect-ratio: 16 / 9;
+  width: 140px;
+  max-width: 140px;
+  max-height: 100px;
 }
 .manga-info-cover-image {
   width: 100%;
@@ -1082,6 +1193,12 @@ async function copyTag() {
   max-width: 280px;
   margin: 0 auto;
 }
+.manga-info-header--large .manga-info-cover--panorama {
+  width: 65%;
+  max-width: 360px;
+  max-height: none;
+  aspect-ratio: 16 / 9;
+}
 .manga-info-header--large .manga-info-content {
   align-items: center;
   text-align: center;
@@ -1092,5 +1209,29 @@ async function copyTag() {
 .manga-info-header--large .manga-info-row {
   justify-content: center;
   max-width: 100%;
+}
+
+.manga-info-override-icon {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-inline-start: 4px;
+  opacity: 0.7;
+  color: rgb(var(--v-theme-primary));
+}
+
+.manga-info-cover-override-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
 }
 </style>

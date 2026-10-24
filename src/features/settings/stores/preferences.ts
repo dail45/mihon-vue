@@ -53,9 +53,9 @@ export const usePreferencesStore = defineStore('preferences', () => {
   }
   const chapterSwipeStartAction = swipePref('mihon.chapters.swipeEndAction', 'toggle-bookmark')
   const chapterSwipeEndAction = swipePref('mihon.chapters.swipeStartAction', 'toggle-read')
-  function bool(key: string, fallback: boolean) {
+  function bool(key: string, fallback: boolean, sync = false) {
     const stored = readPreference(key), value = ref(stored === null ? fallback : stored === 'true')
-    watch(value, v => writePreference(key, String(v))); return value
+    watch(value, v => writePreference(key, String(v)), sync ? { flush: 'sync' } : undefined); return value
   }
   function columns(key: string) {
     const raw = Number(readPreference(key)), value = ref(Number.isInteger(raw) && raw >= 0 && raw <= 10 ? raw : 0)
@@ -139,6 +139,11 @@ export const usePreferencesStore = defineStore('preferences', () => {
   watch(libraryDisplay, v => writePreference('mihon.library.display', v))
   watch(downloadedOnly, v => writePreference('mihon.library.downloadedOnly', String(v)))
   const migrationSmartSearchSingleEntry = bool('mihon.migration.smartSearchSingleEntry', false)
+
+  // 5.6 Tracker Auto-Sync & Prompt on Add
+  const autoSyncProgressFromTrackers = bool('pref_auto_sync_progress_from_trackers_key', true, true)
+  const trackOnAddingToLibrary = bool('track_on_adding_to_library', true, true)
+
   return {
     tabletUiMode,
     themeMode,
@@ -180,5 +185,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
     filterCategories,
     filterCategoriesInclude,
     filterCategoriesExclude,
+    autoSyncProgressFromTrackers,
+    trackOnAddingToLibrary,
   }
 })

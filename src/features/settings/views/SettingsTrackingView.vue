@@ -23,11 +23,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { listTrackers, loginTrackerCredentials, logoutTracker as logoutTrackerRequest, trackerIconUrl, type Tracker } from '@/core/api/trackers'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
+import { usePreferencesStore } from '@/features/settings/stores/preferences'
+import { t } from '@/core/i18n'
 import Md3Switch from '@/core/components/Md3Switch.vue'
 import TrackingLoginDialog from '@/features/trackers/components/TrackingLoginDialog.vue'
 import TrackingLogoutDialog from '@/features/trackers/components/TrackingLogoutDialog.vue'
 
 const server = useSuwayomiStore()
+const preferences = usePreferencesStore()
 
 /* ---------------------------------------------------------------- preferences (local) */
 
@@ -220,6 +223,32 @@ onMounted(loadTrackers)
       <a class="settings-tracking__help" :href="HELP_URL" target="_blank" rel="noopener noreferrer" aria-label="Tracking guide">
         <v-icon icon="help" size="24" />
       </a>
+    </div>
+
+    <!-- Open track menu on adding to library (Komikku pref_track_on_add_library) -->
+    <div class="pref-row pref-row--switch" @click="preferences.trackOnAddingToLibrary = !preferences.trackOnAddingToLibrary">
+      <span class="pref-text">
+        <span class="pref-title">{{ t('pref_track_on_add_library') || 'Open track menu on adding to library' }}</span>
+        <span class="pref-subtitle">{{ t('pref_track_on_add_library_summary') || 'Prompt tracking settings when adding new entries to library' }}</span>
+      </span>
+      <Md3Switch
+        :model-value="preferences.trackOnAddingToLibrary"
+        label="Open track menu on adding to library"
+        @update:model-value="(value: boolean) => { preferences.trackOnAddingToLibrary = value }"
+      />
+    </div>
+
+    <!-- Auto-sync progress from trackers (Komikku pref_auto_sync_progress_from_trackers) -->
+    <div class="pref-row pref-row--switch" @click="preferences.autoSyncProgressFromTrackers = !preferences.autoSyncProgressFromTrackers">
+      <span class="pref-text">
+        <span class="pref-title">{{ t('pref_auto_sync_progress_from_trackers') || 'Auto sync progress from Trackers' }}</span>
+        <span class="pref-subtitle">{{ t('pref_auto_sync_progress_from_trackers_summary') || 'Automatically mark local chapters as read up to the tracker\'s highest read chapter on refresh' }}</span>
+      </span>
+      <Md3Switch
+        :model-value="preferences.autoSyncProgressFromTrackers"
+        label="Auto sync progress from Trackers"
+        @update:model-value="(value: boolean) => { preferences.autoSyncProgressFromTrackers = value }"
+      />
     </div>
 
     <!-- SwitchPreference(trackPreferences.autoUpdateTrack): the whole row toggles the

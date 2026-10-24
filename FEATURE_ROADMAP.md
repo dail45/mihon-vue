@@ -878,11 +878,11 @@ To maintain code cleanliness, security, and web feasibility, the following items
     ```
   - **Tracker Autofill**: Queries bound AniList or MyAnimeList tracker records to fetch canonical title, cover, synopsis, staff, and status.
 - **Acceptance Criteria**:
-  - [ ] "Edit info" in `MangaToolbar.vue` opens `EditMangaDialog.vue`.
-  - [ ] Form displays inputs for Title, Author, Artist, Cover URL, Description, Status dropdown, and Tag chips.
-  - [ ] "Autofill from tracker" queries bound trackers, populating fields for user confirmation.
-  - [ ] Individual "Reset" buttons restore field back to source values; "Reset all" clears all overrides.
-  - [ ] Saving updates `localStorage` and immediately reflects across Manga details and Library views.
+  - [x] "Edit info" in `MangaToolbar.vue` opens `EditMangaDialog.vue`.
+  - [x] Form displays inputs for Title, Author, Artist, Cover URL, Description, Status dropdown, and Tag chips.
+  - [x] "Autofill from tracker" queries bound trackers, populating fields for user confirmation.
+  - [x] Individual "Reset" buttons restore field back to source values; "Reset all" clears all overrides.
+  - [x] Saving updates `localStorage` and immediately reflects across Manga details and Library views.
 
 ---
 
@@ -922,11 +922,11 @@ To maintain code cleanliness, security, and web feasibility, the following items
     ```
   - **Deduplication**: Deduplicates chapters sharing identical `chapterNumber` floats, keeping the chapter from the higher priority source.
 - **Acceptance Criteria**:
-  - [ ] "Merge manga" option in toolbar opens `EditMergedSettingsDialog.vue`.
-  - [ ] Dialog allows reordering merged sources, choosing the designated "Info Manga", and toggling chapter updates per source.
-  - [ ] Merged chapter list deduplicates duplicate chapter numbers according to designated priority.
-  - [ ] Chapter items display source origin chips.
-  - [ ] Tapping a chapter opens the reader with correct backend `mangaId` and `chapterId`.
+  - [x] "Merge manga" option in toolbar opens `EditMergedSettingsDialog.vue`.
+  - [x] Dialog allows reordering merged sources, choosing the designated "Info Manga", and toggling chapter updates per source.
+  - [x] Merged chapter list deduplicates duplicate chapter numbers according to designated priority.
+  - [x] Chapter items display source origin chips.
+  - [x] Tapping a chapter opens the reader with correct backend `mangaId` and `chapterId`.
 
 ---
 
@@ -941,9 +941,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
   - Parses tags with format `namespace:tag` (e.g. `artist:murata`, `character:saitama`, `female:schoolgirl`).
   - Colors: Primary for artist, Secondary for character, Tertiary for group, Error for parody, Pastel pink for female, Teal for male.
 - **Acceptance Criteria**:
-  - [ ] Tags matching `namespace:value` render grouped by namespace with distinct MD3 tonal containers.
-  - [ ] Clicking a tag searches for that specific tag; long-pressing copies tag to clipboard.
-  - [ ] Text remains high-contrast across Light, Dark, and AMOLED modes.
+  - [x] Tags matching `namespace:value` render grouped by namespace with distinct MD3 tonal containers.
+  - [x] Clicking a tag searches for that specific tag; long-pressing copies tag to clipboard.
+  - [x] Text remains high-contrast across Light, Dark, and AMOLED modes.
 
 ---
 
@@ -959,9 +959,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - **Storage Keys**: `mihon.ui.usePanoramaCover` (boolean, default: `true`), `mihon.ui.topAlignCover` (boolean, default: `false`)
 - **Acceptance Criteria**:
-  - [ ] Wide covers (`naturalHeight / naturalWidth <= 0.75`) dynamically render as 16:9 landscape cards.
-  - [ ] Responsive layout adapts correctly on both single-column mobile view and two-column tablet view.
-  - [ ] `topAlignCover` toggles alignment between centered and top-aligned with title.
+  - [x] Wide covers (`naturalHeight / naturalWidth <= 0.75`) dynamically render as 16:9 landscape cards.
+  - [x] Responsive layout adapts correctly on both single-column mobile view and two-column tablet view.
+  - [x] `topAlignCover` toggles alignment between centered and top-aligned with title.
 
 ---
 
@@ -975,10 +975,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - Mode: `'prompt' | 'allow_all' | 'skip_all'`.
 - **Acceptance Criteria**:
-  - [ ] When adding multiple manga, encountering duplicates renders 4 buttons: "Add anyway", "Allow all", "Skip it", "Skip all".
-  - [ ] Clicking "Allow all" resolves current item and automatically adds all remaining duplicates in the batch without prompting.
-  - [ ] Clicking "Skip all" cancels all remaining duplicate additions in the queue.
-  - [ ] Single additions retain standard "Add anyway" and "Cancel" buttons.
+  - [x] When adding multiple manga, encountering duplicates renders 4 buttons: "Add anyway", "Allow all", "Skip it", "Skip all".
+  - [x] Clicking "Allow all" resolves current item and automatically adds all remaining duplicates in the batch without prompting.
+  - [x] Clicking "Skip all" cancels all remaining duplicate additions in the queue.
+  - [x] Single additions retain standard "Add anyway" and "Cancel" buttons.
 
 ---
 
@@ -994,9 +994,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - **Storage Keys**: `pref_auto_sync_progress_from_trackers_key` (boolean, default: `true`), `track_on_adding_to_library` (boolean, default: `true`)
 - **Acceptance Criteria**:
-  - [ ] Refreshing a manga with bound trackers automatically marks local chapters as read up to the tracker's highest read chapter.
-  - [ ] Snackbar confirms: "Progress synced from tracker up to chapter X".
-  - [ ] Adding a manga to library automatically opens `TrackInfoDialog.vue` if user is logged into 1+ trackers.
+  - [x] Refreshing a manga with bound trackers automatically marks local chapters as read up to the tracker's highest read chapter.
+  - [x] Snackbar confirms: "Progress synced from tracker up to chapter X".
+  - [x] Adding a manga to library automatically opens `TrackInfoDialog.vue` if user is logged into 1+ trackers.
 
 ---
 

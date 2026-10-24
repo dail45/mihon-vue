@@ -30,6 +30,7 @@ export function useBulkFavorite() {
   const duplicateManga = ref<Manga | null>(null)
   const duplicateEntries = ref<DuplicateManga[]>([])
   const duplicateIndex = ref(0)
+  const duplicateMode = ref<'prompt' | 'allow_all' | 'skip_all'>('prompt')
 
   // Category selection dialog state
   const changeCategoryOpen = ref(false)
@@ -144,6 +145,7 @@ export function useBulkFavorite() {
   }
 
   async function checkDuplicates(startIdx: number): Promise<boolean> {
+    if (duplicateMode.value === 'allow_all') return false
     const library = [...new Map(Object.values(server.libraryByCategory).flat().map(item => [item.id, item])).values()]
     for (let i = startIdx; i < selection.value.length; i++) {
       const manga = selection.value[i]!
@@ -173,6 +175,7 @@ export function useBulkFavorite() {
     if (!selection.value.length || isRunning.value) return
     isRunning.value = true
     lastError.value = null
+    duplicateMode.value = 'prompt'
     try {
       if (!server.loadingLibrary && !server.totalLibraryCount) {
         await server.loadLibrary()
@@ -197,6 +200,12 @@ export function useBulkFavorite() {
     }
   }
 
+  async function allowAllDuplicatesAndContinue() {
+    duplicateDialogOpen.value = false
+    duplicateMode.value = 'allow_all'
+    await promptCategoriesOrAdd()
+  }
+
   async function skipDuplicateAndContinue() {
     duplicateDialogOpen.value = false
     selection.value = selection.value.filter((_, idx) => idx !== duplicateIndex.value)
@@ -208,6 +217,18 @@ export function useBulkFavorite() {
     if (!hasMoreDuplicates) {
       await promptCategoriesOrAdd()
     }
+  }
+
+  async function skipAllDuplicatesAndContinue() {
+    duplicateDialogOpen.value = false
+    duplicateMode.value = 'skip_all'
+    const library = [...new Map(Object.values(server.libraryByCategory).flat().map(item => [item.id, item])).values()]
+    selection.value = selection.value.filter(manga => findDuplicateManga(manga, library).length === 0)
+    if (selection.value.length === 0) {
+      clearSelection()
+      return
+    }
+    await promptCategoriesOrAdd()
   }
 
   function cancelAdd() {
@@ -280,7 +301,9 @@ export function useBulkFavorite() {
     toggleSelectionMode,
     startAddFavorite,
     confirmDuplicateAndContinue,
+    allowAllDuplicatesAndContinue,
     skipDuplicateAndContinue,
+    skipAllDuplicatesAndContinue,
     cancelAdd,
     confirmCategories,
     executeBatchAdd,

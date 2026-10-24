@@ -363,6 +363,48 @@ const activeListDialog = computed(() => {
       </div>
     </div>
 
+    <!-- 12dp spacer between preference groups (PreferenceScreen.kt). -->
+    <div class="pref-group-spacer" />
+
+    <!-- Manga info group (pref_category_manga_info). -->
+    <h2 class="pref-group-header">{{ t('pref_category_manga_info') || 'Manga info' }}</h2>
+    <div
+      class="pref-row pref-row--button"
+      role="switch"
+      :aria-checked="appearance.usePanoramaCover.value"
+      @click="appearance.usePanoramaCover.value = !appearance.usePanoramaCover.value"
+    >
+      <span class="pref-text">
+        <span class="pref-title">{{ t('pref_use_panorama_cover') || 'Use panorama cover' }}</span>
+        <span class="pref-subtitle">{{ t('pref_use_panorama_cover_summary') || 'Show wide covers in 16:9 ratio in manga details' }}</span>
+      </span>
+      <div class="pref-trailing">
+        <Md3Switch
+          :model-value="appearance.usePanoramaCover.value"
+          label="Use panorama cover"
+          @update:model-value="(val: boolean) => { appearance.usePanoramaCover.value = val }"
+        />
+      </div>
+    </div>
+    <div
+      class="pref-row pref-row--button"
+      role="switch"
+      :aria-checked="appearance.topAlignCover.value"
+      @click="appearance.topAlignCover.value = !appearance.topAlignCover.value"
+    >
+      <span class="pref-text">
+        <span class="pref-title">{{ t('pref_top_align_cover') || 'Top-align cover' }}</span>
+        <span class="pref-subtitle">{{ t('pref_top_align_cover_summary') || 'Align cover to the top of the header instead of centering' }}</span>
+      </span>
+      <div class="pref-trailing">
+        <Md3Switch
+          :model-value="appearance.topAlignCover.value"
+          label="Top-align cover"
+          @update:model-value="(val: boolean) => { appearance.topAlignCover.value = val }"
+        />
+      </div>
+    </div>
+
     <!-- ListPreferenceWidget: the Material 3 alert dialog with radio rows. -->
     <v-dialog
       v-if="activeListDialog"

@@ -454,7 +454,12 @@ watch(
       v-model="bulkFavorite.duplicateDialogOpen.value"
       :manga="bulkFavorite.duplicateManga.value"
       :duplicates="bulkFavorite.duplicateEntries.value"
+      :bulk="true"
       @confirm="bulkFavorite.confirmDuplicateAndContinue"
+      @allow-all="bulkFavorite.allowAllDuplicatesAndContinue"
+      @skip="bulkFavorite.skipDuplicateAndContinue"
+      @skip-all="bulkFavorite.skipAllDuplicatesAndContinue"
+      @cancel="bulkFavorite.cancelAdd"
     />
 
     <ChangeCategoryDialog

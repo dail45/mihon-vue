@@ -94,6 +94,22 @@ function getInitialAmoled(): boolean {
   return false
 }
 
+function getInitialPanoramaCover(): boolean {
+  try {
+    const raw = localStorage.getItem('mihon.ui.usePanoramaCover') ?? read('usePanoramaCover')
+    if (raw !== null) return raw === 'true'
+  } catch { /* private mode */ }
+  return true
+}
+
+function getInitialTopAlignCover(): boolean {
+  try {
+    const raw = localStorage.getItem('mihon.ui.topAlignCover') ?? read('topAlignCover')
+    if (raw !== null) return raw === 'true'
+  } catch { /* private mode */ }
+  return false
+}
+
 function hexToRgbTriplet(hex: string): string {
   const clean = hex.replace('#', '')
   const r = parseInt(clean.slice(0, 2), 16)
@@ -135,6 +151,8 @@ export const useAppearanceStore = defineStore('appearancePreferences', () => {
   const relativeTime = ref(read('relativeTime') === 'true')
   const imagesInDescription = ref(read('imagesInDescription') === 'true')
   const language = ref(read('language') ?? '')
+  const usePanoramaCover = ref(getInitialPanoramaCover())
+  const topAlignCover = ref(getInitialTopAlignCover())
 
   watch(appThemeId, v => {
     write('appTheme', v)
@@ -154,6 +172,14 @@ export const useAppearanceStore = defineStore('appearancePreferences', () => {
   watch(relativeTime, v => write('relativeTime', String(v)))
   watch(imagesInDescription, v => write('imagesInDescription', String(v)))
   watch(language, v => write('language', v))
+  watch(usePanoramaCover, v => {
+    write('usePanoramaCover', String(v))
+    try { localStorage.setItem('mihon.ui.usePanoramaCover', String(v)) } catch { /* private mode */ }
+  }, { flush: 'sync' })
+  watch(topAlignCover, v => {
+    write('topAlignCover', String(v))
+    try { localStorage.setItem('mihon.ui.topAlignCover', String(v)) } catch { /* private mode */ }
+  }, { flush: 'sync' })
 
   const currentTheme = computed<AppTheme>(() =>
     appThemes.find(t => t.id === appThemeId.value) || appThemes[0]!,
@@ -197,6 +223,8 @@ export const useAppearanceStore = defineStore('appearancePreferences', () => {
     relativeTime,
     imagesInDescription,
     language,
+    usePanoramaCover,
+    topAlignCover,
     currentTheme,
     isDarkActive,
     applyCurrentTheme,

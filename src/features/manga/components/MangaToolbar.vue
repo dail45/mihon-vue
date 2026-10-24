@@ -27,6 +27,8 @@ const emit = defineEmits<{
   (event: 'migrate'): void
   (event: 'share'): void
   (event: 'editNotes'): void
+  (event: 'mergeManga'): void
+  (event: 'editInfo'): void
 }>()
 
 const downloadExpanded = ref(false)
@@ -101,10 +103,12 @@ const downloadExpanded = ref(false)
             </template>
             <v-list class="manga-overflow-list" density="default">
               <v-list-item title="Refresh" @click="emit('refresh')" />
+              <v-list-item title="Edit info" @click="emit('editInfo')" />
               <v-list-item v-if="isInLibrary" title="Edit categories" @click="emit('editCategories')" />
               <v-list-item v-if="isInLibrary" title="Migrate" @click="emit('migrate')" />
               <v-list-item v-if="canShare" title="Share" @click="emit('share')" />
               <v-list-item title="Notes" @click="emit('editNotes')" />
+              <v-list-item title="Merge manga" @click="emit('mergeManga')" />
             </v-list>
           </v-menu>
           <span class="manga-toolbar__tooltip" role="tooltip">More options</span>

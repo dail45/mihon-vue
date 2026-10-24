@@ -54,6 +54,7 @@ const props = withDefaults(defineProps<{
   date?: string | null
   readProgress?: string | null
   scanlator?: string | null
+  sourceName?: string | null
   selected?: boolean
   /** `downloadIndicatorEnabled = !isAnyChapterSelected && !manga.isLocal()`. */
   downloadIndicatorEnabled?: boolean
@@ -74,6 +75,7 @@ const props = withDefaults(defineProps<{
   date: null,
   readProgress: null,
   scanlator: null,
+  sourceName: null,
   selected: false,
   downloadIndicatorEnabled: true,
   swipeStartAction: 'disabled',
@@ -309,6 +311,7 @@ const swipeIcon = computed<string | null>(() => {
             />
           </svg>
           <span class="manga-chapter-item__title">{{ title }}</span>
+          <span v-if="sourceName" class="manga-chapter-item__source-chip">{{ sourceName }}</span>
         </div>
 
         <div v-if="date || readProgress || scanlator" class="manga-chapter-item__subtitle">
@@ -500,6 +503,29 @@ const swipeIcon = computed<string | null>(() => {
 .manga-chapter-item.is-read .manga-chapter-item__title {
   /* DISABLED_ALPHA = 0.38 */
   color: rgba(var(--v-theme-on-surface), 0.38);
+}
+
+/* Source origin chip: e.g. [MangaDex] */
+.manga-chapter-item__source-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: rgb(var(--v-theme-surface-container-highest));
+  color: rgb(var(--v-theme-on-surface-variant));
+  border: 1px solid rgba(var(--v-theme-outline), 0.2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-inline-start: 6px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.manga-chapter-item.is-read .manga-chapter-item__source-chip {
+  opacity: 0.6;
 }
 
 /* Subtitle Row: MaterialTheme.typography.bodySmall: 12sp / 16sp w400, letter-spacing 0.4px (0.033333em) */
