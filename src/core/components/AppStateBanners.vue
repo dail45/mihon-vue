@@ -27,6 +27,7 @@
 import { computed } from 'vue'
 import { stringResource, MR } from '@/core/i18n'
 import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
+import { isWebDavSyncing, webDavSyncProgress } from '@/features/settings/services/webdavSync'
 
 const props = defineProps<{
   /** `downloadedOnlyMode`: the "Downloaded only" preference of the More tab. */
@@ -39,12 +40,19 @@ const props = defineProps<{
   updating?: boolean
   /** `progress`: library update progress (0..100). */
   progress?: number | null
+  /** `syncing`: WebDAV sync in progress. */
+  syncing?: boolean
 }>()
 
 const updateStore = useLibraryUpdateErrorsStore()
 
 const isUpdating = computed(() => props.updating ?? updateStore.updating)
 const currentProgress = computed(() => (props.progress !== undefined ? props.progress : updateStore.progress))
+
+const isSyncing = computed(() => props.syncing ?? isWebDavSyncing.value)
+const syncingLabel = computed(() => {
+  return webDavSyncProgress.value || stringResource(MR.strings.pref_webdav_syncing_banner) || 'Syncing with WebDAV...'
+})
 
 const updatingLabel = computed(() => {
   if (currentProgress.value !== null && currentProgress.value !== undefined) {
@@ -67,6 +75,12 @@ const updatingLabel = computed(() => {
     <div v-if="isUpdating" class="banner banner--updating">
       <span class="banner__spinner" aria-hidden="true" />
       <span class="banner__text">{{ updatingLabel }}</span>
+    </div>
+
+    <!-- SyncingBanner: Row(background = secondary, padding 8dp) with the spinner. -->
+    <div v-if="isSyncing" class="banner banner--syncing">
+      <span class="banner__spinner" aria-hidden="true" />
+      <span class="banner__text">{{ syncingLabel }}</span>
     </div>
 
     <!-- DownloadedOnlyModeBanner: Text(background = tertiary, padding 4dp, labelMedium). -->
@@ -134,6 +148,17 @@ const updatingLabel = computed(() => {
     padding: 8px;
     background: rgb(var(--v-theme-tertiary));
     color: rgb(var(--v-theme-on-tertiary));
+  }
+
+  /* SyncingBanner: `Row(background = secondary, padding 8dp)` centred with circular spinner. */
+  .banner--syncing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgb(var(--v-theme-secondary));
+    color: rgb(var(--v-theme-on-secondary));
   }
 
   /*

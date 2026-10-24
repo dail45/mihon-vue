@@ -43,6 +43,8 @@ import { findDuplicateManga, type DuplicateManga } from '@/core/utils/duplicates
 import { availableScanlators, loadExcludedScanlators } from '@/core/utils/scanlatorFilter'
 import { fetchMangaTrackRecords, listTrackers } from '@/core/api/trackers'
 import { updateChaptersBatch } from '@/core/api/chaptersBatch'
+import { useAppearanceStore } from '@/features/settings/stores/appearancePreferences'
+import { useCoverDominantColor } from '@/core/composables/useCoverDominantColor'
 
 /**
  * Manga detail screen.
@@ -84,10 +86,58 @@ const secondaryChaptersByMangaId = ref<Record<number, Chapter[]>>({})
 const mergedGroup = computed(() => mergedMangaStore.getGroup(Number(route.params.id)))
 
 const preferences = usePreferencesStore(), chapterPreferences = useChapterSettings()
+const appearanceStore = useAppearanceStore()
 const chapterSettings = computed(() => chapterPreferences.forManga(server.apiUrl, Number(route.params.id)))
 const detail = computed(() => {
   if (!server.manga) return null
   return overridesStore.applyOverride(server.manga)
+})
+
+const activeCoverUrl = computed(() => {
+  if (!detail.value) return ''
+  return detail.value.hasCustomCover
+    ? (detail.value.thumbnailUrl || server.thumbnailUrl(detail.value.id))
+    : server.thumbnailUrl(detail.value.id)
+})
+
+const { dominantColor, dynamicTheme: coverDynamicTheme } = useCoverDominantColor(activeCoverUrl)
+
+function hexToRgbTriplet(hex: string): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.slice(0, 2), 16)
+  const g = parseInt(clean.slice(2, 4), 16)
+  const b = parseInt(clean.slice(4, 6), 16)
+  return `${r},${g},${b}`
+}
+
+function kebab(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
+const isDark = computed(() => {
+  if (preferences.themeMode === 'dark') return true
+  if (preferences.themeMode === 'light') return false
+  if (typeof window !== 'undefined') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  }
+  return false
+})
+
+const coverThemeStyles = computed<Record<string, string>>(() => {
+  if (!appearanceStore.themeCoverBased || !coverDynamicTheme.value || !dominantColor.value) {
+    return {}
+  }
+
+  const scheme = isDark.value ? coverDynamicTheme.value.dark : coverDynamicTheme.value.light
+  const styles: Record<string, string> = {
+    '--manga-cover-dominant': dominantColor.value,
+  }
+
+  for (const [key, hex] of Object.entries(scheme)) {
+    styles[`--v-theme-${kebab(key)}`] = hexToRgbTriplet(hex)
+  }
+
+  return styles
 })
 
 const STORAGE_KEY_INTERVAL = 'mihon-vue:manga-interval'
@@ -746,6 +796,7 @@ function onTouchEnd() {
   <div
     v-else-if="detail"
     class="manga-page manga-detail"
+    :style="coverThemeStyles"
     @touchstart.passive="onTouchStart"
     @touchmove.passive="onTouchMove"
     @touchend.passive="onTouchEnd"

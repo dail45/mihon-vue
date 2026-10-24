@@ -156,6 +156,19 @@ function toggleIncognito() {
     <v-divider color="outline-variant" :opacity="1" />
 
     <MorePreferenceWidget
+      v-if="!preferences.showNavUpdates"
+      :title="t(MR.strings.label_recent_updates) || 'Updates'"
+      icon="update"
+      @click="router.push('/updates')"
+    />
+    <MorePreferenceWidget
+      v-if="!preferences.showNavHistory"
+      :title="t(MR.strings.label_recent_manga) || 'History'"
+      icon="history"
+      @click="router.push('/history')"
+    />
+
+    <MorePreferenceWidget
       title="Download queue"
       :subtitle="queueSummary"
       :badge="queuePending || undefined"

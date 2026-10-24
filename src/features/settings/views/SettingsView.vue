@@ -133,6 +133,10 @@ const currentDetailTitle = computed(() => {
     const val = t(MR.strings.pref_app_language)
     return (val && val !== 'pref_app_language') ? val : 'App language'
   }
+  if (subSection.value === 'custom-color') {
+    const val = t('pref_custom_color')
+    return (val && val !== 'pref_custom_color') ? val : 'Custom color'
+  }
   if (subSection.value === 'categories') {
     const val = t(MR.strings.action_edit_categories)
     return (val && val !== 'action_edit_categories') ? val : 'Edit categories'

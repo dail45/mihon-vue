@@ -22,12 +22,19 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Md3Switch from '@/core/components/Md3Switch.vue'
 import StorageInfoItem from '@/core/components/StorageInfoItem.vue'
-import { readPreference, writePreference } from '@/features/settings/stores/preferences'
+import WebDavSyncDialog from '../components/WebDavSyncDialog.vue'
+import {
+  testWebDavConnection,
+  uploadWebDavBackup,
+} from '../services/webdavSync'
+import { readPreference, writePreference, usePreferencesStore } from '@/features/settings/stores/preferences'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
+import { t, MR } from '@/core/i18n'
 import type { Manga } from '@/core/api/types'
 
 const router = useRouter()
 const server = useSuwayomiStore()
+const preferences = usePreferencesStore()
 
 /* --- local preferences (browser only, the Suwayomi REST API has no endpoint for them) --------- */
 
@@ -172,6 +179,116 @@ function pickBackupInterval(value: number) {
   intervalOpen.value = false
 }
 
+/* --- WebDAV Cloud Sync ------------------------------------------------------------------- */
+
+const isWebDavConfigured = computed(() => {
+  return !!preferences.webdavUrl && preferences.webdavUrl.startsWith('http')
+})
+
+const lastSyncDisplay = computed(() => {
+  const ts = preferences.webdavLastSync
+  if (!ts) return t(MR.strings.pref_webdav_last_sync_never) || 'Never'
+  try {
+    const d = new Date(ts)
+    if (isNaN(d.getTime())) return ts
+    return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+  } catch {
+    return ts
+  }
+})
+
+const webdavDialogOpen = ref(false)
+const testingConnection = ref(false)
+const backingUpWebdav = ref(false)
+
+const editUrlOpen = ref(false)
+const tempUrl = ref('')
+function openEditUrl() {
+  tempUrl.value = preferences.webdavUrl
+  editUrlOpen.value = true
+}
+function saveUrl() {
+  preferences.webdavUrl = tempUrl.value.trim()
+  editUrlOpen.value = false
+}
+
+const editFolderOpen = ref(false)
+const tempFolder = ref('')
+function openEditFolder() {
+  tempFolder.value = preferences.webdavFolder
+  editFolderOpen.value = true
+}
+function saveFolder() {
+  preferences.webdavFolder = tempFolder.value.trim()
+  editFolderOpen.value = false
+}
+
+const editUsernameOpen = ref(false)
+const tempUsername = ref('')
+function openEditUsername() {
+  tempUsername.value = preferences.webdavUsername
+  editUsernameOpen.value = true
+}
+function saveUsername() {
+  preferences.webdavUsername = tempUsername.value.trim()
+  editUsernameOpen.value = false
+}
+
+const editPasswordOpen = ref(false)
+const tempPassword = ref('')
+function openEditPassword() {
+  tempPassword.value = preferences.webdavPassword
+  editPasswordOpen.value = true
+}
+function savePassword() {
+  preferences.webdavPassword = tempPassword.value
+  editPasswordOpen.value = false
+}
+
+async function handleTestConnection() {
+  if (!isWebDavConfigured.value) {
+    showToast(t(MR.strings.pref_webdav_not_configured) || 'WebDAV URL and credentials must be configured first')
+    return
+  }
+  testingConnection.value = true
+  try {
+    const res = await testWebDavConnection(
+      preferences.webdavUrl,
+      preferences.webdavUsername,
+      preferences.webdavPassword,
+      preferences.webdavFolder
+    )
+    showToast(res.message || t(MR.strings.pref_webdav_test_success) || 'Connection successful!')
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    showToast(`Test failed: ${msg}`)
+  } finally {
+    testingConnection.value = false
+  }
+}
+
+async function handleBackupToWebDav() {
+  if (!isWebDavConfigured.value) {
+    showToast(t(MR.strings.pref_webdav_not_configured) || 'WebDAV URL and credentials must be configured first')
+    return
+  }
+  backingUpWebdav.value = true
+  try {
+    const res = await uploadWebDavBackup(
+      preferences.webdavUrl,
+      preferences.webdavFolder,
+      preferences.webdavUsername,
+      preferences.webdavPassword
+    )
+    showToast(t(MR.strings.pref_webdav_backup_success) || `Backup ${res.fileName} uploaded successfully!`)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    showToast(`Backup failed: ${msg}`)
+  } finally {
+    backingUpWebdav.value = false
+  }
+}
+
 /* --- help action ------------------------------------------------------------------------- */
 
 const HELP_URL = 'https://mihon.app/docs/faq/storage'
@@ -275,6 +392,105 @@ Last automatically backed up: never</p>
         <span class="pref-title">Library List</span>
       </span>
     </button>
+
+    <!-- PreferenceScreen.kt: Spacer(12.dp) -->
+    <div class="pref-group-spacer" />
+
+    <!-- WebDAV Cloud Sync Preference Group (Komikku) -->
+    <h2 class="pref-group-header">{{ t(MR.strings.pref_webdav_group_title) || 'WebDAV Cloud Sync' }}</h2>
+
+    <!-- WebDAV URL -->
+    <button type="button" class="pref-row pref-row--button" @click="openEditUrl">
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_webdav_url) || 'WebDAV Server URL' }}</span>
+        <span class="pref-subtitle">{{ preferences.webdavUrl || 'Not set' }}</span>
+      </span>
+    </button>
+
+    <!-- WebDAV Folder -->
+    <button type="button" class="pref-row pref-row--button" @click="openEditFolder">
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_webdav_folder) || 'WebDAV data folder' }}</span>
+        <span class="pref-subtitle">{{ preferences.webdavFolder || 'mihon-backups' }}</span>
+      </span>
+    </button>
+
+    <!-- WebDAV Username -->
+    <button type="button" class="pref-row pref-row--button" @click="openEditUsername">
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_webdav_username) || 'Username' }}</span>
+        <span class="pref-subtitle">{{ preferences.webdavUsername || 'Not set' }}</span>
+      </span>
+    </button>
+
+    <!-- WebDAV Password -->
+    <button type="button" class="pref-row pref-row--button" @click="openEditPassword">
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_webdav_password) || 'Password' }}</span>
+        <span class="pref-subtitle">{{ preferences.webdavPassword ? '••••••••' : 'Not set' }}</span>
+      </span>
+    </button>
+
+    <!-- WebDAV Auto Sync -->
+    <div class="pref-row pref-row--button" @click="preferences.webdavAutoSync = !preferences.webdavAutoSync">
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_webdav_auto_sync) || 'Automatic cloud sync' }}</span>
+        <span class="pref-subtitle">{{ t(MR.strings.pref_webdav_auto_sync_summ) || 'Sync backups automatically' }}</span>
+      </span>
+      <div class="pref-trailing">
+        <Md3Switch
+          :model-value="preferences.webdavAutoSync"
+          label="Automatic cloud sync"
+          @update:model-value="(value: boolean) => { preferences.webdavAutoSync = value }"
+        />
+      </div>
+    </div>
+
+    <!-- Last Sync Info -->
+    <div class="pref-info">
+      <v-icon icon="cloud_sync" size="24" />
+      <p class="pref-info-text">
+        {{ t(MR.strings.pref_webdav_last_sync) || 'Last cloud sync' }}: {{ lastSyncDisplay }}
+      </p>
+    </div>
+
+    <!-- WebDAV Actions: Test Connection, Backup to WebDAV, Restore from WebDAV -->
+    <div class="pref-row pref-row--custom">
+      <div class="webdav-actions-bar">
+        <v-btn
+          variant="tonal"
+          color="primary"
+          class="webdav-action-btn"
+          :loading="testingConnection"
+          :disabled="!isWebDavConfigured"
+          @click="handleTestConnection"
+        >
+          <v-icon icon="wifi_tethering" start />
+          {{ t(MR.strings.pref_webdav_test_connection) || 'Test connection' }}
+        </v-btn>
+        <v-btn
+          variant="tonal"
+          color="primary"
+          class="webdav-action-btn"
+          :loading="backingUpWebdav"
+          :disabled="!isWebDavConfigured"
+          @click="handleBackupToWebDav"
+        >
+          <v-icon icon="cloud_upload" start />
+          {{ t(MR.strings.pref_webdav_backup_now) || 'Backup to WebDAV' }}
+        </v-btn>
+        <v-btn
+          variant="outlined"
+          color="primary"
+          class="webdav-action-btn"
+          :disabled="!isWebDavConfigured"
+          @click="webdavDialogOpen = true"
+        >
+          <v-icon icon="cloud_download" start />
+          {{ t(MR.strings.pref_webdav_restore_now) || 'Restore from WebDAV' }}
+        </v-btn>
+      </div>
+    </div>
 
     <!-- ColumnSelectionDialog(): title "Select data to include", Title / Author / Artist checkboxes. -->
     <v-dialog
@@ -384,6 +600,113 @@ Last automatically backed up: never</p>
         </div>
       </v-card>
     </v-dialog>
+
+    <!-- Edit WebDAV URL Dialog -->
+    <v-dialog
+      v-model="editUrlOpen"
+      max-width="520"
+    >
+      <v-card class="pref-dialog" rounded="xl">
+        <h3 class="pref-dialog-title">{{ t(MR.strings.pref_webdav_url) || 'WebDAV Server URL' }}</h3>
+        <div class="pref-dialog-body">
+          <v-text-field
+            v-model="tempUrl"
+            label="URL (e.g. https://example.com/remote.php/dav/files/user/)"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            autofocus
+            @keydown.enter="saveUrl"
+          />
+        </div>
+        <div class="pref-dialog-actions">
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="editUrlOpen = false">Cancel</v-btn>
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="saveUrl">Save</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit WebDAV Folder Dialog -->
+    <v-dialog
+      v-model="editFolderOpen"
+      max-width="520"
+    >
+      <v-card class="pref-dialog" rounded="xl">
+        <h3 class="pref-dialog-title">{{ t(MR.strings.pref_webdav_folder) || 'WebDAV data folder' }}</h3>
+        <div class="pref-dialog-body">
+          <v-text-field
+            v-model="tempFolder"
+            label="Folder (e.g. mihon-backups)"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            autofocus
+            @keydown.enter="saveFolder"
+          />
+        </div>
+        <div class="pref-dialog-actions">
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="editFolderOpen = false">Cancel</v-btn>
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="saveFolder">Save</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit WebDAV Username Dialog -->
+    <v-dialog
+      v-model="editUsernameOpen"
+      max-width="520"
+    >
+      <v-card class="pref-dialog" rounded="xl">
+        <h3 class="pref-dialog-title">{{ t(MR.strings.pref_webdav_username) || 'Username' }}</h3>
+        <div class="pref-dialog-body">
+          <v-text-field
+            v-model="tempUsername"
+            label="Username"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            autofocus
+            @keydown.enter="saveUsername"
+          />
+        </div>
+        <div class="pref-dialog-actions">
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="editUsernameOpen = false">Cancel</v-btn>
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="saveUsername">Save</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit WebDAV Password Dialog -->
+    <v-dialog
+      v-model="editPasswordOpen"
+      max-width="520"
+    >
+      <v-card class="pref-dialog" rounded="xl">
+        <h3 class="pref-dialog-title">{{ t(MR.strings.pref_webdav_password) || 'Password' }}</h3>
+        <div class="pref-dialog-body">
+          <v-text-field
+            v-model="tempPassword"
+            label="Password"
+            type="password"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            autofocus
+            @keydown.enter="savePassword"
+          />
+        </div>
+        <div class="pref-dialog-actions">
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="editPasswordOpen = false">Cancel</v-btn>
+          <v-btn variant="text" color="primary" class="pref-dialog-button" @click="savePassword">Save</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Restore from WebDAV Browser Dialog -->
+    <WebDavSyncDialog
+      v-model="webdavDialogOpen"
+      @restored="showToast(t(MR.strings.pref_webdav_restore_success) || 'Backup restored successfully')"
+    />
 
     <!-- Android toast (eu.kanade.tachiyomi.util.system.toast). -->
     <div v-if="toast" class="pref-toast" role="status" aria-live="polite">{{ toast }}</div>
@@ -614,6 +937,20 @@ Last automatically backed up: never</p>
   font-size: 14px;
   line-height: 20px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+}
+
+.webdav-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
+
+.webdav-action-btn {
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.1px;
 }
 }
 </style>

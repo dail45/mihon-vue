@@ -57,6 +57,12 @@ export const usePreferencesStore = defineStore('preferences', () => {
     const stored = readPreference(key), value = ref(stored === null ? fallback : stored === 'true')
     watch(value, v => writePreference(key, String(v)), sync ? { flush: 'sync' } : undefined); return value
   }
+  function str(key: string, fallback = '', sync = false) {
+    const stored = readPreference(key)
+    const value = ref(stored !== null ? stored : fallback)
+    watch(value, v => writePreference(key, v), sync ? { flush: 'sync' } : undefined)
+    return value
+  }
   function columns(key: string) {
     const raw = Number(readPreference(key)), value = ref(Number.isInteger(raw) && raw >= 0 && raw <= 10 ? raw : 0)
     watch(value, v => writePreference(key, String(v))); return value
@@ -144,6 +150,19 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const autoSyncProgressFromTrackers = bool('pref_auto_sync_progress_from_trackers_key', true, true)
   const trackOnAddingToLibrary = bool('track_on_adding_to_library', true, true)
 
+  // 6.4 Navbar Customization
+  const showNavUpdates = bool('pref_show_updates_button', true, true)
+  const showNavHistory = bool('pref_show_history_button', true, true)
+  const bottomBarLabels = bool('pref_show_bottom_bar_labels', true, true)
+
+  // 6.5 Client-Side WebDAV Cloud Backup Sync Preferences
+  const webdavUrl = str('pref_webdav_url', '')
+  const webdavFolder = str('pref_webdav_folder', 'mihon-backups')
+  const webdavUsername = str('pref_webdav_username', '')
+  const webdavPassword = str('pref_webdav_password', '')
+  const webdavAutoSync = bool('pref_webdav_auto_sync', false, true)
+  const webdavLastSync = str('pref_webdav_last_sync', '')
+
   return {
     tabletUiMode,
     themeMode,
@@ -187,5 +206,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
     filterCategoriesExclude,
     autoSyncProgressFromTrackers,
     trackOnAddingToLibrary,
+    showNavUpdates,
+    showNavHistory,
+    bottomBarLabels,
+    webdavUrl,
+    webdavFolder,
+    webdavUsername,
+    webdavPassword,
+    webdavAutoSync,
+    webdavLastSync,
   }
 })

@@ -42,6 +42,8 @@ import {
   type TimeFormatValue,
 } from '../composables/useAppearancePreferences'
 import ThemePreviewItem from '@/features/settings/components/ThemePreviewItem.vue'
+import CustomThemeColorPickerView from '@/features/settings/views/CustomThemeColorPickerView.vue'
+import { generateDynamicTheme } from '@/core/theme/dynamicTheme'
 import { appLanguages } from '@/core/utils/appLanguage'
 import { setAppLanguage, t, MR } from '@/core/i18n'
 
@@ -72,9 +74,12 @@ const dialog = ref<DialogKind>(null)
  * The web client renders it inside this pane: the app bar row with the up button and the title
  * `pref_app_language` = "App language", then the list of the shipped translations.
  */
-const screen = ref<'language' | null>(null)
+const screen = ref<'language' | 'custom-color' | null>(null)
 const isLanguageScreen = computed(() => {
   return props.subScreen === 'language' || route.meta.subSection === 'language' || screen.value === 'language'
+})
+const isCustomColorScreen = computed(() => {
+  return props.subScreen === 'custom-color' || route.meta.subSection === 'custom-color' || screen.value === 'custom-color'
 })
 
 function openLanguage() {
@@ -93,13 +98,39 @@ function closeLanguage() {
   }
 }
 
+function openCustomColor() {
+  screen.value = 'custom-color'
+  emit('update:subScreen', 'custom-color')
+  if (route.path.startsWith('/settings')) {
+    void router.push('/settings/appearance/custom-color')
+  }
+}
+
+function closeCustomColor() {
+  screen.value = null
+  emit('update:subScreen', null)
+  if (route.meta.subSection === 'custom-color') {
+    void router.push('/settings/appearance')
+  }
+}
+
 watch(() => props.subScreen, val => {
   if (val === 'language') screen.value = 'language'
-  else if (val === null && screen.value === 'language') screen.value = null
+  else if (val === 'custom-color') screen.value = 'custom-color'
+  else if (val === null && screen.value !== null) screen.value = null
 })
 watch(() => route.meta.subSection, val => {
   if (val === 'language') screen.value = 'language'
-  else if (!val && screen.value === 'language') screen.value = null
+  else if (val === 'custom-color') screen.value = 'custom-color'
+  else if (!val && screen.value !== null) screen.value = null
+})
+
+const displayedThemes = computed(() => {
+  const list = [...appearance.appThemes]
+  if (appearance.appThemeId.value === 'custom' || appearance.customSeedColor.value) {
+    list.push(generateDynamicTheme(appearance.customSeedColor.value || '#DF0090'))
+  }
+  return list
 })
 
 const LANGUAGE_STORAGE_KEY = 'mihon.appLanguage'
@@ -201,6 +232,12 @@ const activeListDialog = computed(() => {
 
 <template>
   <div class="appearance-settings">
+    <CustomThemeColorPickerView
+      v-if="isCustomColorScreen"
+      :standalone="standalone"
+      @back="closeCustomColor"
+    />
+
     <!--
       AppLanguageScreen.kt: a separate screen with an app bar and a LazyColumn of ListItems.
       The web client renders it inside the settings pane; when embedded in SettingsView, the
@@ -257,7 +294,7 @@ const activeListDialog = computed(() => {
     <!-- AppThemePreferenceWidget: BasePreferenceWidget with the horizontal list of theme previews. -->
     <div class="pref-widget">
       <div class="theme-list" role="listbox" aria-label="App theme">
-        <div v-for="theme in appearance.appThemes" :key="theme.id" class="theme-list-item">
+        <div v-for="theme in displayedThemes" :key="theme.id" class="theme-list-item">
           <!-- AppThemePreviewItem is clickable and applies the theme; the label is not. -->
           <button
             type="button"
@@ -277,6 +314,33 @@ const activeListDialog = computed(() => {
         </div>
       </div>
     </div>
+    <!-- Custom theme seed color picker entry (Komikku) -->
+    <button
+      type="button"
+      class="pref-row pref-row--button"
+      @click="openCustomColor"
+    >
+      <span class="pref-text">
+        <span class="pref-title">{{ t('pref_custom_color') || 'Custom color' }}</span>
+        <span class="pref-subtitle">{{ t('custom_color_description') || 'Pick a seed color for the custom theme' }}</span>
+      </span>
+      <div class="pref-trailing" style="display: flex; align-items: center; gap: 8px;">
+        <span
+          class="custom-color-preview-badge"
+          :style="{
+            display: 'inline-block',
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            backgroundColor: appearance.customSeedColor.value || '#DF0090',
+            border: '2px solid rgba(var(--v-theme-outline), 0.3)',
+          }"
+        />
+        <span class="material-symbols-rounded" style="color: rgb(var(--v-theme-outline)); font-size: 20px;">
+          chevron_right
+        </span>
+      </div>
+    </button>
     <!-- pref_dark_theme_pure_black: only visible when the theme mode is not LIGHT. -->
     <div
       v-if="preferences.themeMode !== 'light'"
@@ -368,6 +432,25 @@ const activeListDialog = computed(() => {
 
     <!-- Manga info group (pref_category_manga_info). -->
     <h2 class="pref-group-header">{{ t('pref_category_manga_info') || 'Manga info' }}</h2>
+    <!-- Theme based on cover switch (Komikku) -->
+    <div
+      class="pref-row pref-row--button"
+      role="switch"
+      :aria-checked="appearance.themeCoverBased.value"
+      @click="appearance.themeCoverBased.value = !appearance.themeCoverBased.value"
+    >
+      <span class="pref-text">
+        <span class="pref-title">{{ t('pref_theme_cover_based') || 'Theme based on cover' }}</span>
+        <span class="pref-subtitle">{{ t('pref_theme_cover_based_summary') || 'Tint details and reader controls using the dominant cover color' }}</span>
+      </span>
+      <div class="pref-trailing">
+        <Md3Switch
+          :model-value="appearance.themeCoverBased.value"
+          label="Theme based on cover"
+          @update:model-value="(val: boolean) => { appearance.themeCoverBased.value = val }"
+        />
+      </div>
+    </div>
     <div
       class="pref-row pref-row--button"
       role="switch"
@@ -401,6 +484,63 @@ const activeListDialog = computed(() => {
           :model-value="appearance.topAlignCover.value"
           label="Top-align cover"
           @update:model-value="(val: boolean) => { appearance.topAlignCover.value = val }"
+        />
+      </div>
+    </div>
+
+    <!-- 12dp spacer between preference groups (PreferenceScreen.kt). -->
+    <div class="pref-group-spacer" />
+
+    <!-- Navigation group (pref_category_navbar). -->
+    <h2 class="pref-group-header">{{ t(MR.strings.pref_category_navbar) || 'Navigation' }}</h2>
+    <div
+      class="pref-row pref-row--button"
+      role="switch"
+      :aria-checked="preferences.showNavUpdates"
+      @click="preferences.showNavUpdates = !preferences.showNavUpdates"
+    >
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_hide_updates_button) || 'Show updates in the nav' }}</span>
+      </span>
+      <div class="pref-trailing">
+        <Md3Switch
+          :model-value="preferences.showNavUpdates"
+          :label="t(MR.strings.pref_hide_updates_button) || 'Show updates in the nav'"
+          @update:model-value="(val: boolean) => { preferences.showNavUpdates = val }"
+        />
+      </div>
+    </div>
+    <div
+      class="pref-row pref-row--button"
+      role="switch"
+      :aria-checked="preferences.showNavHistory"
+      @click="preferences.showNavHistory = !preferences.showNavHistory"
+    >
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_hide_history_button) || 'Show history in the nav' }}</span>
+      </span>
+      <div class="pref-trailing">
+        <Md3Switch
+          :model-value="preferences.showNavHistory"
+          :label="t(MR.strings.pref_hide_history_button) || 'Show history in the nav'"
+          @update:model-value="(val: boolean) => { preferences.showNavHistory = val }"
+        />
+      </div>
+    </div>
+    <div
+      class="pref-row pref-row--button"
+      role="switch"
+      :aria-checked="preferences.bottomBarLabels"
+      @click="preferences.bottomBarLabels = !preferences.bottomBarLabels"
+    >
+      <span class="pref-text">
+        <span class="pref-title">{{ t(MR.strings.pref_show_bottom_bar_labels) || 'Show bottom bar labels' }}</span>
+      </span>
+      <div class="pref-trailing">
+        <Md3Switch
+          :model-value="preferences.bottomBarLabels"
+          :label="t(MR.strings.pref_show_bottom_bar_labels) || 'Show bottom bar labels'"
+          @update:model-value="(val: boolean) => { preferences.bottomBarLabels = val }"
         />
       </div>
     </div>

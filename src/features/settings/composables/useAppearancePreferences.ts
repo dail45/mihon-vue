@@ -16,6 +16,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { usePreferencesStore, type ThemeMode } from '../stores/preferences'
 import { appThemes, type AppTheme } from '@/core/theme/appThemes'
+import { generateDynamicTheme } from '@/core/theme/dynamicTheme'
 
 const PREFIX = 'mihon.appearance.'
 
@@ -34,6 +35,13 @@ export const ENUM_TO_THEME_ID: Record<string, string> = {
   YOTSUBA: 'yotsuba',
   TOKYONIGHT: 'tokyoNight',
   MONOCHROME: 'monochrome',
+  CLOUDFLARE: 'cloudflare',
+  COTTONCANDY: 'cottonCandy',
+  DOOM: 'doom',
+  MATRIX: 'matrix',
+  MOCHA: 'mocha',
+  SAPPHIRE: 'sapphire',
+  CUSTOM: 'custom',
 }
 
 export const THEME_ID_TO_ENUM: Record<string, string> = {
@@ -51,6 +59,13 @@ export const THEME_ID_TO_ENUM: Record<string, string> = {
   yotsuba: 'YOTSUBA',
   tokyoNight: 'TOKYONIGHT',
   monochrome: 'MONOCHROME',
+  cloudflare: 'CLOUDFLARE',
+  cottonCandy: 'COTTONCANDY',
+  doom: 'DOOM',
+  matrix: 'MATRIX',
+  mocha: 'MOCHA',
+  sapphire: 'SAPPHIRE',
+  custom: 'CUSTOM',
 }
 
 function read(key: string): string | null {
@@ -90,13 +105,13 @@ export const timeFormatTitles: Record<TimeFormatValue, string> = {
 
 function getInitialAppTheme(): string {
   const saved = read('appTheme')
-  if (saved && appThemes.some(t => t.id === saved)) return saved
+  if (saved === 'custom' || (saved && appThemes.some(t => t.id === saved))) return saved
   try {
     const rawLocal = localStorage.getItem('mihon.appTheme')
     if (rawLocal) {
-      if (appThemes.some(t => t.id === rawLocal)) return rawLocal
+      if (rawLocal === 'custom' || appThemes.some(t => t.id === rawLocal)) return rawLocal
       const mapped = ENUM_TO_THEME_ID[rawLocal]
-      if (mapped && appThemes.some(t => t.id === mapped)) return mapped
+      if (mapped && (mapped === 'custom' || appThemes.some(t => t.id === mapped))) return mapped
     }
   } catch { /* private mode */ }
   return 'default'
@@ -110,8 +125,26 @@ function getInitialAmoled(): boolean {
   return false
 }
 
+function getInitialCustomSeedColor(): string {
+  try {
+    const raw = localStorage.getItem('pref_color_theme') ?? read('customSeedColor')
+    if (raw) return raw
+  } catch { /* private mode */ }
+  return '#DF0090'
+}
+
+function getInitialThemeCoverBased(): boolean {
+  try {
+    const raw = localStorage.getItem('pref_theme_cover_based') ?? read('themeCoverBased')
+    if (raw !== null) return raw === 'true'
+  } catch { /* private mode */ }
+  return false
+}
+
 const appThemeId = ref(getInitialAppTheme())
 const amoled = ref(getInitialAmoled())
+const customSeedColor = ref(getInitialCustomSeedColor())
+const themeCoverBased = ref(getInitialThemeCoverBased())
 const savedDateFormat = read('dateFormat')
 const dateFormat = ref<DateFormatValue>(
   (dateFormats as readonly string[]).includes(savedDateFormat ?? '') ? (savedDateFormat as DateFormatValue) : '',
@@ -149,12 +182,25 @@ watch(appThemeId, v => {
     const enumVal = THEME_ID_TO_ENUM[v] || v.toUpperCase()
     localStorage.setItem('mihon.appTheme', enumVal)
   } catch { /* private mode */ }
+  applyCurrentTheme()
 })
 watch(amoled, v => {
   write('amoled', String(v))
   try {
     localStorage.setItem('mihon.themeDarkAmoled', String(v))
   } catch { /* private mode */ }
+  applyCurrentTheme()
+})
+watch(customSeedColor, v => {
+  write('customSeedColor', v)
+  try { localStorage.setItem('pref_color_theme', v) } catch { /* private mode */ }
+  if (appThemeId.value === 'custom') {
+    applyCurrentTheme()
+  }
+})
+watch(themeCoverBased, v => {
+  write('themeCoverBased', String(v))
+  try { localStorage.setItem('pref_theme_cover_based', String(v)) } catch { /* private mode */ }
 })
 watch(dateFormat, v => write('dateFormat', v))
 watch(timeFormat, v => write('timeFormat', v))
@@ -284,7 +330,12 @@ function readPreferenceThemeMode(): ThemeMode {
 
 /** The effective appearance: the theme mode preference wins over the system setting. */
 const isDark = computed(() => themeMode.value === 'dark' || (themeMode.value === 'system' && systemDark.value))
-const currentTheme = computed(() => appThemes.find(t => t.id === appThemeId.value) ?? appThemes[0]!)
+const currentTheme = computed(() => {
+  if (appThemeId.value === 'custom') {
+    return generateDynamicTheme(customSeedColor.value)
+  }
+  return appThemes.find(t => t.id === appThemeId.value) ?? appThemes[0]!
+})
 
 /**
  * The Vuetify theme class (`.v-theme--mihonLight` / `.v-theme--mihonDark`) is applied to the
@@ -431,6 +482,8 @@ export function useAppearancePreferences() {
   return {
     appThemeId,
     amoled,
+    customSeedColor,
+    themeCoverBased,
     dateFormat,
     timeFormat,
     relativeTime,

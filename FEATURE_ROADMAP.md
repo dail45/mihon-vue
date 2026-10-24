@@ -1020,10 +1020,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
   - **Storage Key**: `pref_color_theme` (hex string, e.g. `#DF0090`)
   - **Generation**: Takes seed hex and generates full M3 Light and Dark schemes (`primary`, `surfaceContainer`, `outline`, etc.).
 - **Acceptance Criteria**:
-  - [ ] "Custom color" in Settings > Appearance navigates to `CustomThemeColorPickerView.vue`.
-  - [ ] Color picker provides HSV spectrum, brightness slider, and hex input.
-  - [ ] Live preview updates buttons, chips, and cards in real time.
-  - [ ] Saving immediately regenerates and applies the M3 color scheme to Vuetify without reloading.
+  - [x] "Custom color" in Settings > Appearance navigates to `CustomThemeColorPickerView.vue`.
+  - [x] Color picker provides HSV spectrum, brightness slider, and hex input.
+  - [x] Live preview updates buttons, chips, and cards in real time.
+  - [x] Saving immediately regenerates and applies the M3 color scheme to Vuetify without reloading.
 
 ---
 
@@ -1040,10 +1040,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - **Storage Key**: `pref_theme_cover_based` (boolean, default: `false`)
 - **Acceptance Criteria**:
-  - [ ] When enabled, opening manga details extracts dominant color from cover image.
-  - [ ] Backdrop gradient, action buttons, chips, and FAB dynamically harmonize with cover color.
-  - [ ] Reader controls adopt cover color tinting.
-  - [ ] Disabling reverts cleanly to global theme.
+  - [x] When enabled, opening manga details extracts dominant color from cover image.
+  - [x] Backdrop gradient, action buttons, chips, and FAB dynamically harmonize with cover color.
+  - [x] Reader controls adopt cover color tinting.
+  - [x] Disabling reverts cleanly to global theme.
 
 ---
 
@@ -1059,9 +1059,9 @@ To maintain code cleanliness, security, and web feasibility, the following items
 - **State & Data Contract**:
   - All 6 Aniyomi themes export full Light and Dark M3 palettes compatible with pure black AMOLED mode.
 - **Acceptance Criteria**:
-  - [ ] Settings > Appearance lists Cloudflare, Cotton Candy, Doom, Matrix, Mocha, and Sapphire.
-  - [ ] Pure black AMOLED mode functions properly across all new themes.
-  - [ ] 13 preset palettes appear as one-click swatch rows in the Custom Theme Color Picker.
+  - [x] Settings > Appearance lists Cloudflare, Cotton Candy, Doom, Matrix, Mocha, and Sapphire.
+  - [x] Pure black AMOLED mode functions properly across all new themes.
+  - [x] 13 preset palettes appear as one-click swatch rows in the Custom Theme Color Picker.
 
 ---
 
@@ -1081,10 +1081,10 @@ To maintain code cleanliness, security, and web feasibility, the following items
     - `pref_show_history_button`: boolean (default: `true`)
     - `pref_show_bottom_bar_labels`: boolean (default: `true`)
 - **Acceptance Criteria**:
-  - [ ] Disabling `showNavUpdates` removes Updates from bottom bar and tablet rail, moving it into More screen.
-  - [ ] Disabling `showNavHistory` removes History from bottom bar and tablet rail, moving it into More screen.
-  - [ ] Disabling `bottomBarLabels` hides text labels on mobile bottom bar (icons only).
-  - [ ] Direct routing and tab active states continue to function reliably.
+  - [x] Disabling `showNavUpdates` removes Updates from bottom bar and tablet rail, moving it into More screen.
+  - [x] Disabling `showNavHistory` removes History from bottom bar and tablet rail, moving it into More screen.
+  - [x] Disabling `bottomBarLabels` hides text labels on mobile bottom bar (icons only).
+  - [x] Direct routing and tab active states continue to function reliably.
 
 ---
 
@@ -1104,11 +1104,11 @@ To maintain code cleanliness, security, and web feasibility, the following items
   - **Storage Keys**: `pref_webdav_url`, `pref_webdav_folder`, `pref_webdav_username`, `pref_webdav_password`, `pref_webdav_auto_sync`, `pref_webdav_last_sync`
   - **Payload**: Serializes all client state (categories, manga notes, metadata overrides, merged groups, reader preferences, custom theme seed) to JSON.
 - **Acceptance Criteria**:
-  - [ ] WebDAV sync settings group rendered in Settings > Data and storage.
-  - [ ] "Test Connection" button performs `PROPFIND` and confirms server accessibility.
-  - [ ] "Backup to WebDAV" exports current backup directly to Nextcloud/WebDAV directory.
-  - [ ] "Restore from WebDAV" queries folder, presents list of remote snapshots, and restores selected backup.
-  - [ ] Syncing progress banner displays in `AppStateBanners.vue` during active transfer.
+  - [x] WebDAV sync settings group rendered in Settings > Data and storage.
+  - [x] "Test Connection" button performs `PROPFIND` and confirms server accessibility.
+  - [x] "Backup to WebDAV" exports current backup directly to Nextcloud/WebDAV directory.
+  - [x] "Restore from WebDAV" queries folder, presents list of remote snapshots, and restores selected backup.
+  - [x] Syncing progress banner displays in `AppStateBanners.vue` during active transfer.
 
 ---
 

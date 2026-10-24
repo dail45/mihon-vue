@@ -22,6 +22,8 @@ import { stringResource } from '../i18n'
 const TITLE_I18N_MAP: Record<string, string> = {
   'Downloaded only': 'label_downloaded_only',
   'Incognito mode': 'pref_incognito_mode',
+  'Updates': 'label_recent_updates',
+  'History': 'label_recent_manga',
   'Download queue': 'label_download_queue',
   'Categories': 'categories',
   'Statistics': 'label_stats',

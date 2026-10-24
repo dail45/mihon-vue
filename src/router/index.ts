@@ -63,6 +63,18 @@ export const router = createRouter({
       },
     },
     { path: '/settings/app-language', redirect: '/settings/appearance/language' },
+    // Komikku `AppCustomThemeColorPickerScreen` (Appearance -> Custom color)
+    {
+      path: '/settings/appearance/custom-color',
+      component: () => import('@/features/settings/views/SettingsView.vue'),
+      meta: {
+        title: 'Custom color',
+        detail: true,
+        settingsSection: 'appearance',
+        subSection: 'custom-color',
+        ownToolbar: true,
+      },
+    },
     // Mihon `CategoryScreen` (Library -> Edit categories)
     {
       path: '/settings/library/categories',

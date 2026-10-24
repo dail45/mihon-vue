@@ -35,15 +35,29 @@ const { bottomNavVisible } = useBottomNavVisibility()
 const tabletUi = useTabletUi()
 const { width } = useDisplay()
 
-const navItems = computed(() => [
-  { title: stringResource(MR.strings.label_library) || 'Library', icon: 'collections_bookmark', path: '/library' },
-  { title: stringResource(MR.strings.label_recent_updates) || 'Updates', icon: 'update', path: '/updates' },
-  { title: stringResource(MR.strings.label_recent_manga) || 'History', icon: 'history', path: '/history' },
-  { title: stringResource(MR.strings.browse) || 'Browse', icon: 'explore', path: '/browse' },
-  { title: stringResource(MR.strings.label_more) || 'More', icon: 'more_horiz', path: '/more' },
-])
+const navItems = computed(() => {
+  const items = [
+    { title: stringResource(MR.strings.label_library) || 'Library', icon: 'collections_bookmark', path: '/library' },
+  ]
+  if (preferences.showNavUpdates) {
+    items.push({ title: stringResource(MR.strings.label_recent_updates) || 'Updates', icon: 'update', path: '/updates' })
+  }
+  if (preferences.showNavHistory) {
+    items.push({ title: stringResource(MR.strings.label_recent_manga) || 'History', icon: 'history', path: '/history' })
+  }
+  items.push(
+    { title: stringResource(MR.strings.browse) || 'Browse', icon: 'explore', path: '/browse' },
+    { title: stringResource(MR.strings.label_more) || 'More', icon: 'more_horiz', path: '/more' },
+  )
+  return items
+})
 
-const activeNav = computed(() => (route.path.startsWith('/manga/') ? '/library' : route.path))
+const activeNav = computed(() => {
+  if (route.path.startsWith('/manga/')) return '/library'
+  if (route.path.startsWith('/updates') && !preferences.showNavUpdates) return '/more'
+  if (route.path.startsWith('/history') && !preferences.showNavHistory) return '/more'
+  return route.path
+})
 const twoPaneSettings = computed(() => preferences.tabletUiMode === 'always' || (tabletUi.value && width.value >= 600))
 const toolbarTitle = computed(() => {
   if (route.path.startsWith('/settings') && twoPaneSettings.value) {
@@ -156,6 +170,7 @@ function back() {
       bg-color="surface-container"
       elevation="0"
       class="mihon-navigation"
+      :class="{ 'mihon-navigation--no-labels': !preferences.bottomBarLabels }"
       aria-label="Main navigation"
     >
       <v-btn
@@ -169,7 +184,7 @@ function back() {
         <span class="navigation-icon" :class="{ 'bg-secondary-container': activeNav === item.path }">
           <v-icon :icon="item.icon" />
         </span>
-        <span class="mt-1 text-body-medium font-weight-medium navigation-label">{{ item.title }}</span>
+        <span v-if="preferences.bottomBarLabels" class="mt-1 text-body-medium font-weight-medium navigation-label">{{ item.title }}</span>
       </v-btn>
     </v-bottom-navigation>
 

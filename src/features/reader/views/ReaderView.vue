@@ -18,6 +18,8 @@ import ChapterTransition from '@/features/reader/components/ChapterTransition.vu
 import { useReaderKeybindings } from '../composables/useReaderKeybindings'
 import { useReaderFullscreen } from '../composables/useReaderFullscreen'
 import { usePagePreloader } from '../composables/usePagePreloader'
+import { useAppearanceStore } from '@/features/settings/stores/appearancePreferences'
+import { useCoverDominantColor } from '@/core/composables/useCoverDominantColor'
 import {
   computeSpreadLayout,
   findSpreadIndexForPage,
@@ -76,6 +78,47 @@ const toast = ref(''), toastOpen = ref(false)
 const title = computed(() => reader.manga?.title ?? '')
 const subtitle = computed(() => reader.chapter?.name ?? '')
 const chapterUrl = computed(() => reader.chapter?.realUrl || reader.chapter?.url || '')
+
+const appearanceStore = useAppearanceStore()
+const readerCoverUrl = computed(() => {
+  if (!reader.manga) return ''
+  return reader.manga.thumbnailUrl || (reader.manga.id ? server.thumbnailUrl(reader.manga.id) : '')
+})
+
+const { dominantColor, dynamicTheme: coverDynamicTheme } = useCoverDominantColor(readerCoverUrl)
+
+function hexToRgbTriplet(hex: string): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.slice(0, 2), 16)
+  const g = parseInt(clean.slice(2, 4), 16)
+  const b = parseInt(clean.slice(4, 6), 16)
+  return `${r},${g},${b}`
+}
+
+function kebab(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
+const readerCoverThemeStyles = computed<Record<string, string>>(() => {
+  if (!appearanceStore.themeCoverBased || !coverDynamicTheme.value || !dominantColor.value) {
+    return {}
+  }
+  const scheme = coverDynamicTheme.value.dark
+  const styles: Record<string, string> = {
+    '--cn-primary': scheme.primary,
+    '--cn-secondary-container': scheme.secondaryContainer,
+    '--v-theme-primary': hexToRgbTriplet(scheme.primary),
+    '--v-theme-primary-container': hexToRgbTriplet(scheme.primaryContainer),
+    '--v-theme-on-primary-container': hexToRgbTriplet(scheme.onPrimaryContainer),
+    '--v-theme-secondary': hexToRgbTriplet(scheme.secondary),
+    '--v-theme-secondary-container': hexToRgbTriplet(scheme.secondaryContainer),
+    '--v-theme-surface-container': hexToRgbTriplet(scheme.surfaceContainer),
+  }
+  for (const [key, hex] of Object.entries(scheme)) {
+    styles[`--v-theme-${kebab(key)}`] = hexToRgbTriplet(hex)
+  }
+  return styles
+})
 
 /* ------------------------------------------------------------- preferences */
 
@@ -676,6 +719,7 @@ onBeforeUnmount(() => {
       `reader-background-${preferences.background}`,
       { 'reader-fit-width': preferences.fit === 'width', 'reader-webtoon': modeIsWebtoon, 'reader--crop-borders': cropEnabled }
     ]"
+    :style="readerCoverThemeStyles"
     aria-label="Manga reader"
   >
     <!-- ReaderActivity.kt: the viewer fills the whole screen; the bars are an overlay on top of it. -->
