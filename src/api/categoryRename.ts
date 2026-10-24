@@ -13,11 +13,7 @@
  */
 import { ofetch } from 'ofetch'
 import { serverGraphqlUrl } from './serverSettings'
-
-export interface GraphQLResponse<T> {
-  data?: T
-  errors?: { message: string }[]
-}
+import type { GraphQLResponse } from './types'
 
 const updateCategoryMutation = `mutation UpdateCategory($input: UpdateCategoryInput!) {
   updateCategory(input: $input) { category { id name } }

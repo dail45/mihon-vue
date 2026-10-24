@@ -10,6 +10,7 @@
  */
 import { ofetch } from 'ofetch'
 import { serverGraphqlUrl } from './serverSettings'
+import type { GraphQLResponse } from './types'
 
 /** One status option of a tracker, e.g. `{ name: 'Reading', value: 1 }`. */
 export interface TrackerStatus {
@@ -72,7 +73,6 @@ export interface TrackerSearchResult {
   artists?: string[]
 }
 
-interface GraphQLResponse<T> { data?: T; errors?: { message: string }[] }
 
 async function request<T>(apiUrl: string, query: string, variables?: Record<string, unknown>): Promise<T> {
   const response = await ofetch<GraphQLResponse<T>>(serverGraphqlUrl(apiUrl), {

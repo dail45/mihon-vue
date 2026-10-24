@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/TrackerSearchView.vue', 'utf8')
+const view = readFileSync('src/views/TrackerSearchView.vue', 'utf8') + '\n' + readFileSync('src/components/tracker/TrackerSearchResultCard.vue', 'utf8')
 const api = readFileSync('src/api/trackers.ts', 'utf8')
 
 /**

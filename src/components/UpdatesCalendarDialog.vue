@@ -69,7 +69,7 @@ const monthTitle = computed(() => new Intl.DateTimeFormat(locale.value, { month:
 const MONDAY_FIRST_LOCALES = ['ru', 'uk', 'be', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hu', 'it', 'lt', 'lv', 'nl', 'no', 'pl', 'pt', 'ro', 'sk', 'sl', 'sv', 'tr', 'zh', 'ja', 'ko', 'id', 'vi', 'th', 'he', 'ar']
 function firstDayOfWeek(lang: string): number {
   try {
-    const info = (new Intl.Locale(lang) as unknown as { getWeekInfo?: () => { firstDay: number } }).getWeekInfo?.()
+    const info = new Intl.Locale(lang).getWeekInfo?.()
     if (info?.firstDay) return info.firstDay
   } catch { /* engines without Intl.Locale.getWeekInfo fall back to the table */ }
   return MONDAY_FIRST_LOCALES.includes(lang) ? 1 : 7

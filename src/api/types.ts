@@ -37,6 +37,7 @@ export interface Manga {
   unreadCount: number | null; downloadCount: number | null; chapterCount: number | null;
   lastReadAt: number | null; lastChapterRead: Chapter | null; age: number | null;
   chaptersAge: number | null; trackers: MangaTracker[] | null; lastModifiedAt: number; version: number;
+  favorite?: boolean; readerOrientation?: number | null; viewer?: number | null;
 }
 export interface Category {
   id: number; order: number; name: string; default: boolean;
@@ -54,6 +55,11 @@ export interface MangaChapter { manga: Manga; chapter: Chapter }
 export interface RecentChapters { page: MangaChapter[]; hasNextPage: boolean }
 
 /** Raw Suwayomi filter object payload for GET /source/{id}/filters and search queries */
+export interface GraphQLResponse<T> {
+  data?: T
+  errors?: { message: string }[]
+}
+
 export interface RawSourceFilterObject {
   type: string
   filter: {

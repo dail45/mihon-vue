@@ -51,6 +51,7 @@ export const useReaderPreferences = defineStore('readerPreferences', () => {
   // ReaderPreferences.cropBorders / cropBordersWebtoon: toggled from the reader bottom bar
   // (ReaderBottomBar.kt -> onClickCropBorder).
   const crop = ref(readPreference('mihon.reader.cropBorders') === 'true')
+  const cropWebtoon = ref(readPreference('mihon.reader.cropBordersWebtoon') === 'true')
   // GeneralSettingsPage.kt preferences that the reader itself has to honour:
   //   flashOnPageChange / flashDurationMillis / flashPageInterval / flashColor (DisplayRefreshHost.kt),
   //   pageTransitions (pager page change animation), readWithLongTap (long tap opens the page actions).
@@ -105,14 +106,37 @@ export const useReaderPreferences = defineStore('readerPreferences', () => {
   watch(readWithLongTap, v => writePreference('mihon.reader.readWithLongTap', String(v)))
   watch(mode, v => writePreference('mihon.reader.mode', v))
   watch(crop, v => writePreference('mihon.reader.cropBorders', String(v)))
+  watch(cropWebtoon, v => writePreference('mihon.reader.cropBordersWebtoon', String(v)))
   watch(fit, v => writePreference('mihon.reader.fit', v))
   watch(saveProgress, v => writePreference('mihon.reader.saveProgress', String(v)))
 
+  function getOrientation(mangaId: number): 'default' | 'free' | 'portrait' | 'landscape' | 'locked_portrait' | 'locked_landscape' | 'reverse_portrait' {
+    const flag = Number(readPreference(`mihon.reader.orientation.${mangaId}`) ?? '0')
+    switch (flag) {
+      case 0x00000008: return 'free'
+      case 0x00000010: return 'portrait'
+      case 0x00000018: return 'landscape'
+      case 0x00000020: return 'locked_portrait'
+      case 0x00000028: return 'locked_landscape'
+      case 0x00000030: return 'reverse_portrait'
+      default: return 'default'
+    }
+  }
+
+  function refresh() {
+    crop.value = readPreference('mihon.reader.cropBorders') === 'true'
+    cropWebtoon.value = readPreference('mihon.reader.cropBordersWebtoon') === 'true'
+    showPageNumber.value = readPreference('mihon.reader.showPageNumber') !== 'false'
+    readWithLongTap.value = readPreference('mihon.reader.readWithLongTap') !== 'false'
+    alwaysShowChapterTransition.value = readPreference('always_show_chapter_transition') !== 'false' && readPreference('mihon.reader.alwaysShowChapterTransition') !== 'false'
+  }
+
   return {
-    mode, background, readerTheme, fit, saveProgress, crop,
+    mode, background, readerTheme, fit, saveProgress, crop, cropWebtoon,
     flashOnPageChange, flashDuration, flashInterval, flashColor, pageTransitions, readWithLongTap,
     fullscreen, keepScreenOn, showPageNumber,
     verticalNavigator, verticalNavigatorOnLeft, verticalNavigatorHeight,
     drawUnderCutout, alwaysShowChapterTransition,
+    getOrientation, refresh,
   }
 })

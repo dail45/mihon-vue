@@ -1,21 +1,9 @@
-<script lang="ts">
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+
 /**
  * Port of `eu.kanade.presentation.components.DownloadDropdownMenu.kt`
  * (Mihon, pinned commit 446f6df82c390ab760802c2fce3b677bce3f31c1).
- *
- * The Kotlin composable only renders a `DropdownMenu` with six `DropdownMenuItem`s and
- * reports the picked `DownloadAction`; the chapter selection itself lives in the view model
- * (`MangaViewModel.runDownloadAction` / `LibraryViewModel.performDownloadAction`).
- * The web port keeps that split: this component emits the action and the host view maps it
- * onto the Suwayomi download queue.
- *
- * The unqualified `DropdownMenu` call inside the reference file resolves to the same-package
- * wrapper `eu.kanade.presentation.components.DropdownMenu`, which
- *   - pins the width with `sizeIn(minWidth = 196.dp, maxWidth = 196.dp)`,
- *   - offsets the menu with `DpOffset(8.dp, (-56).dp)` by default, and
- *   - opens a focusable popup (`PopupProperties(focusable = true)`).
- * `offset = null` therefore means "the default offset", and an explicit offset (the
- * `MangaBottomActionMenu` call site uses `DpOffset(0.dp, 0.dp)`) replaces it.
  */
 
 /** `eu.kanade.presentation.manga.DownloadAction` (MangaScreenConstants.kt). */
@@ -37,7 +25,7 @@ export interface DownloadDropdownOption {
  * `MR.plurals.download_amount`:
  * `one` -> "Next chapter", `other` -> "Next %d chapters".
  */
-export function downloadAmountLabel(amount: number): string {
+function downloadAmountLabel(amount: number): string {
   return amount === 1 ? 'Next chapter' : `Next ${amount} chapters`
 }
 
@@ -45,7 +33,7 @@ export function downloadAmountLabel(amount: number): string {
  * The option order of `DownloadDropdownMenuItems`: the four "next N chapters" entries,
  * then "Unread" (`download_unread`) and "Bookmarked" (`download_bookmarked`).
  */
-export const downloadDropdownOptions: DownloadDropdownOption[] = [
+const downloadDropdownOptions: DownloadDropdownOption[] = [
   { action: 'NEXT_1_CHAPTER', label: downloadAmountLabel(1) },
   { action: 'NEXT_5_CHAPTERS', label: downloadAmountLabel(5) },
   { action: 'NEXT_10_CHAPTERS', label: downloadAmountLabel(10) },
@@ -55,20 +43,17 @@ export const downloadDropdownOptions: DownloadDropdownOption[] = [
 ]
 
 /** Optional fallback for legacy/extended "All" download action (`TOTAL_CHAPTERS`). */
-export const downloadAllOption: DownloadDropdownOption = {
+const downloadAllOption: DownloadDropdownOption = {
   action: 'TOTAL_CHAPTERS',
   label: 'All',
 }
+void downloadAllOption
 
 /**
  * The default offset of the wrapper menu: `DpOffset(8.dp, (-56).dp)`
  * (`presentation/components/DropdownMenu.kt`).
  */
-export const defaultDownloadMenuOffset = { x: 8, y: -56 }
-</script>
-
-<script setup lang="ts">
-import { computed, ref } from 'vue'
+const defaultDownloadMenuOffset = { x: 8, y: -56 }
 
 const props = withDefaults(defineProps<{
   /** `expanded` of the Kotlin composable. */

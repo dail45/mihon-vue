@@ -81,7 +81,7 @@ describe('BrowseBadges & Badges parity with Mihon reference', () => {
   it('supports explicit enabled prop as well as wire inLibrary and domain favorite', () => {
     expect(badgesVue).toContain("props.enabled !== undefined")
     expect(badgesVue).toContain("props.manga.inLibrary")
-    expect(badgesVue).toContain("props.manga as any).favorite")
+    expect(badgesVue).toContain("props.manga.favorite")
   })
 
   it('provides dedicated InLibraryBadge component conforming to BrowseBadges.kt signature', () => {

@@ -64,7 +64,7 @@ function fromFlag(flag: number | null | undefined): OrientationId {
 function resolveOrientation(): OrientationId {
   const stored = readPreference(storageKey.value)
   if (stored !== null) return fromFlag(Number(stored))
-  const remote = (reader.manga as unknown as { readerOrientation?: number | null } | null)?.readerOrientation
+  const remote = reader.manga?.readerOrientation
   return fromFlag(typeof remote === 'number' ? remote : null)
 }
 /** Mihon keeps the current value as the initial selection and only re-syncs while the dialog is open. */

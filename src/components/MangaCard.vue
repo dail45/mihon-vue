@@ -162,7 +162,7 @@ onBeforeUnmount(onPointerUp)
             class="manga-cover-image"
             :class="{
               'in-library-cover': catalogue && manga.inLibrary,
-              'in-library-cover-fav': catalogue && !manga.inLibrary && (manga as any).favorite,
+              'in-library-cover-fav': catalogue && !manga.inLibrary && Boolean(manga.favorite),
             }"
             @error="broken = true"
           />
@@ -175,7 +175,7 @@ onBeforeUnmount(onPointerUp)
             class="cover-fallback"
             :class="{
               'in-library-cover': catalogue && manga.inLibrary,
-              'in-library-cover-fav': catalogue && !manga.inLibrary && (manga as any).favorite,
+              'in-library-cover-fav': catalogue && !manga.inLibrary && Boolean(manga.favorite),
             }"
           >
             <svg class="cover-fallback-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">

@@ -97,7 +97,7 @@ describe('chapter sorting and display', () => {
   it('persists per-manga/server settings and browser defaults without storing chapter data', async () => {
     const store=useChapterSettings(),s=store.forManga('/a',1);s.display='number';s.unread='exclude';store.setDefault(s);await nextTick();setActivePinia(createPinia());const restored=useChapterSettings()
     expect(restored.forManga('/a',1).display).toBe('number');expect(restored.forManga('/b',1).unread).toBe('exclude')
-    expect(localStorage.getItem('mihon.chapters.settings')).not.toContain('Chapter 1')
+    expect(localStorage.getItem('mihon.chapters.settings') ?? '').not.toContain('Chapter 1')
   })
   it('supports negative tri-state filters and number-only presentation', () => {
     expect(sortChapters([{...chapter,read:true},{...chapter,id:2,read:false}],{...defaultChapterSettings(),unread:'exclude'})).toHaveLength(1)

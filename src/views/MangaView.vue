@@ -6,8 +6,11 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { useSuwayomiStore } from '../stores/suwayomi'
 import ChapterSettingsSheet from '../components/ChapterSettingsSheet.vue'
 import ChapterHeader from '../components/ChapterHeader.vue'
-import DownloadDropdownMenu, { type DownloadAction } from '../components/DownloadDropdownMenu.vue'
-import MangaBottomActionMenu, { mangaBottomActionFlags } from '../components/MangaBottomActionMenu.vue'
+import type { DownloadAction } from '../components/DownloadDropdownMenu.vue'
+import MangaToolbar from '../components/MangaToolbar.vue'
+import MangaResumeFab from '../components/MangaResumeFab.vue'
+import MangaBottomActionMenu from '../components/MangaBottomActionMenu.vue'
+import { mangaBottomActionFlags } from '../utils/mangaBottomActions'
 import MangaCoverDialog from '../components/MangaCoverDialog.vue'
 import MangaInfoHeader from '../components/MangaInfoHeader.vue'
 import MissingChapterCountListItem from '../components/MissingChapterCountListItem.vue'
@@ -27,7 +30,8 @@ import { relativeDateText } from '../utils/dates'
 import { createSuwayomiApi } from '../api/client'
 import type { Chapter, Manga } from '../api/types'
 import { isLocal } from '../utils/library'
-import { deleteDownloadedChapter, dequeueChapterDownload, enqueueChapterDownload, readDownloadQueue, startDownloader } from '../api/downloads'
+import { useChapterSelection } from '../composables/useChapterSelection'
+import { useMangaDownloads } from '../composables/useMangaDownloads'
 import { stateSelection, type CategorySelection } from '../utils/categorySelection'
 import { findDuplicateManga, type DuplicateManga } from '../utils/duplicates'
 import { availableScanlators, loadExcludedScanlators } from '../utils/scanlatorFilter'
@@ -131,33 +135,16 @@ const hasFilters = computed(() => chapterSettings.value.unread !== 'all'
   || isScanlatorFilterActive.value)
 
 /** Mihon: `actionModeCounter = state.selectedChapters.size`. */
-const selectedChapters = ref<Set<number>>(new Set())
-const isActionMode = computed(() => selectedChapters.value.size > 0)
-const selectedCount = computed(() => selectedChapters.value.size)
-
-const lastSelectedChapterIndex = ref<number | null>(null)
-
-function toggleChapterSelection(id: number) {
-  const next = new Set(selectedChapters.value)
-  if (!next.delete(id)) {
-    next.add(id)
-    lastSelectedChapterIndex.value = visibleChapters.value.findIndex(c => c.id === id)
-  }
-  selectedChapters.value = next
-  if (next.size === 0) {
-    lastSelectedChapterIndex.value = null
-  }
-}
-function cancelSelection() {
-  selectedChapters.value = new Set()
-  lastSelectedChapterIndex.value = null
-}
-function selectAllChapters() { selectedChapters.value = new Set(visibleChapters.value.map(c => c.id)) }
-function invertChapterSelection() {
-  const next = new Set<number>()
-  for (const chapter of visibleChapters.value) if (!selectedChapters.value.has(chapter.id)) next.add(chapter.id)
-  selectedChapters.value = next
-}
+const {
+  selectedChapters,
+  isActionMode,
+  selectedCount,
+  toggleChapterSelection,
+  cancelSelection,
+  selectAllChapters,
+  invertChapterSelection,
+  handleLongPressSelect,
+} = useChapterSelection()
 
 /**
  * Mihon: `BackHandler(enabled = isAnySelected) { onAllChapterSelected(false) }` — the back
@@ -219,7 +206,6 @@ onBeforeUnmount(() => {
 
 // --- Toolbar actions -------------------------------------------------------------------------------
 
-const downloadExpanded = ref(false)
 const snackbar = ref(false), snackbarText = ref('')
 
 function notify(text: string) {
@@ -227,36 +213,24 @@ function notify(text: string) {
   snackbar.value = true
 }
 
-/**
- * Mihon `MangaViewModel.runDownloadAction(downloadAction)` queues matching chapters.
- */
-async function onDownload(action: DownloadAction) {
-  const chapters = orderedChapters.value
-  if (!chapters.length) return
-  const next = chapters.filter(c => !c.read)
-  let targets: typeof chapters = []
-  if (action === 'NEXT_1_CHAPTER') targets = next.slice(0, 1)
-  else if (action === 'NEXT_5_CHAPTERS') targets = next.slice(0, 5)
-  else if (action === 'NEXT_10_CHAPTERS') targets = next.slice(0, 10)
-  else if (action === 'NEXT_25_CHAPTERS') targets = next.slice(0, 25)
-  else if (action === 'UNREAD_CHAPTERS') targets = next
-  else if (action === 'BOOKMARKED_CHAPTERS') targets = chapters.filter(c => c.bookmarked)
-  if (!targets.length) {
-    notify('No chapters match this download action.')
-    return
-  }
-  for (const chapter of targets) {
-    cancelledChapterIds.delete(chapter.id)
-    downloadInfos.value[chapter.id] = { state: 'queue', progress: 0 }
-  }
-  try {
-    for (const chapter of targets) await enqueueChapterDownload(server.apiUrl, chapter.id)
-    await startDownloader(server.apiUrl)
-    notify(`${targets.length} chapter${targets.length === 1 ? '' : 's'} queued for download.`)
-    await refreshDownloadInfos()
-  } catch (error) {
-    notify(error instanceof Error ? error.message : 'The server rejected the request.')
-  }
+const {
+  downloadInfo,
+  onDownload,
+  onDownloadAction,
+  refreshDownloadInfos,
+  startDownloadPolling,
+} = useMangaDownloads({
+  apiUrl: () => server.apiUrl,
+  mangaId: () => detail.value?.id ?? Number(route.params.id),
+  updateChapterByIdLocally: (id, patch) => server.updateChapterByIdLocally(id, patch),
+  onMangaReloadNeeded: async () => { await server.loadManga(Number(route.params.id), false, true) },
+  notify,
+})
+
+watch(() => [route.params.id, server.apiUrl], startDownloadPolling, { immediate: true })
+
+function handleDownload(action: DownloadAction) {
+  void onDownload(action, orderedChapters.value)
 }
 function onRefresh() { void server.loadManga(detail.value?.id ?? Number(route.params.id), true) }
 
@@ -521,23 +495,7 @@ function onChapterClick(chapter: { id: number, index: number }) {
 
 /** Mihon: `onLongClick = { onChapterSelected(item, !item.selected, true) }` with range selection. */
 function onChapterLongPress(chapter: { id: number }) {
-  const currentIndex = visibleChapters.value.findIndex(c => c.id === chapter.id)
-  if (currentIndex < 0) return
-
-  if (!isActionMode.value || lastSelectedChapterIndex.value === null) {
-    selectedChapters.value = new Set([chapter.id])
-    lastSelectedChapterIndex.value = currentIndex
-  } else {
-    const start = Math.min(lastSelectedChapterIndex.value, currentIndex)
-    const end = Math.max(lastSelectedChapterIndex.value, currentIndex)
-    const next = new Set(selectedChapters.value)
-    for (let i = start; i <= end; i++) {
-      const c = visibleChapters.value[i]
-      if (c) next.add(c.id)
-    }
-    selectedChapters.value = next
-    lastSelectedChapterIndex.value = currentIndex
-  }
+  handleLongPressSelect(chapter, visibleChapters.value)
 }
 
 /** Mihon `executeChapterSwipeAction` (MangaViewModel.kt:619-646). */
@@ -545,128 +503,6 @@ async function onChapterSwipe(chapter: { id: number, index: number, read: boolea
   if (action === 'toggle-read') await patchChapter(chapter.index, { read: !chapter.read })
   else if (action === 'toggle-bookmark') await patchChapter(chapter.index, { bookmarked: !chapter.bookmarked })
   else if (action === 'download') await onDownloadAction(chapter, 'start')
-}
-
-// --- Chapter download indicator (ChapterDownloadIndicator.kt) -----------------------------------------
-
-interface ChapterDownloadInfo { state: 'not-downloaded' | 'queue' | 'downloading' | 'downloaded' | 'error', progress: number }
-const downloadInfos = ref<Record<number, ChapterDownloadInfo>>({})
-let downloadPoll: number | undefined
-let currentPollInterval = 3000
-const cancelledChapterIds = new Set<number>()
-
-function queueState(state: string): ChapterDownloadInfo['state'] {
-  if (state === 'DOWNLOADING') return 'downloading'
-  if (state === 'QUEUED') return 'queue'
-  if (state === 'ERROR') return 'error'
-  if (state === 'FINISHED') return 'downloaded'
-  return 'downloaded'
-}
-
-function normalizeDownloadProgress(progress: number | undefined): number {
-  if (typeof progress !== 'number' || !Number.isFinite(progress) || progress <= 0) return 0
-  if (progress <= 1) return Math.round(progress * 100)
-  return Math.min(100, Math.round(progress))
-}
-
-function adjustPollingInterval(ms: number) {
-  if (currentPollInterval === ms && downloadPoll !== undefined) return
-  currentPollInterval = ms
-  if (downloadPoll !== undefined) {
-    window.clearInterval(downloadPoll)
-  }
-  downloadPoll = window.setInterval(() => { void refreshDownloadInfos() }, ms)
-}
-
-async function refreshDownloadInfos() {
-  const mangaId = detail.value?.id ?? Number(route.params.id)
-  try {
-    const snapshot = await readDownloadQueue(server.apiUrl)
-    const next: Record<number, ChapterDownloadInfo> = {}
-    const inQueue = new Set<number>()
-
-    for (const entry of snapshot.queue) {
-      if (entry.manga.id !== mangaId) continue
-      const chapterId = entry.chapter.id
-      inQueue.add(chapterId)
-      next[chapterId] = {
-        state: queueState(entry.state),
-        progress: normalizeDownloadProgress(entry.progress),
-      }
-    }
-
-    // Detect chapters that finished downloading or were cancelled
-    for (const [idStr, prevInfo] of Object.entries(downloadInfos.value)) {
-      const chapterId = Number(idStr)
-      if (prevInfo.state === 'downloading' || prevInfo.state === 'queue') {
-        if (!inQueue.has(chapterId)) {
-          if (cancelledChapterIds.has(chapterId)) {
-            cancelledChapterIds.delete(chapterId)
-            next[chapterId] = { state: 'not-downloaded', progress: 0 }
-            server.updateChapterByIdLocally(chapterId, { downloaded: false })
-          } else {
-            // Completed download!
-            next[chapterId] = { state: 'downloaded', progress: 100 }
-            server.updateChapterByIdLocally(chapterId, { downloaded: true })
-          }
-        }
-      } else if (prevInfo.state === 'downloaded' && !next[chapterId]) {
-        // Keep downloaded state
-        next[chapterId] = prevInfo
-      }
-    }
-
-    downloadInfos.value = next
-
-    // Dynamic polling: fast (1000ms) when active downloading/queued, slower (4000ms) when idle
-    const hasActiveDownloads = Object.values(next).some(info => info.state === 'downloading' || info.state === 'queue')
-    adjustPollingInterval(hasActiveDownloads ? 1000 : 4000)
-  } catch { /* queue stays */ }
-}
-
-function startDownloadPolling() {
-  if (downloadPoll !== undefined) window.clearInterval(downloadPoll)
-  currentPollInterval = 3000
-  void refreshDownloadInfos()
-  downloadPoll = window.setInterval(() => { void refreshDownloadInfos() }, currentPollInterval)
-}
-watch(() => [route.params.id, server.apiUrl], startDownloadPolling, { immediate: true })
-onBeforeUnmount(() => { if (downloadPoll !== undefined) { window.clearInterval(downloadPoll); downloadPoll = undefined } })
-
-function downloadInfo(chapter: { id: number, downloaded: boolean }): ChapterDownloadInfo {
-  const info = downloadInfos.value[chapter.id]
-  if (info) return info
-  return {
-    state: chapter.downloaded ? 'downloaded' : 'not-downloaded',
-    progress: chapter.downloaded ? 100 : 0,
-  }
-}
-
-async function onDownloadAction(chapter: { id: number, name?: string }, action: string) {
-  const apiUrl = server.apiUrl
-  try {
-    if (action === 'start' || action === 'start-now') {
-      cancelledChapterIds.delete(chapter.id)
-      downloadInfos.value[chapter.id] = { state: 'queue', progress: 0 }
-      await enqueueChapterDownload(apiUrl, chapter.id)
-      await startDownloader(apiUrl)
-    } else if (action === 'cancel') {
-      cancelledChapterIds.add(chapter.id)
-      downloadInfos.value[chapter.id] = { state: 'not-downloaded', progress: 0 }
-      await dequeueChapterDownload(apiUrl, chapter.id)
-    } else if (action === 'delete') {
-      server.updateChapterByIdLocally(chapter.id, { downloaded: false })
-      downloadInfos.value[chapter.id] = { state: 'not-downloaded', progress: 0 }
-      await deleteDownloadedChapter(apiUrl, chapter.id)
-      void server.loadManga(Number(route.params.id), false, true)
-    }
-    await refreshDownloadInfos()
-    notify(action === 'delete' ? `${chapter.name ?? 'Chapter'} deleted`
-      : action === 'cancel' ? 'Download cancelled'
-      : 'Chapter queued for download')
-  } catch (error) {
-    notify(error instanceof Error ? error.message : 'The server rejected the request.')
-  }
 }
 
 // --- Floating action button & shouldExpandFAB() ----------------------------------------------------
@@ -787,85 +623,29 @@ function onTouchEnd() {
       The background is `surfaceColorAtElevation(3.dp)` with the scroll driven alpha.
       In tablet two-pane mode, title and background are always 1f.
     -->
-    <header class="manga-toolbar" :class="{ 'manga-toolbar--action': isActionMode }">
-      <div class="manga-toolbar__background" :style="{ opacity: backgroundAlpha }" />
-      <div class="manga-toolbar__nav-wrap">
-        <button
-          type="button"
-          class="manga-toolbar__nav"
-          :aria-label="isActionMode ? 'Cancel' : 'Navigate up'"
-          @click="isActionMode ? cancelSelection() : router.back()"
-        >
-          <v-icon :icon="isActionMode ? 'close' : 'arrow_back'" size="24" />
-        </button>
-        <span class="manga-toolbar__tooltip" role="tooltip">{{ isActionMode ? 'Cancel' : 'Navigate up' }}</span>
-      </div>
-      <div class="manga-toolbar__title" :style="{ opacity: titleAlpha }">
-        {{ isActionMode ? selectedCount : detail.title }}
-      </div>
-      <div class="manga-toolbar__actions">
-        <template v-if="isActionMode">
-          <div class="manga-toolbar__action-wrap">
-            <button type="button" class="manga-toolbar__icon" aria-label="Select all" @click="selectAllChapters">
-              <v-icon icon="select_all" size="24" />
-            </button>
-            <span class="manga-toolbar__tooltip" role="tooltip">Select all</span>
-          </div>
-          <div class="manga-toolbar__action-wrap">
-            <button type="button" class="manga-toolbar__icon" aria-label="Invert selection" @click="invertChapterSelection">
-              <v-icon icon="flip_to_back" size="24" />
-            </button>
-            <span class="manga-toolbar__tooltip" role="tooltip">Invert selection</span>
-          </div>
-        </template>
-        <template v-else>
-          <!-- Download dropdown: only rendered if not local or stub source (takeIf { !source.isLocalOrStub() }) -->
-          <div v-if="canDownload" class="manga-toolbar__action-wrap">
-            <DownloadDropdownMenu v-model="downloadExpanded" @download="onDownload">
-              <template #activator="{ props: activatorProps }">
-                <button type="button" v-bind="activatorProps" class="manga-toolbar__icon" aria-label="Download">
-                  <v-icon icon="download" size="24" />
-                </button>
-              </template>
-            </DownloadDropdownMenu>
-            <span class="manga-toolbar__tooltip" role="tooltip">Download</span>
-          </div>
-
-          <!-- Filter button: tinted with activeColor when filters are applied -->
-          <div class="manga-toolbar__action-wrap">
-            <button
-              type="button"
-              class="manga-toolbar__icon"
-              aria-label="Filter"
-              :style="hasFilters ? { color: activeColor } : undefined"
-              @click="chapterSettingsOpen = true"
-            >
-              <v-icon icon="filter_list" size="24" />
-            </button>
-            <span class="manga-toolbar__tooltip" role="tooltip">Filter</span>
-          </div>
-
-          <!-- More options overflow menu -->
-          <div class="manga-toolbar__action-wrap">
-            <v-menu location="bottom end" :offset="[0, 0]" content-class="manga-overflow-menu">
-              <template #activator="{ props: activatorProps }">
-                <button type="button" v-bind="activatorProps" class="manga-toolbar__icon" aria-label="More options">
-                  <v-icon icon="more_vert" size="24" />
-                </button>
-              </template>
-              <v-list class="manga-overflow-list" density="default">
-                <v-list-item title="Refresh" @click="onRefresh" />
-                <v-list-item v-if="isInLibrary" title="Edit categories" @click="onEditCategories" />
-                <v-list-item v-if="isInLibrary" title="Migrate" @click="onMigrate" />
-                <v-list-item v-if="canShare" title="Share" @click="onShare" />
-                <v-list-item title="Notes" @click="onEditNotes" />
-              </v-list>
-            </v-menu>
-            <span class="manga-toolbar__tooltip" role="tooltip">More options</span>
-          </div>
-        </template>
-      </div>
-    </header>
+    <MangaToolbar
+      :detail="detail"
+      :is-action-mode="isActionMode"
+      :selected-count="selectedCount"
+      :can-download="canDownload"
+      :has-filters="hasFilters"
+      :active-color="activeColor"
+      :is-in-library="isInLibrary"
+      :can-share="canShare"
+      :title-alpha="titleAlpha"
+      :background-alpha="backgroundAlpha"
+      @navigate-up="router.back()"
+      @cancel-selection="cancelSelection"
+      @select-all="selectAllChapters(visibleChapters.map(c => c.id))"
+      @invert-selection="invertChapterSelection(visibleChapters.map(c => c.id))"
+      @download="handleDownload"
+      @open-filters="chapterSettingsOpen = true"
+      @refresh="onRefresh"
+      @edit-categories="onEditCategories"
+      @migrate="onMigrate"
+      @share="onShare"
+      @edit-notes="onEditNotes"
+    />
 
     <!--
       Mihon: `Scaffold` content -> `PullRefresh` -> `LazyColumn` with the items INFO_BOX,
@@ -941,19 +721,12 @@ function onTouchEnd() {
       ContainerHeight 56dp, CornerLarge 16dp, primaryContainer/onPrimaryContainer.
       Expands on scroll up, collapses on scroll down (shouldExpandFAB()).
     -->
-    <transition name="manga-fab">
-      <button
-        v-if="fabVisible"
-        type="button"
-        class="manga-fab"
-        :class="{ 'manga-fab--expanded': fabExpanded }"
-        :aria-label="hasReadChapters ? 'Resume' : 'Start'"
-        @click="continueReading"
-      >
-        <v-icon icon="play_arrow" size="24" class="manga-fab__icon" />
-        <span v-if="fabExpanded" class="manga-fab__label">{{ hasReadChapters ? 'Resume' : 'Start' }}</span>
-      </button>
-    </transition>
+    <MangaResumeFab
+      :visible="fabVisible"
+      :expanded="fabExpanded"
+      :has-read-chapters="hasReadChapters"
+      @click="continueReading"
+    />
 
     <!--
       Mihon: SharedMangaBottomActionMenu (the chapter selection menu).

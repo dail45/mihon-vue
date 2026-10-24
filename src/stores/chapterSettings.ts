@@ -17,11 +17,27 @@ export const useChapterSettings = defineStore('chapter-settings', () => {
   const defaults = ref(valid(json('mihon.chapters.default'))), items = ref<Record<string, ChapterSettings>>({})
   const raw = json('mihon.chapters.settings')
   if (raw && typeof raw === 'object') for (const [key, value] of Object.entries(raw)) items.value[key] = valid(value)
-  function forManga(apiUrl: string, id: number) { const key = `${apiUrl}::${id}`; return items.value[key] ||= { ...defaults.value } }
-  function choose(settings: ChapterSettings, mode: ChapterSortType) { if (settings.sort === mode) settings.descending = !settings.descending; else { settings.sort = mode; settings.descending = false } }
+  function forManga(apiUrl: string, id: number): ChapterSettings {
+    const key = `${apiUrl}::${id}`
+    return items.value[key] ? { ...items.value[key] } : { ...defaults.value }
+  }
+  function set(apiUrl: string, id: number, settings: ChapterSettings) {
+    items.value[`${apiUrl}::${id}`] = { ...settings }
+  }
+  function update(apiUrl: string, id: number, patch: Partial<ChapterSettings>) {
+    const key = `${apiUrl}::${id}`
+    items.value[key] = { ...(items.value[key] ?? defaults.value), ...patch }
+  }
+  function choose(settings: ChapterSettings, mode: ChapterSortType, apiUrl?: string, id?: number) {
+    if (settings.sort === mode) settings.descending = !settings.descending
+    else { settings.sort = mode; settings.descending = false }
+    if (apiUrl && id !== undefined) {
+      update(apiUrl, id, { sort: settings.sort, descending: settings.descending })
+    }
+  }
   function reset(apiUrl: string, id: number) { items.value[`${apiUrl}::${id}`] = { ...defaults.value } }
   function setDefault(settings: ChapterSettings) { defaults.value = { ...settings } }
   watch(defaults, v => writePreference('mihon.chapters.default', JSON.stringify(v)), { deep: true })
   watch(items, v => writePreference('mihon.chapters.settings', JSON.stringify(v)), { deep: true })
-  return { defaults, items, forManga, choose, reset, setDefault }
+  return { defaults, items, forManga, set, update, choose, reset, setDefault }
 })

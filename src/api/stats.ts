@@ -17,6 +17,7 @@
  */
 import { ofetch } from 'ofetch'
 import { serverGraphqlUrl } from './serverSettings'
+import type { GraphQLResponse } from './types'
 
 export interface TrackerStats {
   /** Trackers the server reports as logged in (Mihon: loggedInTrackers). */
@@ -31,11 +32,6 @@ export interface UpdateRestrictions {
   excludeCompleted: boolean
   excludeEntryWithUnreadChapters: boolean
   excludeNotStarted: boolean
-}
-
-interface GraphQLResponse<T> {
-  data?: T
-  errors?: { message: string }[]
 }
 
 const statsQuery = `query StatsScreen {

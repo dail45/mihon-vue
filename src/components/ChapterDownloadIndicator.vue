@@ -1,4 +1,4 @@
-<script lang="ts">
+<script setup lang="ts">
 export type ChapterDownloadIndicatorState =
   | 'not-downloaded'
   | 'queue'
@@ -17,26 +17,13 @@ export type ChapterDownloadIndicatorAction =
   | 'cancel'
   | 'delete'
 
-export enum ChapterDownloadAction {
-  START = 'start',
-  START_NOW = 'start-now',
-  CANCEL = 'cancel',
-  DELETE = 'delete',
-}
-
-export enum DownloadState {
-  NOT_DOWNLOADED = 'not-downloaded',
-  QUEUE = 'queue',
-  DOWNLOADING = 'downloading',
-  DOWNLOADED = 'downloaded',
-  ERROR = 'error',
-}
+export type ChapterDownloadAction = 'start' | 'start-now' | 'cancel' | 'delete'
+export type DownloadState = 'not-downloaded' | 'queue' | 'downloading' | 'downloaded' | 'error'
 
 /** IndicatorWavelength = 7dp. */
-export const WAVELENGTH = 7
-</script>
+const WAVELENGTH = 7
+void WAVELENGTH
 
-<script setup lang="ts">
 /**
  * Chapter download indicator.
  * Reference: mihon/app/src/main/java/eu/kanade/presentation/manga/components/ChapterDownloadIndicator.kt

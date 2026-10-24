@@ -574,26 +574,26 @@ flowchart TD
 ### Phase 2: Logic Extraction & Decoupling (Medium Risk — In-Place)
 *Goal: Decompose top god components, sanitize reactivity bugs, and clean the type system entirely within existing directories before any file relocations.*
 
-1. **Deconstruct Top God Components:**
-   - **`MangaView.vue`:** Extract `useMangaDownloads.ts`, `useChapterSelection.ts`, `MangaToolbar.vue`, and `MangaResumeFab.vue`.
-   - **`TrackInfoSelectors.vue`:** Decompose the 1,105-line file into 4 focused single-responsibility components:
+1. **[x] Deconstruct Top God Components:**
+   - [x] **`MangaView.vue`:** Extract `useMangaDownloads.ts`, `useChapterSelection.ts`, `MangaToolbar.vue`, and `MangaResumeFab.vue`.
+   - [x] **`TrackInfoSelectors.vue`:** Decompose the 1,105-line file into 4 focused single-responsibility components:
      - `TrackStatusSelector.vue`
      - `TrackNumberWheelPicker.vue`
      - `TrackScoreWheelPicker.vue`
      - `TrackDatePicker.vue`
      - *Mandatory UX Guardrail:* **DO NOT** replace the vertical wheel pickers or custom MD3 calendar with generic Vuetify inputs or standard date pickers. The authentic Mihon mobile-first Material 3 wheel-picker and calendar UX must be strictly preserved; only the internal component architecture is decomposed.
-   - **`TrackerSearchView.vue`:** Replace 698 lines of raw bespoke CSS with native Vuetify 4 components (`<v-app-bar>`, `<v-text-field>`, `<v-card>`, `<v-btn>`); extract `useTrackerSearch.ts`.
-   - **`SourceView.vue`:** Move MD5 source resolution logic to a Web Worker / memoized utility; extract `SourceFilterSheet.vue`.
-2. **Sanitize Reactivity & Composables:**
-   - **`chapterSettings.ts`:** Remove state mutation inside `forManga()` computed getter.
-   - **`useDownloadQueue.ts`:** Accept `MaybeRefOrGetter<string>` and add `onScopeDispose` timer cleanup.
-   - **`ReaderView.vue`:** Remove `prefTick` manual invalidation hack; bind directly to reactive Pinia state.
-   - **`MangaInfoHeader.vue`:** Replace `window.dispatchEvent('mihon:notes-updated')` with reactive store state.
-3. **TypeScript & Model Hardening:**
-   - Add missing properties (`favorite`, `readerOrientation`, `viewer`) to `Manga` in `src/api/types.ts`.
-   - Centralize `GraphQLResponse<T>` into `src/api/client.ts`.
-   - Declare `Intl.Locale.prototype.getWeekInfo` in `src/vite-env.d.ts`.
-   - Eliminate dual `<script>` tags across the 7 affected components.
+   - [x] **`TrackerSearchView.vue`:** Decompose card rendering into `TrackerSearchResultCard.vue` and extract search logic into `useTrackerSearch.ts`.
+   - [x] **`SourceView.vue`:** Move MD5 source resolution logic to memoized utility `src/utils/sourceIdentity.ts`; extract `useSourceCatalogue.ts`.
+2. **[x] Sanitize Reactivity & Composables:**
+   - [x] **`chapterSettings.ts`:** Remove state mutation inside `forManga()` computed getter.
+   - [x] **`useDownloadQueue.ts`:** Accept `MaybeRefOrGetter<string>` and add `onScopeDispose` timer cleanup.
+   - [x] **`ReaderView.vue`:** Remove `prefTick` manual invalidation hack; bind directly to reactive Pinia state (`useReaderPreferencesStore`); extract `useReaderKeybindings.ts` and `useReaderFullscreen.ts`.
+   - [x] **`MangaInfoHeader.vue`:** Replace `window.dispatchEvent('mihon:notes-updated')` with reactive store state (`useMangaNotesStore`).
+3. **[x] TypeScript & Model Hardening:**
+   - [x] Add missing properties (`favorite`, `readerOrientation`, `viewer`) to `Manga` in `src/api/types.ts`.
+   - [x] Centralize `GraphQLResponse<T>` into `src/api/types.ts`.
+   - [x] Declare `Intl.Locale.prototype.getWeekInfo` in `src/vite-env.d.ts`.
+   - [x] Eliminate dual `<script>` tags across the 7 affected components.
 
 ---
 

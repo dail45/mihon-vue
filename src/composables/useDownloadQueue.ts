@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import {
   clearDownloader,
   dequeueChapterDownloads,
@@ -36,7 +36,8 @@ function groupBySource(entries: DownloadQueueEntry[]): DownloadQueueSection[] {
  * reachable through the GraphQL endpoint. Progress is polled because the
  * GraphQL subscription needs a websocket transport the web client does not ship.
  */
-export function useDownloadQueue(apiUrl: string) {
+export function useDownloadQueue(apiUrl: MaybeRefOrGetter<string>) {
+  const getApiUrl = () => toValue(apiUrl)
   const entries = ref<DownloadQueueEntry[]>([])
   const downloaderState = ref<DownloaderState>('STOPPED')
   const loading = ref(false)
@@ -53,7 +54,7 @@ export function useDownloadQueue(apiUrl: string) {
     const request = ++generation
     loading.value = true
     try {
-      const snapshot = await readDownloadQueue(apiUrl)
+      const snapshot = await readDownloadQueue(getApiUrl())
       if (request !== generation) return
       entries.value = snapshot.queue
       downloaderState.value = snapshot.state
@@ -82,15 +83,15 @@ export function useDownloadQueue(apiUrl: string) {
     }
   }
 
-  function start() { return mutate(() => startDownloader(apiUrl), 'Downloader started.') }
-  function pause() { return mutate(() => stopDownloader(apiUrl), 'Downloader paused.') }
-  function clear() { return mutate(() => clearDownloader(apiUrl), 'Queue cleared.') }
+  function start() { return mutate(() => startDownloader(getApiUrl()), 'Downloader started.') }
+  function pause() { return mutate(() => stopDownloader(getApiUrl()), 'Downloader paused.') }
+  function clear() { return mutate(() => clearDownloader(getApiUrl()), 'Queue cleared.') }
 
   /** Persists a new absolute order of the whole queue. */
   async function applyOrder(order: DownloadQueueEntry[]) {
     const reorders = order.map((entry, index) => ({ chapterId: entry.chapter.id, to: index }))
     entries.value = order
-    await mutate(() => reorderChapterDownloads(apiUrl, reorders), 'Queue reordered.')
+    await mutate(() => reorderChapterDownloads(getApiUrl(), reorders), 'Queue reordered.')
   }
 
   function sectionOf(entry: DownloadQueueEntry): DownloadQueueSection | undefined {
@@ -138,13 +139,13 @@ export function useDownloadQueue(apiUrl: string) {
   }
 
   function cancel(download: DownloadQueueEntry) {
-    void mutate(() => dequeueChapterDownloads(apiUrl, [download.chapter.id]), 'Download cancelled.')
+    void mutate(() => dequeueChapterDownloads(getApiUrl(), [download.chapter.id]), 'Download cancelled.')
   }
 
   function cancelSeries(download: DownloadQueueEntry) {
     const ids = entries.value.filter(e => e.manga.id === download.manga.id).map(e => e.chapter.id)
     if (!ids.length) return
-    void mutate(() => dequeueChapterDownloads(apiUrl, ids), 'Downloads cancelled for this series.')
+    void mutate(() => dequeueChapterDownloads(getApiUrl(), ids), 'Downloads cancelled for this series.')
   }
 
   /** Reorders one download inside its own section (drag and drop). */
@@ -178,6 +179,10 @@ export function useDownloadQueue(apiUrl: string) {
     generation++
     if (timer !== undefined) window.clearInterval(timer)
     timer = undefined
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(dispose)
   }
 
   return {

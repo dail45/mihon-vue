@@ -111,7 +111,7 @@ const filterRows = computed(() => [
 ])
 // TriStateItem cycles DISABLED -> ENABLED_IS -> ENABLED_NOT -> DISABLED.
 function advanceFilter(key: FilterKey) {
-  settings.value[key] = nextTriState(settings.value[key])
+  store.update(props.apiUrl, props.mangaId, { [key]: nextTriState(settings.value[key]) })
 }
 // TriStateItem.kt: DISABLED -> CheckBoxOutlineBlank, ENABLED_IS -> RoundedFilled.CheckBox,
 // ENABLED_NOT -> RoundedFilled.DisabledByDefault.
@@ -148,7 +148,7 @@ function confirmScanlators(excluded: string[]) {
 }
 
 // --- Sort / display ---------------------------------------------------------------------------
-function chooseSort(mode: typeof chapterSortOptions[number]['value']) { store.choose(settings.value, mode) }
+function chooseSort(mode: typeof chapterSortOptions[number]['value']) { store.choose(settings.value, mode, props.apiUrl, props.mangaId) }
 
 // --- Overflow actions -------------------------------------------------------------------------
 function notify() {
@@ -173,7 +173,7 @@ async function saveDefault() {
       ids = [...new Set(libraries.flat().map(m => m.id))]
     }
     store.setDefault(selected)
-    for (const id of ids) Object.assign(store.forManga(props.apiUrl, id), selected)
+    for (const id of ids) store.set(props.apiUrl, id, selected)
     confirmDefault.value = false
     // MangaViewModel.setCurrentSettingsAsDefault shows MR.strings.chapter_settings_updated.
     notify()
@@ -293,7 +293,7 @@ async function saveDefault() {
           class="settings-row chapter-radio-item"
           :aria-checked="settings.display === option.value"
           :aria-label="option.label"
-          @click="settings.display = option.value"
+          @click="store.update(props.apiUrl, props.mangaId, { display: option.value })"
         >
           <span class="settings-icon-slot">
             <span

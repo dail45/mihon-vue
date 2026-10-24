@@ -1,23 +1,6 @@
-<script lang="ts">
-/**
- * Port of `eu.kanade.presentation.manga.components.MangaBottomActionMenu.kt`
- * (Mihon revision 446f6df82c390ab760802c2fce3b677bce3f31c1).
- *
- * The Kotlin file holds two composables:
- *  - `MangaBottomActionMenu` — chapter multi selection of the manga screen;
- *  - `LibraryBottomActionMenu` — multi selection of the library tab.
- *
- * Both are rendered by this component; the `variant` prop selects which one.
- *
- * The action visibility rules live in `src/utils/mangaBottomActions.ts` (like
- * `src/utils/updatesBottomActions.ts`), so that unit tests can import them without a Vue
- * SFC transform.
- */
-export { mangaBottomActionFlags } from '../utils/mangaBottomActions'
-export type { MangaBottomActionChapter, MangaBottomActionFlags } from '../utils/mangaBottomActions'
-</script>
-
 <script setup lang="ts">
+export type { MangaBottomActionChapter, MangaBottomActionFlags } from '../utils/mangaBottomActions'
+
 /**
  * Pixel-parity port of the Mihon bottom action menus.
  *

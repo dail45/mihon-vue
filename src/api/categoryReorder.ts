@@ -18,11 +18,7 @@
  */
 import { ofetch } from 'ofetch'
 import { serverGraphqlUrl } from './serverSettings'
-
-export interface GraphQLResponse<T> {
-  data?: T
-  errors?: { message: string }[]
-}
+import type { GraphQLResponse } from './types'
 
 const updateCategoryOrderMutation = `mutation UpdateCategoryOrder($input: UpdateCategoryOrderInput!) {
   updateCategoryOrder(input: $input) { categories { id name order } }

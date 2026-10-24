@@ -3,12 +3,13 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiErrorMessage, createSuwayomiApi } from '../api/client'
 import type { Manga } from '../api/types'
-import { useCatalogueStore, type CatalogueMode } from '../stores/catalogue'
+import { useSourceCatalogue, type CatalogueMode } from '../composables/useSourceCatalogue'
 import { usePreferencesStore } from '../stores/preferences'
 import { useSuwayomiStore } from '../stores/suwayomi'
 import MangaCollection from '../components/MangaCollection.vue'
 import { fetchExtensionList } from '../api/extensions'
-import { sourceIdentityToString, generateSourceId, SOURCE_LANGUAGES, type SourceIdentity } from '../utils/sourceId'
+import { sourceIdentityToString, type SourceIdentity } from '../utils/sourceId'
+import { resolveStubSourceIdentity } from '../utils/sourceIdentity'
 import BrowseSourceLoadingItem from '../components/BrowseSourceLoadingItem.vue'
 import RemoveMangaDialog from '../components/RemoveMangaDialog.vue'
 import DuplicateMangaDialog from '../components/DuplicateMangaDialog.vue'
@@ -35,7 +36,7 @@ import { stateSelection, type CategorySelection } from '../utils/categorySelecti
  *    failed while items are already on screen.
  */
 const preferences = usePreferencesStore()
-const route = useRoute(), router = useRouter(), server = useSuwayomiStore(), catalogue = useCatalogueStore()
+const route = useRoute(), router = useRouter(), server = useSuwayomiStore(), catalogue = useSourceCatalogue()
 const source = computed(() => server.sources.find(s => s.id === String(route.params.sourceId)))
 const sourceId = computed(() => String(route.params.sourceId ?? ''))
 const mode = computed<CatalogueMode>(() => route.query.mode === 'search' ? 'search' : route.query.mode === 'latest' ? 'latest' : 'popular')
@@ -110,20 +111,8 @@ const stubIdentity = ref<SourceIdentity | null>(null)
 let resolveToken = 0
 async function resolveStubIdentity(names: string[], wanted: string) {
   const token = ++resolveToken
-  for (let i = 0; i < names.length; i += 64) {
-    if (token !== resolveToken) return
-    const slice = names.slice(i, i + 64)
-    for (const name of slice) {
-      for (const lang of SOURCE_LANGUAGES) {
-        if (generateSourceId(name, lang) === wanted) {
-          if (token === resolveToken) stubIdentity.value = { name, lang }
-          return
-        }
-      }
-    }
-    await new Promise(resolve => setTimeout(resolve, 0))
-  }
-  if (token === resolveToken) stubIdentity.value = null
+  const result = await resolveStubSourceIdentity(names, wanted, () => token !== resolveToken)
+  if (token === resolveToken) stubIdentity.value = result
 }
 watch([missingSource, extensionNames, sourceId], ([isMissing, names, id]) => {
   if (!isMissing || !names.length) { stubIdentity.value = null; return }

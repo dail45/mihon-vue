@@ -1,14 +1,6 @@
-<script lang="ts">
-/**
- * The action flags of the Updates bottom bar, mirroring the `takeIf { ... }` guards of
- * `UpdatesScreen.kt:216-248`. They live in `src/utils/updatesBottomActions.ts` so that
- * unit tests can import them without a Vue SFC compiler.
- */
-export { updatesBottomActionFlags } from '../utils/updatesBottomActions'
-export type { UpdatesBottomActionChapter, UpdatesBottomActionFlags } from '../utils/updatesBottomActions'
-</script>
-
 <script setup lang="ts">
+export type { UpdatesBottomActionChapter, UpdatesBottomActionFlags } from '../utils/updatesBottomActions'
+
 /**
  * Pixel-parity port of the Updates bottom action bar.
  *

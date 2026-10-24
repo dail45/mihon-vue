@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const source = readFileSync(resolve(process.cwd(), 'src/views/MangaView.vue'), 'utf8')
+const source = [
+  readFileSync(resolve(process.cwd(), 'src/views/MangaView.vue'), 'utf8'),
+  readFileSync(resolve(process.cwd(), 'src/components/MangaToolbar.vue'), 'utf8'),
+  readFileSync(resolve(process.cwd(), 'src/components/MangaResumeFab.vue'), 'utf8'),
+].join('\n')
 
 describe('MangaScreen (MangaScreen.kt) pixel-parity in MangaView.vue', () => {
   describe('Adaptive layout (TwoPanelBox vs LazyColumn)', () => {

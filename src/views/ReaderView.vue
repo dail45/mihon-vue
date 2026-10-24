@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSuwayomiStore } from '../stores/suwayomi'
 import { useReaderStore } from '../stores/reader'
 import { useReaderPreferences } from '../stores/readerPreferences'
-import { readPreference, writePreference } from '../stores/preferences'
+import { readPreference } from '../stores/preferences'
 import ReaderTopBar from '../components/reader/ReaderTopBar.vue'
 import ReaderBottomBar from '../components/reader/ReaderBottomBar.vue'
 import ChapterNavigator, { type ChapterNavigatorType } from '../components/reader/ChapterNavigator.vue'
@@ -15,6 +15,8 @@ import ReadingModeSelectDialog from '../components/reader/ReadingModeSelectDialo
 import OrientationSelectDialog from '../components/reader/OrientationSelectDialog.vue'
 import ReaderPageActionsDialog from '../components/reader/ReaderPageActionsDialog.vue'
 import ChapterTransition from '../components/reader/ChapterTransition.vue'
+import { useReaderKeybindings } from '../composables/useReaderKeybindings'
+import { useReaderFullscreen } from '../composables/useReaderFullscreen'
 
 /**
  * Mihon reference:
@@ -72,41 +74,33 @@ const chapterUrl = computed(() => reader.chapter?.realUrl || reader.chapter?.url
  * The reference reads its preferences through `ReaderPreferences`; this build keeps them in
  * `localStorage` under `mihon.reader.*` keys. `prefTick` re-reads them after a dialog wrote one.
  */
-const prefTick = ref(0)
-function refreshPrefs() { prefTick.value++ }
+// preferences are reactively tracked via useReaderPreferences store
+function refreshPrefs() { preferences.refresh() }
 
 const showPageNumber = computed(() => {
-  void prefTick.value
+
   return preferences.showPageNumber
 })
 const readWithLongTap = computed(() => {
-  void prefTick.value
+
   return preferences.readWithLongTap
 })
 /** ReaderActivity.kt:452 - the pager uses `cropBorders`, the webtoon viewer `cropBordersWebtoon`. */
 const cropEnabled = computed(() => {
-  void prefTick.value
-  const key = modeIsWebtoon.value ? 'mihon.reader.cropBordersWebtoon' : 'mihon.reader.cropBorders'
-  return readPreference(key) === 'true'
+
+  return modeIsWebtoon.value ? preferences.cropWebtoon : preferences.crop
+
 })
 const alwaysShowChapterTransition = computed(() => {
-  void prefTick.value
-  return readPreference('mihon.reader.alwaysShowChapterTransition') !== 'false'
+
+  return preferences.alwaysShowChapterTransition
 })
 const pagerTransition = ref<'prev' | 'next' | null>(null)
 /** `ReaderOrientation.fromPreference(...)` flag values (ReaderOrientation.kt). */
 const orientation = computed<'default' | 'free' | 'portrait' | 'landscape' | 'locked_portrait' | 'locked_landscape' | 'reverse_portrait'>(() => {
-  void prefTick.value
-  const flag = Number(readPreference(`mihon.reader.orientation.${reader.manga?.id ?? 0}`) ?? '0')
-  switch (flag) {
-    case 0x00000008: return 'free'
-    case 0x00000010: return 'portrait'
-    case 0x00000018: return 'landscape'
-    case 0x00000020: return 'locked_portrait'
-    case 0x00000028: return 'locked_landscape'
-    case 0x00000030: return 'reverse_portrait'
-    default: return 'default'
-  }
+
+  return preferences.getOrientation(reader.manga?.id ?? 0)
+
 })
 
 /* ------------------------------------------------------------------ reader */
@@ -140,11 +134,12 @@ async function toggleBookmark() {
 function showToast(message: string) { toast.value = message; toastOpen.value = true }
 /** ReaderActivity.kt:512 - toggling the crop borders shows a toast with the new state. */
 function toggleCrop() {
-  const key = modeIsWebtoon.value ? 'mihon.reader.cropBordersWebtoon' : 'mihon.reader.cropBorders'
-  const next = readPreference(key) !== 'true'
-  writePreference(key, String(next))
-  if (!modeIsWebtoon.value) preferences.crop = next
-  refreshPrefs()
+  const next = !cropEnabled.value
+  if (modeIsWebtoon.value) {
+    preferences.cropWebtoon = next
+  } else {
+    preferences.crop = next
+  }
   showToast(next ? 'On' : 'Off')
 }
 
@@ -285,19 +280,10 @@ watch(() => reader.pageIndex, () => flash())
 
 /* ---------------------------------------------------------------- fullscreen */
 
-/**
- * GeneralSettingsPage.kt pref_fullscreen: Mihon keeps the reader in an immersive full screen
- * activity. The browser equivalent is the Fullscreen API on the reader element, which needs a
- * user gesture, so the request is made right after the preference is toggled.
- */
-async function applyFullscreen(enabled: boolean) {
-  const host = document.querySelector('.reader') as HTMLElement | null
-  try {
-    if (enabled && host && !document.fullscreenElement) await host.requestFullscreen()
-    else if (!enabled && document.fullscreenElement) await document.exitFullscreen()
-  } catch { showToast('Fullscreen is not available in this browser') }
-}
-watch(() => preferences.fullscreen, value => { void applyFullscreen(value) })
+useReaderFullscreen({
+  fullscreen: () => preferences.fullscreen,
+  onError: msg => showToast(msg),
+})
 
 /* --------------------------------------------------------- page transitions */
 
@@ -307,136 +293,24 @@ watch(() => preferences.fullscreen, value => { void applyFullscreen(value) })
  */
 const animatePages = computed(() => preferences.pageTransitions)
 
-/* ---------------------------------------------------------------- gestures */
+/* ---------------------------------------------------------------- keybindings & scrolling */
 
-function scrollDown() {
-  if (!viewport.value) return
-  const distance = Math.round(viewport.value.clientHeight * 0.75)
-  viewport.value.scrollBy({ top: distance, behavior: animatePages.value ? 'smooth' : 'auto' })
-}
-
-function scrollUp() {
-  if (!viewport.value) return
-  const distance = Math.round(viewport.value.clientHeight * 0.75)
-  viewport.value.scrollBy({ top: -distance, behavior: animatePages.value ? 'smooth' : 'auto' })
-}
-
-/**
- * Mihon: PagerViewer.handleKeyEvent, WebtoonViewer.handleKeyEvent, ReaderActivity.onKeyUp.
- * Supports:
- * - ArrowLeft / ArrowRight, A / D: turn pages in paged mode (reversed in RTL), scroll in webtoon.
- * - ArrowUp / ArrowDown, PageUp / PageDown: turn pages forward/backward or scroll strip.
- * - Ctrl + ArrowLeft / ArrowRight: jump to previous/next chapter.
- * - Space, Shift+Space: toggle controls or turn/scroll.
- * - N / P: next / previous chapter.
- * - Home / End: first / last page.
- * - M: toggle controls (KEYCODE_MENU).
- * - Escape: close dialogs or toggle controls.
- */
-function onKey(event: KeyboardEvent) {
-  if (settings.value || readingModeDialog.value || orientationDialog.value || pageActions.value) return
-  if ((event.target as HTMLElement)?.closest('input, textarea, select, [role="slider"], [role="menu"]')) return
-
-  if (event.key === 'Escape') {
-    if (chaptersOpen.value) { chaptersOpen.value = false; return }
-    controls.value = !controls.value
-    return
-  }
-  if (event.key === ' ' && !(event.target as HTMLElement)?.closest('button, a')) {
-    event.preventDefault()
-    if (event.shiftKey) {
-      if (modeIsWebtoon.value) scrollUp()
-      else turn(preferences.mode === 'rtl' ? 1 : -1)
-    } else {
-      controls.value = !controls.value
-    }
-    return
-  }
-  if (event.key === 'm' || event.key === 'M') {
-    controls.value = !controls.value
-    return
-  }
-  if (event.key === 'n' || event.key === 'N') {
-    if (reader.nextChapter) goChapter(reader.nextChapter.index)
-    return
-  }
-  if (event.key === 'p' || event.key === 'P') {
-    if (reader.previousChapter) goChapter(reader.previousChapter.index)
-    return
-  }
-  if (event.key === 'Home') {
-    event.preventDefault()
-    if (modeIsWebtoon.value) {
-      viewport.value?.scrollTo({ top: 0, behavior: animatePages.value ? 'smooth' : 'auto' })
-    } else {
-      void goPage(0)
-    }
-    return
-  }
-  if (event.key === 'End') {
-    event.preventDefault()
-    if (modeIsWebtoon.value) {
-      viewport.value?.scrollTo({ top: viewport.value.scrollHeight, behavior: animatePages.value ? 'smooth' : 'auto' })
-    } else {
-      void goPage(reader.pageCount - 1)
-    }
-    return
-  }
-
-  // Webtoon viewer keys (WebtoonViewer.kt:304-336)
-  if (modeIsWebtoon.value) {
-    if (event.key === 'ArrowDown' || event.key === 'PageDown' || event.key === 's' || event.key === 'S' || event.key === 'd' || event.key === 'D' || event.key === 'ArrowRight') {
-      event.preventDefault()
-      scrollDown()
-      return
-    }
-    if (event.key === 'ArrowUp' || event.key === 'PageUp' || event.key === 'w' || event.key === 'W' || event.key === 'a' || event.key === 'A' || event.key === 'ArrowLeft') {
-      event.preventDefault()
-      scrollUp()
-      return
-    }
-    return
-  }
-
-  // Pager viewer keys (PagerViewer.kt:387-424)
-  if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-    event.preventDefault()
-    if (event.ctrlKey) {
-      if (preferences.mode === 'rtl') {
-        if (reader.previousChapter) goChapter(reader.previousChapter.index)
-      } else {
-        if (reader.nextChapter) goChapter(reader.nextChapter.index)
-      }
-    } else {
-      turn(preferences.mode === 'rtl' ? -1 : 1)
-    }
-    return
-  }
-  if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-    event.preventDefault()
-    if (event.ctrlKey) {
-      if (preferences.mode === 'rtl') {
-        if (reader.nextChapter) goChapter(reader.nextChapter.index)
-      } else {
-        if (reader.previousChapter) goChapter(reader.previousChapter.index)
-      }
-    } else {
-      turn(preferences.mode === 'rtl' ? 1 : -1)
-    }
-    return
-  }
-  if (event.key === 'ArrowDown' || event.key === 'PageDown') {
-    event.preventDefault()
-    turn(preferences.mode === 'rtl' ? -1 : 1)
-    return
-  }
-  if (event.key === 'ArrowUp' || event.key === 'PageUp') {
-    event.preventDefault()
-    turn(preferences.mode === 'rtl' ? 1 : -1)
-    return
-  }
-}
-
+const { onKey, scrollDown, scrollUp } = useReaderKeybindings({
+  isDialogActive: () => settings.value || readingModeDialog.value || orientationDialog.value || pageActions.value,
+  chaptersOpen,
+  controls,
+  modeIsWebtoon: () => modeIsWebtoon.value,
+  readingMode: () => preferences.mode,
+  animatePages: () => animatePages.value,
+  viewport,
+  pageCount: () => reader.pageCount,
+  hasNextChapter: () => !!reader.nextChapter,
+  hasPreviousChapter: () => !!reader.previousChapter,
+  onNextChapter: () => { if (reader.nextChapter) goChapter(reader.nextChapter.index) },
+  onPreviousChapter: () => { if (reader.previousChapter) goChapter(reader.previousChapter.index) },
+  onTurn: delta => turn(delta),
+  onGoPage: page => { void goPage(page) },
+})
 /**
  * Gestures & Tap Zones:
  * Mirrors Mihon's `RightAndLeftNavigation` (ViewerNavigation.kt):

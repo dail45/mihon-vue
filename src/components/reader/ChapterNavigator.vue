@@ -1,26 +1,14 @@
-<script lang="ts">
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useTheme } from 'vuetify'
+import { useTabletUi } from '../../composables/useTabletUi'
+import { READER_NAVIGATOR_ICONS } from './readerIcons'
+
 /**
  * Mirrors Mihon's `ChapterNavigator`
  * (mihon/app/src/main/java/eu/kanade/presentation/reader/components/ChapterNavigator.kt).
- *
- * Reference behaviour (Mihon):
- * - `ChapterNavigatorType` = HORIZONTAL_LTR | HORIZONTAL_RTL | VERTICAL_LEFT | VERTICAL_RIGHT.
- * - The page slider only exists when `totalPages > 1`; otherwise the middle slot is a `Spacer(1f)`.
- * - The slider state is discrete: `steps = totalPages - 2`, `trackRange = 1f..totalPages.toFloat()`,
- *   and the value is 1-based while the public callback is 0-based (`onPageIndexChange(value - 1)`).
- * - The middle slot of the horizontal navigator is a rounded (24.dp) surface-coloured container with
- *   16.dp horizontal padding that holds [current page][slider][total pages]; the current page text
- *   is right aligned inside a box that also reserves the width of the (transparent) total pages
- *   text so the slider never shifts when the digit count changes.
- * - The background colour matches the reader bars:
- *   `surfaceColorAtElevation(3.dp).copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)`.
- * - The chapter buttons are `FilledIconButton`s painted with that same background colour
- *   (fully rounded shape, 40.dp container, 48.dp touch target, 24.dp icon) and swap their meaning in RTL mode.
- * - The vertical navigator stacks [previous (icon rotated 90°)][current page][vertical slider]
- *   [total pages][next (icon rotated 90°)] inside a rounded (24.dp) container with 16.dp vertical padding.
- * - The main axis padding is 24.dp on tablets and 8.dp everywhere else.
  */
-export const ChapterNavigatorType = {
+const ChapterNavigatorType = {
   HORIZONTAL_LTR: 'horizontal-ltr',
   HORIZONTAL_RTL: 'horizontal-rtl',
   VERTICAL_LEFT: 'vertical-left',
@@ -36,13 +24,6 @@ export type ChapterNavigatorType =
   | 'HORIZONTAL_RTL'
   | 'VERTICAL_LEFT'
   | 'VERTICAL_RIGHT'
-</script>
-
-<script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useTheme } from 'vuetify'
-import { useTabletUi } from '../../composables/useTabletUi'
-import { READER_NAVIGATOR_ICONS } from './readerIcons'
 
 const props = withDefaults(
   defineProps<{

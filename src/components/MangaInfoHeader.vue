@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Manga } from '../api/types'
 import MarkdownRender from './MarkdownRender.vue'
 import MangaNotesSection from './MangaNotesSection.vue'
-import { readMangaNotes } from '../utils/mangaNotes'
+import { useMangaNotesStore } from '../stores/mangaNotes'
 
 /**
  * Pixel-parity port of Mihon's
@@ -125,36 +125,13 @@ const stubQuery = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
 
-// Reactive notes tracking from local storage / API
-const notes = ref('')
-
-function reloadNotes() {
+// Reactive notes tracking from Pinia store
+const notesStore = useMangaNotesStore()
+const notes = computed(() => {
   if (props.apiUrl && props.manga.id) {
-    notes.value = readMangaNotes(props.apiUrl, props.manga.id).trim()
-  } else {
-    notes.value = ''
+    return notesStore.getNotes(props.apiUrl, props.manga.id).trim()
   }
-}
-
-watch(
-  () => [props.apiUrl, props.manga.id],
-  () => reloadNotes(),
-  { immediate: true },
-)
-
-onMounted(() => {
-  reloadNotes()
-  if (typeof window !== 'undefined') {
-    window.addEventListener('mihon:notes-updated', reloadNotes)
-    window.addEventListener('storage', reloadNotes)
-  }
-})
-
-onUnmounted(() => {
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('mihon:notes-updated', reloadNotes)
-    window.removeEventListener('storage', reloadNotes)
-  }
+  return ''
 })
 
 const hasNotes = computed(() => !!notes.value.trim())

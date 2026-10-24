@@ -10,6 +10,7 @@
  */
 import { ofetch } from 'ofetch'
 import { serverGraphqlUrl } from './serverSettings'
+import type { GraphQLResponse } from './types'
 
 /** Deep-link hosts of Mihon's TrackLoginActivity intent filters. */
 export const TRACKER_AUTH_HOSTS = [
@@ -96,11 +97,6 @@ export function parseTrackerCallback(url: URL | { host: string; search: string; 
 export function trackerCallbackUrl(host: string, credential: string): string {
   const key = CREDENTIAL_KEYS[host] ?? 'code'
   return `${key}=${credential.replace(/&/g, '')}`
-}
-
-interface GraphQLResponse<T> {
-  data?: T
-  errors?: { message: string }[]
 }
 
 async function request<T>(apiUrl: string, query: string, variables?: Record<string, unknown>): Promise<T> {

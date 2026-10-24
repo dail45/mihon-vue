@@ -1,39 +1,11 @@
-<script lang="ts">
-/**
- * Mihon reference (pinned commit 446f6df):
- * mihon/app/src/main/java/eu/kanade/presentation/browse/ExtensionsScreen.kt
- *   -> `private fun ExtensionNotLoadedDialog(reason, onClickUninstall, onDismissRequest)`
- *      (lines 572-621), shown from lines 265-288 when the tapped extension is
- *      `Extension.NotLoaded` with a reason other than `Untrusted`.
- *
- * androidx.compose.material3.AlertDialog with:
- *   title   = Text(MR.strings.ext_not_loaded_dialog)        -> "Couldn't load"
- *   text    = Column(Arrangement.spacedBy(padding.small = 8.dp)) {
- *                Text(reason.descriptionRes)                  -> the reason specific message
- *                if (reason is Reason.Failed) {
- *                    Text(reason.message, bodySmall, FontFamily.Monospace, onSurfaceVariant)
- *                    TextButton(MR.strings.ext_copy_stacktrace, contentPadding = PaddingValues(0.dp))
- *                }
- *            }
- *   confirmButton = TextButton(MR.strings.action_ok)          -> "OK"
- *   dismissButton = TextButton(MR.strings.ext_uninstall)      -> "Uninstall"
- *   onDismissRequest = onDismissRequest
- *
- * The reason is `Extension.NotLoaded.Reason`, defined in
- * mihon/domain/src/main/java/eu/kanade/tachiyomi/extension/model/Extension.kt:
- *   Untrusted(signatureHash) | Filtered | Unsigned | UnsupportedLibVersion | Malformed | Failed(message, stackTrace)
- *
- * Base-locale strings: mihon/i18n/src/commonMain/moko-resources/base/strings.xml (lines 356-364).
- */
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+
 /**
  * `Untrusted` is deliberately absent: the reference routes that reason to `ExtensionTrustDialog`
  * (ExtensionsScreen.kt lines 267-278) and never to this dialog.
  */
 export type ExtensionNotLoadedReason = 'filtered' | 'unsigned' | 'unsupported' | 'malformed' | 'failed'
-</script>
-
-<script setup lang="ts">
-import { computed, ref, watch } from 'vue'
 
 const open = defineModel<boolean>({ required: true })
 const props = withDefaults(
@@ -56,7 +28,7 @@ const props = withDefaults(
 const emit = defineEmits<{ (event: 'uninstall'): void }>()
 
 /** MR.strings.ext_not_loaded_dialog */
-const TITLE = 'Couldn\'t load'
+const TITLE = "Couldn't load"
 /** MR.strings.action_ok */
 const OK = 'OK'
 /** MR.strings.ext_uninstall */

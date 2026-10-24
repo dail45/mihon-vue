@@ -4,10 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiErrorMessage, createSuwayomiApi } from '../api/client'
 import type { Manga, Source } from '../api/types'
 import GlobalSearchCardRow from '../components/GlobalSearchCardRow.vue'
-import GlobalSearchResultItem, {
-  GlobalSearchErrorResultItem,
-  GlobalSearchLoadingResultItem,
-} from '../components/GlobalSearchResultItems.vue'
+import GlobalSearchErrorResultItem from '../components/GlobalSearchErrorResultItem.vue'
+import GlobalSearchLoadingResultItem from '../components/GlobalSearchLoadingResultItem.vue'
+import GlobalSearchResultItem from '../components/GlobalSearchResultItems.vue'
 import GlobalSearchToolbar from '../components/GlobalSearchToolbar.vue'
 import { readPreference, writePreference } from '../stores/preferences'
 import { useSuwayomiStore } from '../stores/suwayomi'

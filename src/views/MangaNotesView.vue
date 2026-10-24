@@ -34,9 +34,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSuwayomiStore } from '../stores/suwayomi'
+import { useMangaNotesStore } from '../stores/mangaNotes'
 import { htmlToMarkdown, htmlToPlainText, markdownToHtml } from '../utils/notesMarkdown'
 
-const route = useRoute(), router = useRouter(), server = useSuwayomiStore()
+const route = useRoute(), router = useRouter(), server = useSuwayomiStore(), notesStore = useMangaNotesStore()
 const mangaId = computed(() => Number(route.params.id))
 const manga = computed(() => (server.manga?.id === mangaId.value ? server.manga : null))
 
@@ -57,17 +58,11 @@ let lastRange: Range | null = null
  * Suwayomi exposes no notes field, so the notes are kept in browser storage.
  * Mihon stores them in its own local database, so the same is done here.
  */
-function storageKey() { return `mihon.notes.${server.apiUrl}::${mangaId.value}` }
 function readNotes() {
-  try { return localStorage.getItem(storageKey()) || '' } catch { return '' }
+  return notesStore.getNotes(server.apiUrl, mangaId.value)
 }
 function writeNotes(value: string) {
-  try {
-    localStorage.setItem(storageKey(), value)
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('mihon:notes-updated', { detail: { mangaId: mangaId.value } }))
-    }
-  } catch { /* private mode: session only */ }
+  notesStore.setNotes(server.apiUrl, mangaId.value, value)
 }
 
 function saveNow() {

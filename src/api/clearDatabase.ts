@@ -17,6 +17,7 @@
  */
 import { ofetch } from 'ofetch'
 import { serverGraphqlUrl } from './serverSettings'
+import type { GraphQLResponse } from './types'
 
 /** One source that owns at least one non-library entry, with the number of those entries. */
 export interface SourceWithCount {
@@ -26,7 +27,6 @@ export interface SourceWithCount {
   count: number
 }
 
-interface GraphQLResponse<T> { data?: T; errors?: { message: string }[] }
 
 const nonLibraryQuery = `query ClearDatabase($offset: Int!, $first: Int!) {
   mangas(condition: { inLibrary: false }, offset: $offset, first: $first) {

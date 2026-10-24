@@ -4,7 +4,7 @@ import type { Tokens } from 'marked'
 import { computed, nextTick, onActivated, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSuwayomiStore } from '../stores/suwayomi'
-import { readMangaNotes } from '../utils/mangaNotes'
+import { useMangaNotesStore } from '../stores/mangaNotes'
 
 /**
  * Mirrors Mihon's `presentation/manga/components/MangaNotesSection.kt` and its
@@ -68,6 +68,7 @@ const emit = defineEmits<{
 }>()
 
 const server = useSuwayomiStore()
+const notesStore = useMangaNotesStore()
 const router = useRouter()
 
 const bodyRef = ref<HTMLElement | null>(null)
@@ -82,7 +83,7 @@ function refreshNotes() {
 const storedNotes = computed(() => {
   void revision.value
   if (props.mangaId === undefined) return ''
-  return readMangaNotes(props.apiUrl ?? server.apiUrl, props.mangaId)
+  return notesStore.getNotes(props.apiUrl ?? server.apiUrl, props.mangaId)
 })
 
 const notes = computed(() => (props.content === undefined ? storedNotes.value : props.content))
@@ -275,7 +276,6 @@ onMounted(() => {
   contentUpdatedOnce.value = true
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', refreshNotes)
-    window.addEventListener('mihon:notes-updated', refreshNotes)
     window.addEventListener('focus', refreshNotes)
   }
 })
@@ -287,7 +287,6 @@ onActivated(() => {
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('storage', refreshNotes)
-    window.removeEventListener('mihon:notes-updated', refreshNotes)
     window.removeEventListener('focus', refreshNotes)
   }
 })

@@ -47,7 +47,7 @@ const server = useSuwayomiStore()
 const inLibrary = computed(() => {
   if (props.enabled !== undefined) return props.enabled
   if (!props.manga) return false
-  return Boolean(props.manga.inLibrary || (props.manga as any).favorite)
+  return Boolean(props.manga.inLibrary || props.manga.favorite)
 })
 
 /** LocalSource.ID == 0 in Mihon; Suwayomi's local source carries id "0" / lang "localsourcelang". */

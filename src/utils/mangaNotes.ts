@@ -1,4 +1,5 @@
 import { Marked } from 'marked'
+import { useMangaNotesStore } from '../stores/mangaNotes'
 
 /**
  * Storage and rendering helpers for the manga notes shown by `MangaNotesSection.vue`.
@@ -19,21 +20,26 @@ export function notesStorageKey(apiUrl: string, mangaId: number): string {
 /** Reads the Markdown notes of a manga, or an empty string when there are none. */
 export function readMangaNotes(apiUrl: string, mangaId: number): string {
   try {
-    return localStorage.getItem(notesStorageKey(apiUrl, mangaId)) || ''
+    return useMangaNotesStore().getNotes(apiUrl, mangaId)
   } catch {
-    return ''
+    try {
+      return localStorage.getItem(notesStorageKey(apiUrl, mangaId)) || ''
+    } catch {
+      return ''
+    }
   }
 }
 
 /** Writes the Markdown notes of a manga. */
 export function writeMangaNotes(apiUrl: string, mangaId: number, markdown: string): void {
   try {
-    localStorage.setItem(notesStorageKey(apiUrl, mangaId), markdown)
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('mihon:notes-updated', { detail: { apiUrl, mangaId } }))
-    }
+    useMangaNotesStore().setNotes(apiUrl, mangaId, markdown)
   } catch {
-    /* private mode: the notes are only kept for this session */
+    try {
+      localStorage.setItem(notesStorageKey(apiUrl, mangaId), markdown)
+    } catch {
+      /* private mode: the notes are only kept for this session */
+    }
   }
 }
 

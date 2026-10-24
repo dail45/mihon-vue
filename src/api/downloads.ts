@@ -5,6 +5,7 @@
  */
 import { ofetch } from 'ofetch'
 import { serverGraphqlUrl } from './serverSettings'
+import type { GraphQLResponse } from './types'
 
 export type DownloadState = 'QUEUED' | 'DOWNLOADING' | 'FINISHED' | 'ERROR'
 export type DownloaderState = 'STARTED' | 'STOPPED'
@@ -63,7 +64,6 @@ const queueQuery = `query DownloadQueue {
   }
 }`
 
-interface GraphQLResponse<T> { data?: T; errors?: { message: string }[] }
 
 async function request<T>(apiUrl: string, query: string, variables?: Record<string, unknown>): Promise<T> {
   const response = await ofetch<GraphQLResponse<T>>(serverGraphqlUrl(apiUrl), {

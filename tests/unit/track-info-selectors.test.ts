@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/TrackInfoSelectors.vue', 'utf8')
+const source = [
+  'src/components/TrackInfoSelectors.vue',
+  'src/components/tracker/TrackStatusSelector.vue',
+  'src/components/tracker/TrackNumberWheelPicker.vue',
+  'src/components/tracker/TrackScoreWheelPicker.vue',
+  'src/components/tracker/TrackDatePicker.vue',
+].map(path => readFileSync(path, 'utf8')).join('\n')
 
 describe('TrackInfoSelectors matches the Mihon reference (TrackInfoDialogSelector.kt)', () => {
   it('uses the AlertDialogContent geometry of the reference', () => {
