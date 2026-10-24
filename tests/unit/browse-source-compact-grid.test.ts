@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const collection = readFileSync('src/components/MangaCollection.vue', 'utf8')
-const card = readFileSync('src/components/MangaCard.vue', 'utf8')
+const collection = readFileSync('src/features/browse/components/MangaCollection.vue', 'utf8')
+const card = readFileSync('src/features/browse/components/MangaCard.vue', 'utf8')
 const styles = readFileSync('src/styles/main.scss', 'utf8')
-const sourceView = readFileSync('src/views/SourceView.vue', 'utf8')
+const sourceView = readFileSync('src/features/browse/views/SourceView.vue', 'utf8')
 
 /**
  * Pixel-parity guardrails for Mihon's `BrowseSourceCompactGrid.kt`

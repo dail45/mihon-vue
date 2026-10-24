@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const source = readFileSync(resolve(process.cwd(), 'src/components/reader/ReaderTopBar.vue'), 'utf8')
+const source = readFileSync(resolve(process.cwd(), 'src/features/reader/components/ReaderTopBar.vue'), 'utf8')
 
 describe('ReaderTopBar matches the Mihon reference', () => {
   it('keeps the reference structure: up button, title/subtitle column, bookmark action, overflow menu', () => {

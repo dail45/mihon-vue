@@ -9,10 +9,10 @@ import {
   cssBlendMode,
   READER_BLEND_MODE_OPTIONS,
   setColorChannel,
-} from '../../src/components/reader/readerContentOverlay'
+} from '@/features/reader/utils/readerContentOverlay'
 
 const vueSource = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ReaderContentOverlay.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ReaderContentOverlay.vue'),
   'utf8',
 )
 

@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import { relativeTimeSpanString } from '../../src/utils/dates'
 
 describe('UpdatesLastUpdatedHeader matches Mihon reference', () => {
-  const source = readFileSync('src/components/UpdatesLastUpdatedHeader.vue', 'utf8')
-  const viewSource = readFileSync('src/views/UpdatesView.vue', 'utf8')
+  const source = readFileSync('src/features/updates/components/UpdatesLastUpdatedHeader.vue', 'utf8')
+  const viewSource = readFileSync('src/features/updates/views/UpdatesView.vue', 'utf8')
 
   it('matches Mihon compose layout padding (horizontal = 16dp, vertical = 8dp)', () => {
     // Reference: Box(modifier.padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small))

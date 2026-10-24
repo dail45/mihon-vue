@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const collectionSource = readFileSync('src/components/MangaCollection.vue', 'utf8')
+const collectionSource = readFileSync('src/features/browse/components/MangaCollection.vue', 'utf8')
 const styles = readFileSync('src/styles/main.scss', 'utf8')
-const pagerSource = readFileSync('src/components/LibraryPager.vue', 'utf8')
+const pagerSource = readFileSync('src/features/library/components/LibraryPager.vue', 'utf8')
 
 /**
  * Pixel-parity verification for CHECKLIST item 13:

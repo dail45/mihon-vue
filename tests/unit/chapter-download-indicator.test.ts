@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/ChapterDownloadIndicator.vue', 'utf8')
+const source = readFileSync('src/features/manga/components/ChapterDownloadIndicator.vue', 'utf8')
 
 /**
  * Parity guards for ChapterDownloadIndicator.vue with

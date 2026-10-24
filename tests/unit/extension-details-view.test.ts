@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/ExtensionDetailsView.vue', 'utf8')
+const view = readFileSync('src/features/browse/views/ExtensionDetailsView.vue', 'utf8')
 const router = readFileSync('src/router/index.ts', 'utf8')
 
 describe('ExtensionDetailsView pixel-parity with Mihon ExtensionDetailsScreen.kt', () => {

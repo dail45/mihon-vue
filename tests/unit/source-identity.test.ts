@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { clearStubIdentityCache, resolveStubSourceIdentity } from '../../src/utils/sourceIdentity'
+import { clearStubIdentityCache, resolveStubSourceIdentity } from '@/features/browse/utils/sourceIdentity'
 import { generateSourceId } from '../../src/utils/sourceId'
 
 describe('sourceIdentity utility', () => {

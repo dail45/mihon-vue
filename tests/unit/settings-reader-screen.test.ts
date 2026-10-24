@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/settings/ReaderSettingsScreen.vue', 'utf8')
-const settingsView = readFileSync('src/views/SettingsView.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/SettingsReaderView.vue', 'utf8')
+const settingsView = readFileSync('src/features/settings/views/SettingsView.vue', 'utf8')
 
 /**
- * Guards for the parity of `src/components/settings/ReaderSettingsScreen.vue` with
+ * Guards for the parity of `src/features/settings/views/SettingsReaderView.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/SettingsReaderScreen.kt
  * (Mihon 446f6df) and the preference widgets it renders. The reference is Kotlin, so the
  * invariants are asserted on the ported order, the reference strings and the widget metrics.
@@ -194,7 +194,7 @@ describe('ReaderSettingsScreen parity with Mihon', () => {
   })
 
   it('is mounted by the reader section of the settings screen', () => {
-    expect(settingsView).toContain("import ReaderSettingsScreen from '../components/settings/ReaderSettingsScreen.vue'")
+    expect(settingsView).toContain("import ReaderSettingsScreen from '@/features/settings/views/SettingsReaderView.vue'")
     expect(settingsView).toContain('<ReaderSettingsScreen />')
   })
 })

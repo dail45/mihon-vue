@@ -4,7 +4,7 @@ import { useUpdatesStore } from '../../src/stores/updates'
 import { fetchedDateKey, fetchedDateLabel, latestFetchedAt, relativeTimeSpanString } from '../../src/utils/dates'
 import { chapter, manga } from '../fixtures'
 const recent = vi.hoisted(() => vi.fn())
-vi.mock('../../src/api/client', () => ({ createSuwayomiApi: () => ({ recentChapters: recent }), apiErrorMessage: () => 'Server error' }))
+vi.mock('@/core/api/client', () => ({ createSuwayomiApi: () => ({ recentChapters: recent }), apiErrorMessage: () => 'Server error' }))
 const entry = (id: number) => ({ manga: manga(id), chapter: { ...chapter, id } })
 beforeEach(() => { setActivePinia(createPinia()); recent.mockReset() })
 describe('recent chapter feed', () => {

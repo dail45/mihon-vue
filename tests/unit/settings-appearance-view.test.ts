@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { calculatePalerSurface } from '../../src/composables/useAppearancePreferences'
 
-const viewSource = readFileSync('src/views/SettingsAppearanceView.vue', 'utf8')
-const previewSource = readFileSync('src/components/appearance/ThemePreviewItem.vue', 'utf8')
+const viewSource = readFileSync('src/features/settings/views/SettingsAppearanceView.vue', 'utf8')
+const previewSource = readFileSync('src/features/settings/components/ThemePreviewItem.vue', 'utf8')
 
 /**
- * Pixel-parity tests for `src/views/SettingsAppearanceView.vue` and `ThemePreviewItem.vue`
+ * Pixel-parity tests for `src/features/settings/views/SettingsAppearanceView.vue` and `ThemePreviewItem.vue`
  * matching references:
  * - `mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/SettingsAppearanceScreen.kt`
  * - `mihon/app/src/main/java/eu/kanade/presentation/more/settings/widget/AppThemeModePreferenceWidget.kt`
@@ -86,7 +86,7 @@ describe('SettingsAppearanceView parity with Mihon', () => {
   it('uses Md3Switch and makes the entire row clickable matching SwitchPreferenceWidget', () => {
     // Uses Md3Switch component
     expect(viewSource).toContain('<Md3Switch')
-    expect(viewSource).toContain("import Md3Switch from '../components/Md3Switch.vue'")
+    expect(viewSource).toContain("import Md3Switch from '@/core/components/Md3Switch.vue'")
 
     // Pure black switch is gated by themeMode !== 'light'
     expect(viewSource).toContain("v-if=\"preferences.themeMode !== 'light'\"")

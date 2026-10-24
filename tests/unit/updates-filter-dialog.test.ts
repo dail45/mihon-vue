@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
 describe('UpdatesFilterDialog matches Mihon reference', () => {
-  const source = readFileSync('src/components/UpdatesFilterDialog.vue', 'utf8')
+  const source = readFileSync('src/features/updates/components/UpdatesFilterDialog.vue', 'utf8')
 
   it('uses TabbedDialog tabs: Filter and Categories', () => {
     expect(source).toContain(":tabs=\"['Filter', 'Categories']\"")

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/TrackerSearchView.vue', 'utf8') + '\n' + readFileSync('src/components/tracker/TrackerSearchResultCard.vue', 'utf8')
-const api = readFileSync('src/api/trackers.ts', 'utf8')
+const view = readFileSync('src/features/trackers/views/TrackerSearchView.vue', 'utf8') + '\n' + readFileSync('src/features/trackers/components/TrackerSearchResultCard.vue', 'utf8')
+const api = readFileSync('src/core/api/trackers.ts', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/views/TrackerSearchView.vue` with
+ * Guards for the pixel parity of `src/features/trackers/views/TrackerSearchView.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/track/TrackerSearch.kt
  * (Mihon commit 446f6df82c390ab760802c2fce3b677bce3f31c1).
  *

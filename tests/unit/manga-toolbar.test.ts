@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const source = [
-  readFileSync(resolve(process.cwd(), 'src/views/MangaView.vue'), 'utf8'),
-  readFileSync(resolve(process.cwd(), 'src/components/MangaToolbar.vue'), 'utf8'),
+  readFileSync(resolve(process.cwd(), 'src/features/manga/views/MangaView.vue'), 'utf8'),
+  readFileSync(resolve(process.cwd(), 'src/features/manga/components/MangaToolbar.vue'), 'utf8'),
 ].join('\n')
 
 describe('MangaToolbar (MangaToolbar.kt & AppBar.kt) parity in MangaView.vue', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const sourceView = readFileSync('src/views/SourceView.vue', 'utf8')
+const sourceView = readFileSync('src/features/browse/views/SourceView.vue', 'utf8')
 
 describe('BrowseSourceScreen parity with the Mihon reference', () => {
   it('renders Scaffold top bar with SearchToolbar, display mode, and overflow menu', () => {

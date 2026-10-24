@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
 describe('CategoryDeleteDialog matches the Mihon reference', () => {
-  const source = readFileSync('src/components/CategoryDeleteDialog.vue', 'utf8')
+  const source = readFileSync('src/features/library/components/CategoryDeleteDialog.vue', 'utf8')
 
   it('renders the reference title, message and buttons', () => {
     expect(source).toContain('delete_category')

@@ -38,7 +38,7 @@ describe('UpdatesBottomBar action flags match the Mihon reference', () => {
 })
 
 describe('UpdatesBottomBar matches the Mihon reference', () => {
-  const source = readFileSync('src/components/UpdatesBottomBar.vue', 'utf8')
+  const source = readFileSync('src/features/updates/components/UpdatesBottomBar.vue', 'utf8')
 
   it('shows the bar only while something is selected', () => {
     expect(source).toMatch(/props\.visible \?\? selected\.value\.length > 0/)

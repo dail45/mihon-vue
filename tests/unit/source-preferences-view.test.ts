@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/SourcePreferencesView.vue', 'utf8')
+const view = readFileSync('src/features/browse/views/SourcePreferencesView.vue', 'utf8')
 const router = readFileSync('src/router/index.ts', 'utf8')
 
 describe('SourcePreferencesView matches Mihon SourcePreferencesScreen.kt and preference widgets', () => {

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useTrackerSearch } from '../../src/composables/useTrackerSearch'
-import * as trackerApi from '../../src/api/trackers'
+import * as trackerApi from '@/core/api/trackers'
 
-vi.mock('../../src/api/trackers', () => ({
+vi.mock('@/core/api/trackers', () => ({
   listTrackers: vi.fn(),
   searchTracker: vi.fn(),
   bindTracker: vi.fn(),

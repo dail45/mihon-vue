@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/BackupSchemaView.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/BackupSchemaView.vue', 'utf8')
 
 /**
- * Guards for pixel parity of `src/views/BackupSchemaView.vue` with
+ * Guards for pixel parity of `src/features/settings/views/BackupSchemaView.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/debug/BackupSchemaScreen.kt
  * and related Compose references (AppBar.kt, FastScrollLazyColumn.kt, SelectionContainer).
  */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const viewSource = readFileSync('src/views/SettingsView.vue', 'utf8')
+const viewSource = readFileSync('src/features/settings/views/SettingsView.vue', 'utf8')
 const routerSource = readFileSync('src/router/index.ts', 'utf8')
 
 describe('SettingsMainScreen parity with Mihon', () => {
@@ -100,7 +100,7 @@ describe('SettingsMainScreen parity with Mihon', () => {
   })
 
   it('has ownToolbar: true configured in router for settings routes', () => {
-    expect(routerSource).toContain("{ path: '/settings', component: () => import('../views/SettingsView.vue'), meta: { title: 'Settings', detail: true, ownToolbar: true } }")
+    expect(routerSource).toContain("{ path: '/settings', component: () => import('@/features/settings/views/SettingsView.vue'), meta: { title: 'Settings', detail: true, ownToolbar: true } }")
     expect(routerSource).toContain("ownToolbar: true")
   })
 

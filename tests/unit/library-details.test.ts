@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { chapter } from '../fixtures'
 const api = vi.hoisted(() => ({ chapters: vi.fn() }))
-vi.mock('../../src/api/client', async orig => ({ ...await orig<typeof import('../../src/api/client')>(), createSuwayomiApi: () => api }))
+vi.mock('@/core/api/client', async orig => ({ ...await orig<typeof import('@/core/api/client')>(), createSuwayomiApi: () => api }))
 import { useLibraryDetails } from '../../src/stores/libraryDetails'
 beforeEach(() => { setActivePinia(createPinia()); vi.resetAllMocks() })
 it('loads at most four parallel chapter lists per batch and deduplicates requests', async () => {

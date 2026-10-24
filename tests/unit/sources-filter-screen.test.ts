@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { getSourceDisplayName } from '../../src/utils/sourceLanguage'
+import { getSourceDisplayName } from '@/features/browse/utils/sourceLanguage'
 
-const sourcesFilterSource = readFileSync('src/views/SourcesFilterView.vue', 'utf8')
+const sourcesFilterSource = readFileSync('src/features/browse/views/SourcesFilterView.vue', 'utf8')
 
 /**
  * Parity tests for SourcesFilterView against Mihon Jetpack Compose:

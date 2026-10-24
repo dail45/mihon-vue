@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { searchSettings, settingsIndex } from '../../src/data/settingsIndex'
 
-const source = readFileSync('src/views/SettingsSearchView.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/SettingsSearchView.vue', 'utf8')
 
 /**
  * Parity audit against Mihon Compose:
@@ -68,7 +68,7 @@ describe('SettingsSearchScreen parity with Mihon Compose', () => {
   })
 
   it('uses MihonEmptyScreen for no results found state with kaomoji glyph and bodyMedium', () => {
-    expect(source).toContain("import MihonEmptyScreen from '../components/MihonEmptyScreen.vue'")
+    expect(source).toContain("import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'")
     expect(source).toContain('message="No results found"')
   })
 

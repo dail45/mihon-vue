@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/SearchAppBar.vue', 'utf8')
+const source = readFileSync('src/core/components/SearchAppBar.vue', 'utf8')
 
 /**
- * Guards for pixel parity of `src/components/SearchAppBar.vue` with Mihon Compose:
+ * Guards for pixel parity of `src/core/components/SearchAppBar.vue` with Mihon Compose:
  *  - `eu/kanade/presentation/components/AppBar.kt:263-418` (SearchToolbar)
  *  - `eu/kanade/presentation/components/AppBar.kt:137-164` (TopAppBar container)
  *  - `tachiyomi/presentation/core/components/material/IconButtonTokens.kt`

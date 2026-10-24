@@ -6,10 +6,10 @@ import {
   sortLibrary,
 } from '../../src/utils/library'
 
-const sheetSource = readFileSync('src/components/LibrarySettingsSheet.vue', 'utf8')
-const displaySource = readFileSync('src/components/LibraryDisplaySettings.vue', 'utf8')
-const tristateSource = readFileSync('src/components/TriStateRow.vue', 'utf8')
-const checkboxSource = readFileSync('src/components/PreferenceCheckbox.vue', 'utf8')
+const sheetSource = readFileSync('src/features/library/components/LibrarySettingsSheet.vue', 'utf8')
+const displaySource = readFileSync('src/features/library/components/LibraryDisplaySettings.vue', 'utf8')
+const tristateSource = readFileSync('src/features/settings/components/TriStateRow.vue', 'utf8')
+const checkboxSource = readFileSync('src/features/settings/components/PreferenceCheckbox.vue', 'utf8')
 const mainScssSource = readFileSync('src/styles/main.scss', 'utf8')
 
 describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {

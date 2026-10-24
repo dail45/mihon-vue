@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/MangaNotesSection.vue', 'utf8')
+const source = readFileSync('src/features/manga/components/MangaNotesSection.vue', 'utf8')
 
 describe('MangaNotesSection matches the Mihon reference', () => {
   it('renders nothing for blank notes and shows the notes body otherwise', () => {

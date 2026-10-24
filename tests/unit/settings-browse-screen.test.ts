@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/settings/SettingsBrowseScreen.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/SettingsBrowseView.vue', 'utf8')
 
 /**
- * Guards for the parity of `src/components/settings/SettingsBrowseScreen.vue` with
+ * Guards for the parity of `src/features/settings/views/SettingsBrowseView.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/SettingsBrowseScreen.kt
  * (Mihon 446f6df) and the preference widgets it renders:
  *   - widget/PreferenceGroupHeader.kt    → group header, bodyMedium, secondary colour, 14dp/8dp
@@ -41,7 +41,7 @@ describe('SettingsBrowseScreen parity with Mihon', () => {
   })
 
   it('offers the three reference content warning entries', () => {
-    const prefs = readFileSync('src/utils/browsePreferences.ts', 'utf8')
+    const prefs = readFileSync('src/core/utils/browsePreferences.ts', 'utf8')
     expect(prefs).toContain("{ key: 'safe', title: 'Safe' }")
     expect(prefs).toContain("{ key: 'mixed', title: 'Mixed' }")
     expect(prefs).toContain("{ key: 'nsfw', title: '18+' }")

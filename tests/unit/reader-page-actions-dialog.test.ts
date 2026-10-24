@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const source = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ReaderPageActionsDialog.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ReaderPageActionsDialog.vue'),
   'utf8',
 )
 
 /**
- * Parity test verifying `src/components/reader/ReaderPageActionsDialog.vue` against
+ * Parity test verifying `src/features/reader/components/ReaderPageActionsDialog.vue` against
  * `eu/kanade/presentation/reader/ReaderPageActionsDialog.kt`, `ActionButton.kt`,
  * and `AdaptiveSheet.kt`.
  */

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/settings/SettingsDataScreen.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/SettingsDataView.vue', 'utf8')
 
 /**
- * Guards for the parity of `src/components/settings/SettingsDataScreen.vue` with
+ * Guards for the parity of `src/features/settings/views/SettingsDataView.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/SettingsDataScreen.kt
  * (Mihon 446f6df) and the preference widgets it renders. The reference is Kotlin, so the
  * invariants are asserted on the ported metrics and on the reference strings.

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
  * `presentation/browse/BrowseSourceScreen.kt` -> `MissingSourceScreen`
  * (BrowseSourceScreen.kt:150-167) and `presentation-core/.../screens/EmptyScreen.kt`.
  */
-const sourceView = readFileSync('src/views/SourceView.vue', 'utf8')
+const sourceView = readFileSync('src/features/browse/views/SourceView.vue', 'utf8')
 
 describe('MissingSourceScreen parity with the Mihon reference', () => {
   it('uses the reference message of the not installed source', () => {

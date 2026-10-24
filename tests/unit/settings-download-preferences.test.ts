@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/settings/SettingsDownloadScreen.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/SettingsDownloadView.vue', 'utf8')
 
 /**
  * Settings — Downloads (Mihon `SettingsDownloadScreen.kt`, pinned commit 446f6df).

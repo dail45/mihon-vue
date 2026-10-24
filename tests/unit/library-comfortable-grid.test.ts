@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const itemComponent = readFileSync('src/components/LibraryComfortableGridItem.vue', 'utf8')
-const collectionComponent = readFileSync('src/components/MangaCollection.vue', 'utf8')
-const cardComponent = readFileSync('src/components/MangaCard.vue', 'utf8')
+const itemComponent = readFileSync('src/features/library/components/LibraryComfortableGridItem.vue', 'utf8')
+const collectionComponent = readFileSync('src/features/browse/components/MangaCollection.vue', 'utf8')
+const cardComponent = readFileSync('src/features/browse/components/MangaCard.vue', 'utf8')
 const styles = readFileSync('src/styles/main.scss', 'utf8')
 
 /**

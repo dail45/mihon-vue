@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/reader/SetCoverDialog.vue', 'utf8')
+const source = readFileSync('src/features/reader/components/SetCoverDialog.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/components/reader/SetCoverDialog.vue` with
+ * Guards for the pixel parity of `src/features/reader/components/SetCoverDialog.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/reader/ReaderPageActionsDialog.kt
  * (private fun SetCoverDialog). The reference is Kotlin, so the invariants are asserted on the
  * ported Material3 metrics of androidx.compose.material3.AlertDialog.

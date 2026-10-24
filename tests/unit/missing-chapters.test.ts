@@ -64,7 +64,7 @@ describe('missing chapter gap calculation', () => {
 })
 
 describe('MissingChapterCountListItem parity', () => {
-  const source = readFileSync('src/components/MissingChapterCountListItem.vue', 'utf8')
+  const source = readFileSync('src/features/manga/components/MissingChapterCountListItem.vue', 'utf8')
 
   it('uses the reference paddings, gap and secondary alpha', () => {
     // MaterialTheme.padding.medium = 16dp, MaterialTheme.padding.small = 8dp,

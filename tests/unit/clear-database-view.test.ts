@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/ClearDatabaseView.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/ClearDatabaseView.vue', 'utf8')
 const routerSource = readFileSync('src/router/index.ts', 'utf8')
-const settingsAdvancedSource = readFileSync('src/views/SettingsAdvancedView.vue', 'utf8')
+const settingsAdvancedSource = readFileSync('src/features/settings/views/SettingsAdvancedView.vue', 'utf8')
 
 /**
- * Parity verification of `src/views/ClearDatabaseView.vue` with Mihon reference:
+ * Parity verification of `src/features/settings/views/ClearDatabaseView.vue` with Mihon reference:
  * - `mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/advanced/ClearDatabaseScreen.kt`
  * - `mihon/presentation-core/src/main/java/tachiyomi/presentation/core/components/LazyColumnWithAction.kt`
  * - `mihon/presentation-core/src/main/java/tachiyomi/presentation/core/components/material/AlertDialog.kt`

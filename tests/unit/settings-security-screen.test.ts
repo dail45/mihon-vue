@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/settings/SettingsSecurityScreen.vue', 'utf8')
-const composable = readFileSync('src/composables/useSecurityPreferences.ts', 'utf8')
+const source = readFileSync('src/features/settings/views/SettingsSecurityView.vue', 'utf8')
+const composable = readFileSync('src/features/settings/composables/useSecurityPreferences.ts', 'utf8')
 
 /**
  * Settings — Security and privacy (Mihon `SettingsSecurityScreen.kt`, pinned commit 446f6df).
@@ -109,8 +109,8 @@ describe('SettingsSecurityScreen matches the Mihon reference', () => {
   })
 
   it('is integrated in SettingsView.vue for route /settings/security', () => {
-    const settingsView = readFileSync('src/views/SettingsView.vue', 'utf8')
-    expect(settingsView).toContain("import SettingsSecurityScreen from '../components/settings/SettingsSecurityScreen.vue'")
+    const settingsView = readFileSync('src/features/settings/views/SettingsView.vue', 'utf8')
+    expect(settingsView).toContain("import SettingsSecurityScreen from '@/features/settings/views/SettingsSecurityView.vue'")
     expect(settingsView).toContain("<SettingsSecurityScreen />")
   })
 })

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/CategoriesView.vue', 'utf8') + '\n' + readFileSync('src/components/category/CategoryManagerPanel.vue', 'utf8')
-const api = readFileSync('src/api/categoryReorder.ts', 'utf8')
-const item = readFileSync('src/components/category/CategoryListItem.vue', 'utf8')
+const view = readFileSync('src/features/library/views/CategoriesView.vue', 'utf8') + '\n' + readFileSync('src/features/library/components/CategoryManagerPanel.vue', 'utf8')
+const api = readFileSync('src/core/api/categoryReorder.ts', 'utf8')
+const item = readFileSync('src/features/library/components/CategoryListItem.vue', 'utf8')
 
 describe('CategoriesView matches the Mihon reference', () => {
   it('uses the reference app bar title and the navigateUp action', () => {

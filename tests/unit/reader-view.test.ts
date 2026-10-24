@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const readerViewSource = readFileSync(resolve(process.cwd(), 'src/views/ReaderView.vue'), 'utf8')
-const keybindingsSource = readFileSync(resolve(process.cwd(), 'src/composables/useReaderKeybindings.ts'), 'utf8')
+const readerViewSource = readFileSync(resolve(process.cwd(), 'src/features/reader/views/ReaderView.vue'), 'utf8')
+const keybindingsSource = readFileSync(resolve(process.cwd(), 'src/features/reader/composables/useReaderKeybindings.ts'), 'utf8')
 const source = readerViewSource + '\n' + keybindingsSource
 
 describe('ReaderView matches Mihon ReaderActivity & Viewers reference', () => {

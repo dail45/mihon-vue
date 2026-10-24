@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/SourcePinButton.vue', 'utf8')
+const source = readFileSync('src/features/browse/components/SourcePinButton.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/components/SourcePinButton.vue` with
+ * Guards for the pixel parity of `src/features/browse/components/SourcePinButton.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/browse/SourcesScreen.kt:141-162
  * (the private `SourcePinButton` composable). The reference is Kotlin, so the
  * invariants are asserted on the ported metrics.

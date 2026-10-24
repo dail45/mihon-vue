@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/NewUpdateView.vue', 'utf8')
+const source = readFileSync('src/features/updates/views/NewUpdateView.vue', 'utf8')
 
 describe('NewUpdateView parity with Mihon Compose (NewUpdateScreen.kt & InfoScreen.kt)', () => {
   it('mirrors InfoScreen structure with verified icon and typography tokens', () => {

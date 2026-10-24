@@ -15,7 +15,7 @@ describe('Vuetify 4 migration guardrails',()=>{
   expect(readFileSync('public/layers.css','utf8')).toContain('app-components, vuetify-utilities')
  })
  it('uses native Vuetify controls for common settings and toolbar input',()=>{
-  for(const p of ['src/components/PreferenceCheckbox.vue','src/components/TriStateRow.vue'])expect(readFileSync(p,'utf8')).toContain('<v-checkbox')
-  for(const p of ['src/components/SearchAppBar.vue','src/views/SourceView.vue']){const s=readFileSync(p,'utf8');expect(s).toContain('<v-text-field');expect(s).not.toMatch(/<input\b/)}
+  for(const p of ['src/features/settings/components/PreferenceCheckbox.vue','src/features/settings/components/TriStateRow.vue'])expect(readFileSync(p,'utf8')).toContain('<v-checkbox')
+  for(const p of ['src/core/components/SearchAppBar.vue','src/features/browse/views/SourceView.vue']){const s=readFileSync(p,'utf8');expect(s).toContain('<v-text-field');expect(s).not.toMatch(/<input\b/)}
  })
 })

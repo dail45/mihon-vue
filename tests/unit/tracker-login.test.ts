@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { parseTrackerCallback, trackerCallbackUrl } from '../../src/api/trackerLogin'
 
-const source = readFileSync('src/views/TrackerLoginView.vue', 'utf8')
-const indicatorSource = readFileSync('src/components/Md3CircularProgress.vue', 'utf8')
+const source = readFileSync('src/features/trackers/views/TrackerLoginView.vue', 'utf8')
+const indicatorSource = readFileSync('src/core/components/Md3CircularProgress.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/views/TrackerLoginView.vue` with
+ * Guards for the pixel parity of `src/features/trackers/views/TrackerLoginView.vue` with
  * mihon/app/src/main/java/eu/kanade/tachiyomi/ui/setting/track/TrackLoginActivity.kt
  * and its base class BaseOAuthLoginActivity.kt.
  */

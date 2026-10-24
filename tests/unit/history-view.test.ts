@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/PlannedView.vue', 'utf8')
+const view = readFileSync('src/features/history/views/HistoryView.vue', 'utf8')
 const router = readFileSync('src/router/index.ts', 'utf8')
-const app = readFileSync('src/App.vue', 'utf8')
+const app = readFileSync('src/app/App.vue', 'utf8')
 
 describe('PlannedView (History screen) matches the Mihon reference', () => {
   it('registers /history route with ownToolbar and excludes global app bar in App.vue', () => {

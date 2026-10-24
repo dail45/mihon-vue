@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/HistoryItem.vue', 'utf8')
+const source = readFileSync('src/features/history/components/HistoryItem.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/components/HistoryItem.vue` with
+ * Guards for the pixel parity of `src/features/history/components/HistoryItem.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/history/components/HistoryItem.kt
  * (Mihon @ 446f6df82c390ab760802c2fce3b677bce3f31c1). The reference is Kotlin, so the
  * invariants are asserted on the ported Material3 metrics.
@@ -71,7 +71,7 @@ describe('HistoryItem parity with Mihon', () => {
   it('formats the subtitle like MR.strings.recent_manga_time', () => {
     // "Ch. %1$s - %2$s", and the prefix is only added for chapterNumber > -1.
     expect(source).toContain('formatRecentMangaTime')
-    const format = readFileSync('src/utils/history.ts', 'utf8')
+    const format = readFileSync('src/core/utils/history.ts', 'utf8')
     expect(format).toContain('`Ch. ${formatChapterNumber(chapterNumber)} - ${readAt}`')
     expect(format).toContain('chapterNumber > -1')
   })

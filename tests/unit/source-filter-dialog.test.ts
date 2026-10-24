@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { toSourceFilters, toRawSourceFilters, cloneSourceFilters, type RawSourceFilterObject } from '../../src/components/sourceFilter'
+import { toSourceFilters, toRawSourceFilters, cloneSourceFilters, type RawSourceFilterObject } from '@/features/browse/utils/sourceFilter'
 
-const dialog = readFileSync('src/components/SourceFilterDialog.vue', 'utf8')
-const items = readFileSync('src/components/SourceFilterItems.vue', 'utf8')
+const dialog = readFileSync('src/features/browse/components/SourceFilterDialog.vue', 'utf8')
+const items = readFileSync('src/features/browse/components/SourceFilterItems.vue', 'utf8')
 
 describe('SourceFilterDialog matches the Mihon reference', () => {
   it('uses the AdaptiveSheet geometry (extraLarge 28dp surface, 460dp max width)', () => {

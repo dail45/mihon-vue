@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/DeleteLibraryMangaDialog.vue', 'utf8')
+const source = readFileSync('src/features/library/components/DeleteLibraryMangaDialog.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/components/DeleteLibraryMangaDialog.vue` with
+ * Guards for the pixel parity of `src/features/library/components/DeleteLibraryMangaDialog.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/library/DeleteLibraryMangaDialog.kt.
  * The reference is Kotlin, so the invariants are asserted on the ported Material3 metrics.
  */

@@ -29,7 +29,7 @@ describe('category rename mutation', () => {
 })
 
 describe('CategoryRenameDialog matches the Mihon reference', () => {
-  const source = readFileSync('src/components/CategoryRenameDialog.vue', 'utf8')
+  const source = readFileSync('src/features/library/components/CategoryRenameDialog.vue', 'utf8')
 
   it('renders the reference title, labels and messages', () => {
     expect(source).toContain('action_rename_category')

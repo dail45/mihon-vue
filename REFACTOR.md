@@ -600,25 +600,25 @@ flowchart TD
 ### Phase 3: Deep Architectural Overhaul (High Effort — Structural Move)
 *Goal: Establish layout abstractions, transition to Domain-Driven feature architecture, and enforce Two-Tier state boundaries.*
 
-1. **Introduce True Layout Abstraction (`src/app/layouts/`):**
-   - Implement `DefaultLayout.vue`, `ReaderLayout.vue`, `SettingsLayout.vue`, and `FullscreenLayout.vue`.
-   - Strip navigation rails, bottom bars, and banner handling out of `App.vue`, reducing it to a clean root wrapper.
-2. **Overhaul Settings Routing & Container/Panel Pattern:**
-   - Move the 6 misplaced `*Screen.vue` components from `src/components/settings/` into `src/features/settings/views/`.
-   - Replace the 19 redundant routes and the monolithic 17 `v-if` cascade in `SettingsView.vue` with native nested `<router-view>` child routes inside `SettingsLayout.vue`.
-   - **Implement the Container/Panel Pattern for Dual-Purpose Screens:** For features that open both as standalone routes and as modal sheets/dialogs without changing URLs (`CategoriesView`, `ExtensionStoresView`), extract core logic into domain panels (`CategoryManagerPanel.vue`, `ExtensionStoresPanel.vue`) and embed them in both route views and modal wrappers.
-3. **Migrate to Domain-Driven Feature Directory Structure (Clean Move Commit):**
-   - Execute the migration mapping defined in Section 2.3 as an isolated Git commit, grouping code by domain (`features/library/`, `features/browse/`, `features/manga/`, `features/reader/`, etc.).
-   - Rename `PlannedView.vue` to `HistoryView.vue`.
-   - Demote `ExtensionsView.vue` from `views/` to a tab component in `features/browse/components/BrowseExtensionsTab.vue`.
-4. **Construct Unified API Client & Enforce Two-Tier State Rules:**
-   - Consolidate all 18 fragmented API modules into a unified client (`src/core/api/`).
-   - Forbid raw `ofetch` and direct API imports in `.vue` files.
-   - **Enforce Two-Tier State Separation:**
+1. **[x] Introduce True Layout Abstraction (`src/app/layouts/`):**
+   - [x] Implement `DefaultLayout.vue`, `ReaderLayout.vue`, `SettingsLayout.vue`, and `FullscreenLayout.vue`.
+   - [x] Strip navigation rails, bottom bars, and banner handling out of `App.vue`, reducing it to a clean root wrapper.
+2. **[x] Overhaul Settings Routing & Container/Panel Pattern:**
+   - [x] Move the 6 misplaced `*Screen.vue` components from `src/components/settings/` into `src/features/settings/views/`.
+   - [x] Replace the 19 redundant routes and the monolithic 17 `v-if` cascade in `SettingsView.vue` with native nested `<router-view>` child routes inside `SettingsLayout.vue`.
+   - [x] **Implement the Container/Panel Pattern for Dual-Purpose Screens:** For features that open both as standalone routes and as modal sheets/dialogs without changing URLs (`CategoriesView`, `ExtensionStoresView`), extract core logic into domain panels (`CategoryManagerPanel.vue`, `ExtensionStoresPanel.vue`) and embed them in both route views and modal wrappers.
+3. **[x] Migrate to Domain-Driven Feature Directory Structure (Clean Move Commit):**
+   - [x] Execute the migration mapping defined in Section 2.3 as an isolated Git commit, grouping code by domain (`features/library/`, `features/browse/`, `features/manga/`, `features/reader/`, etc.).
+   - [x] Rename `PlannedView.vue` to `HistoryView.vue`.
+   - [x] Demote `ExtensionsView.vue` from `views/` to a tab component in `features/browse/components/BrowseExtensionsTab.vue`.
+4. **[x] Construct Unified API Client & Enforce Two-Tier State Rules:**
+   - [x] Consolidate all 18 fragmented API modules into a unified client (`src/core/api/`).
+   - [x] Forbid raw `ofetch` and direct API imports in `.vue` files.
+   - [x] **Enforce Two-Tier State Separation:**
      - **Global App State:** Bound to Pinia stores (`useConnectionStore`, `useLibraryStore`, `useExtensionsStore`, `usePreferencesStore`).
      - **Local Screen State:** Bound to domain composables (`useMangaDetail`, `useTrackerSearch`, `useSourceCatalogue`) and cleaned up with component lifecycle. Do NOT bloat Pinia with transient query results.
-   - Implement `AbortController` cancellation across all endpoints.
-   - **Batching:** Prioritize Suwayomi's native GraphQL batch mutation (`updateChapters(input: { ids, patch })`) for bulk chapter updates, keeping client-side `p-limit` loops only as a fallback for REST endpoints that lack batching.
-5. **Split the `suwayomiStore` God Store:**
-   - Decompose into `useConnectionStore`, `useLibraryStore`, and `useSourcesStore`.
-   - Migrate pseudo-stores (`useAppearancePreferences`, `browsePreferences`, `sourcePins`) into proper Pinia stores.
+   - [x] Implement `AbortController` cancellation across all endpoints.
+   - [x] **Batching:** Prioritize Suwayomi's native GraphQL batch mutation (`updateChapters(input: { ids, patch })`) for bulk chapter updates, keeping client-side `p-limit` loops only as a fallback for REST endpoints that lack batching.
+5. **[x] Split the `suwayomiStore` God Store:**
+   - [x] Decompose into `useConnectionStore`, `useLibraryStore`, and `useSourcesStore`.
+   - [x] Migrate pseudo-stores (`useAppearancePreferences`, `browsePreferences`, `sourcePins`) into proper Pinia stores.

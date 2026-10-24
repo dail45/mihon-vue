@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useCatalogueStore } from '../../src/stores/catalogue'
 import { manga } from '../fixtures'
 const fetchPage = vi.hoisted(() => vi.fn())
-vi.mock('../../src/api/client', () => ({ createSuwayomiApi: () => ({ sourceCatalogue: fetchPage }), apiErrorMessage: () => 'Server error' }))
+vi.mock('@/core/api/client', () => ({ createSuwayomiApi: () => ({ sourceCatalogue: fetchPage }), apiErrorMessage: () => 'Server error' }))
 beforeEach(() => { setActivePinia(createPinia()); fetchPage.mockReset() })
 describe('source catalogue', () => {
   it('uses string source IDs, deduplicates pages and stops at the end', async () => {

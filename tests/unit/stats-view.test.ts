@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { formatDuration, formatMeanScore } from '../../src/utils/statsFormatters'
 
-const statsViewSource = readFileSync('src/views/StatsView.vue', 'utf8')
+const statsViewSource = readFileSync('src/features/settings/views/StatsView.vue', 'utf8')
 const routerSource = readFileSync('src/router/index.ts', 'utf8')
-const appSource = readFileSync('src/App.vue', 'utf8')
+const appSource = readFileSync('src/app/App.vue', 'utf8')
 
 describe('StatsView formatDuration matches Mihon TimeUtils.toDurationString', () => {
   it('returns fallback ("None") for 0 or negative values', () => {

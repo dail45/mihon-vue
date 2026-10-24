@@ -9,7 +9,7 @@ import {
   isPageNumberEnabled,
   isPageIndicatorVisible,
   pageIndicatorLabel,
-} from '../../src/components/reader/readerPageIndicator'
+} from '@/features/reader/utils/readerPageIndicator'
 
 describe('reader page indicator (ReaderPageIndicator.kt)', () => {
   it('renders nothing for a non-positive page or total', () => {

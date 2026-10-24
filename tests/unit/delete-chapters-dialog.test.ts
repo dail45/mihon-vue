@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/DeleteChaptersDialog.vue', 'utf8')
+const source = readFileSync('src/features/manga/components/DeleteChaptersDialog.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/components/DeleteChaptersDialog.vue` with
+ * Guards for the pixel parity of `src/features/manga/components/DeleteChaptersDialog.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/manga/components/MangaDialogs.kt:35-64
  * (DeleteChaptersDialog). The reference is Kotlin, so the invariants are asserted on the ported
  * Material3 metrics of androidx.compose.material3.AlertDialog.

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/OnboardingView.vue', 'utf8')
+const source = readFileSync('src/features/onboarding/views/OnboardingView.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/views/OnboardingView.vue` with
+ * Guards for the pixel parity of `src/features/onboarding/views/OnboardingView.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/more/onboarding/OnboardingScreen.kt and the
  * InfoScreen shell it builds on
  * (mihon/presentation-core/src/main/java/tachiyomi/presentation/core/screens/InfoScreen.kt),
@@ -14,10 +14,10 @@ describe('OnboardingView parity with Mihon', () => {
   it('keeps the four reference steps in order', () => {
     // listOf(ThemeStep(), StorageStep(), PermissionStep(), GuidesStep(onRestoreBackup)).
     expect(source).toContain("const steps = ['theme', 'storage', 'permission', 'guides'] as const")
-    expect(source).toContain("import ThemeStep from '../components/onboarding/ThemeStep.vue'")
-    expect(source).toContain("import StorageStep from '../components/onboarding/StorageStep.vue'")
-    expect(source).toContain("import PermissionStep from '../components/onboarding/PermissionStep.vue'")
-    expect(source).toContain("import GuidesStep from '../components/onboarding/GuidesStep.vue'")
+    expect(source).toContain("import ThemeStep from '@/features/onboarding/components/ThemeStep.vue'")
+    expect(source).toContain("import StorageStep from '@/features/onboarding/components/StorageStep.vue'")
+    expect(source).toContain("import PermissionStep from '@/features/onboarding/components/PermissionStep.vue'")
+    expect(source).toContain("import GuidesStep from '@/features/onboarding/components/GuidesStep.vue'")
   })
 
   it('reproduces the InfoScreen heading block', () => {

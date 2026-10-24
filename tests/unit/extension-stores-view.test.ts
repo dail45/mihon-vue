@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/ExtensionStoresView.vue', 'utf8') + '\n' + readFileSync('src/components/extension/ExtensionStoresPanel.vue', 'utf8')
-const api = readFileSync('src/api/extensionStores.ts', 'utf8')
+const view = readFileSync('src/features/browse/views/ExtensionStoresView.vue', 'utf8') + '\n' + readFileSync('src/features/browse/components/ExtensionStoresPanel.vue', 'utf8')
+const api = readFileSync('src/core/api/extensionStores.ts', 'utf8')
 
 describe('ExtensionStoresView matches the Mihon reference', () => {
   it('uses the reference app bar title and refresh action', () => {

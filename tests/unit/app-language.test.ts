@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { APP_LOCALE_TAGS, appLanguages, deviceDisplayName, localizedDisplayName, normalizeLocaleTag } from '../../src/utils/appLanguage'
 
-const viewSource = readFileSync('src/views/AppLanguageView.vue', 'utf8')
+const viewSource = readFileSync('src/features/settings/views/AppLanguageView.vue', 'utf8')
 
 describe('app language list', () => {
   it('ships the same translations as the Mihon locales_config.xml', () => {

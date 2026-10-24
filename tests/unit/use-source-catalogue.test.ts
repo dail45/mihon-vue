@@ -3,7 +3,7 @@ import { useSourceCatalogue } from '../../src/composables/useSourceCatalogue'
 import { manga } from '../fixtures'
 
 const fetchPage = vi.hoisted(() => vi.fn())
-vi.mock('../../src/api/client', () => ({
+vi.mock('@/core/api/client', () => ({
   createSuwayomiApi: () => ({ sourceCatalogue: fetchPage }),
   apiErrorMessage: () => 'Server error',
 }))

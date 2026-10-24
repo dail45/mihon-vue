@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const source = readFileSync(resolve(process.cwd(), 'src/components/MangaInfoHeader.vue'), 'utf8')
+const source = readFileSync(resolve(process.cwd(), 'src/features/manga/components/MangaInfoHeader.vue'), 'utf8')
 
 describe('MangaInfoHeader (MangaInfoHeader.kt) pixel-parity', () => {
   it('implements reference structure: MangaInfoBox, MangaActionRow, ExpandableMangaDescription', () => {

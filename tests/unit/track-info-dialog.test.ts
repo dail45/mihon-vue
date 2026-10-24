@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/TrackInfoDialog.vue', 'utf8')
+const source = readFileSync('src/features/trackers/components/TrackInfoDialog.vue', 'utf8')
 
 describe('TrackInfoDialog matches the Mihon reference (TrackInfoDialogHome.kt)', () => {
   it('uses the scrollable column geometry of the reference', () => {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/HistoryDeleteDialog.vue', 'utf8')
+const source = readFileSync('src/features/history/components/HistoryDeleteDialog.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/components/HistoryDeleteDialog.vue` with
+ * Guards for the pixel parity of `src/features/history/components/HistoryDeleteDialog.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/history/components/HistoryDialogs.kt:21-60
  * (HistoryDeleteDialog). The reference is Kotlin, so the invariants are asserted on the
  * ported Material3 metrics.

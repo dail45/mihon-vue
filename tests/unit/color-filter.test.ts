@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { colorFilterModes } from '../../src/components/reader/useColorFilter'
+import { colorFilterModes } from '@/features/reader/composables/useColorFilter'
 
 // Mirrors ColorFilterPage.getColorValue(currentColor, color, mask, bitShift):
 //   (color shl bitShift) or (currentColor and mask.inv().toInt())
@@ -12,7 +12,7 @@ function getColorValue(currentColor: number, color: number, mask: number, bitShi
   return ((color << bitShift) | (currentColor & ~mask)) >>> 0
 }
 
-const colorFilterPageSource = readFileSync('src/components/reader/ColorFilterPage.vue', 'utf8')
+const colorFilterPageSource = readFileSync('src/features/reader/components/ColorFilterPage.vue', 'utf8')
 
 describe('reader color filter page', () => {
   it('packs each channel into the ARGB int exactly like the reference', () => {

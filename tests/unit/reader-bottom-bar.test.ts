@@ -6,10 +6,10 @@ import {
   READER_ORIENTATION_ICONS,
   READER_CROP_ICONS,
   READER_SETTINGS_ICON,
-} from '../../src/components/reader/readerIcons'
+} from '@/features/reader/assets/readerIcons'
 
 const source = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ReaderBottomBar.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ReaderBottomBar.vue'),
   'utf8',
 )
 

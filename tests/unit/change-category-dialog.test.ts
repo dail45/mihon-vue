@@ -8,10 +8,10 @@ import {
 } from '../../src/utils/categorySelection'
 import type { Category } from '../../src/api/types'
 
-const source = readFileSync('src/components/ChangeCategoryDialog.vue', 'utf8')
+const source = readFileSync('src/features/library/components/ChangeCategoryDialog.vue', 'utf8')
 
 /**
- * Parity guards for `src/components/ChangeCategoryDialog.vue` against
+ * Parity guards for `src/features/library/components/ChangeCategoryDialog.vue` against
  * mihon/app/src/main/java/eu/kanade/presentation/category/components/CategoryDialogs.kt:189-295
  * and supporting tachiyomi components (LabeledCheckbox.kt, AlertDialog.kt).
  */

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { category, chapter, manga } from '../fixtures'
 const api = vi.hoisted(() => ({ categories: vi.fn(), categoryManga: vi.fn(), manga: vi.fn(), chapters: vi.fn(), sources: vi.fn(), addToLibrary: vi.fn(), removeFromLibrary: vi.fn() }))
-vi.mock('../../src/api/client', async importOriginal => ({ ...await importOriginal<typeof import('../../src/api/client')>(), createSuwayomiApi: () => api }))
+vi.mock('@/core/api/client', async importOriginal => ({ ...await importOriginal<typeof import('@/core/api/client')>(), createSuwayomiApi: () => api }))
 import { useSuwayomiStore } from '../../src/stores/suwayomi'
 beforeEach(() => { setActivePinia(createPinia()); vi.resetAllMocks() })
 describe('useSuwayomiStore', () => {

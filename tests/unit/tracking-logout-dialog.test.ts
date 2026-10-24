@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/TrackingLogoutDialog.vue', 'utf8')
+const source = readFileSync('src/features/trackers/components/TrackingLogoutDialog.vue', 'utf8')
 
 describe('TrackingLogoutDialog matches the Mihon reference', () => {
   it('renders the reference title with the tracker name', () => {

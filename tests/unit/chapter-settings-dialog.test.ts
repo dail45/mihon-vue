@@ -8,7 +8,7 @@ import {
 } from '../../src/utils/chapters'
 import { useChapterSettings } from '../../src/stores/chapterSettings'
 
-const sheetSource = readFileSync('src/components/ChapterSettingsSheet.vue', 'utf8')
+const sheetSource = readFileSync('src/features/manga/components/ChapterSettingsSheet.vue', 'utf8')
 const mainScssSource = readFileSync('src/styles/main.scss', 'utf8')
 
 describe('ChapterSettingsDialog (item 77) - Pixel Parity with Mihon', () => {

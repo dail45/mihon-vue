@@ -32,7 +32,7 @@ describe('category create mutation', () => {
 })
 
 describe('CategoryCreateDialog matches the Mihon reference', () => {
-  const source = readFileSync('src/components/CategoryCreateDialog.vue', 'utf8')
+  const source = readFileSync('src/features/library/components/CategoryCreateDialog.vue', 'utf8')
 
   it('renders the reference title, labels and messages', () => {
     expect(source).toContain('action_add_category')

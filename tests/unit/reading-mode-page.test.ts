@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const source = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ReadingModePage.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ReadingModePage.vue'),
   'utf8',
 )
 
 const dialogSource = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ReaderSettingsDialog.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ReaderSettingsDialog.vue'),
   'utf8',
 )
 

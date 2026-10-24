@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/MarkdownRender.vue', 'utf8')
+const source = readFileSync('src/core/components/MarkdownRender.vue', 'utf8')
 
 describe('MarkdownRender matches Mihon Compose reference (MarkdownRender.kt)', () => {
   it('defines M3 typography tokens for all headings h1-h6', () => {

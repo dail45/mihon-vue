@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { mangaBottomActionFlags } from '../../src/utils/mangaBottomActions'
 
-const source = readFileSync('src/components/MangaBottomActionMenu.vue', 'utf8')
+const source = readFileSync('src/features/manga/components/MangaBottomActionMenu.vue', 'utf8')
 
 const chapter = (over: Partial<{ read: boolean, bookmarked: boolean, lastPageRead: number, downloaded: boolean }> = {}) =>
   ({ read: false, bookmarked: false, lastPageRead: 0, downloaded: false, ...over })

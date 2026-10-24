@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/TriStateListDialog.vue', 'utf8')
+const source = readFileSync('src/features/settings/components/TriStateListDialog.vue', 'utf8')
 
 describe('TriStateListDialog matches the Mihon reference', () => {
   it('renders the reference tri-state cycle UNCHECKED -> CHECKED -> INVERSED -> UNCHECKED', () => {

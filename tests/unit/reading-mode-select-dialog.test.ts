@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const source = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ReadingModeSelectDialog.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ReadingModeSelectDialog.vue'),
   'utf8',
 )
 

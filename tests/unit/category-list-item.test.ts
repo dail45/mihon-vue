@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/category/CategoryListItem.vue', 'utf8')
+const source = readFileSync('src/features/library/components/CategoryListItem.vue', 'utf8')
 
 describe('CategoryListItem matches the Mihon reference', () => {
   it('renders the drag handle, the name and the two icon buttons', () => {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const badgesVue = readFileSync('src/components/MangaBadges.vue', 'utf8')
-const inLibraryBadgeVue = readFileSync('src/components/InLibraryBadge.vue', 'utf8')
+const badgesVue = readFileSync('src/features/manga/components/MangaBadges.vue', 'utf8')
+const inLibraryBadgeVue = readFileSync('src/features/library/components/InLibraryBadge.vue', 'utf8')
 const styles = readFileSync('src/styles/main.scss', 'utf8')
 const collectionsBookmarkSvg = readFileSync(
   'mihon/icons/material-symbols/src/main/valkyrieResources/rounded/collections_bookmark.svg',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/LibraryToolbar.vue', 'utf8')
+const source = readFileSync('src/features/library/components/LibraryToolbar.vue', 'utf8')
 
 describe('LibraryToolbar matches the Mihon reference (LibraryToolbar.kt & AppBar.kt)', () => {
   it('implements regular and selection modes based on selectedCount', () => {

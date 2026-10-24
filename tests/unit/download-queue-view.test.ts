@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/DownloadQueueView.vue', 'utf8')
+const source = readFileSync('src/features/downloads/views/DownloadQueueView.vue', 'utf8')
 
 /**
  * Download queue screen parity test.

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { READER_NAVIGATOR_ICONS } from '../../src/components/reader/readerIcons'
+import { READER_NAVIGATOR_ICONS } from '@/features/reader/assets/readerIcons'
 
 
 const source = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ChapterNavigator.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ChapterNavigator.vue'),
   'utf8',
 )
 

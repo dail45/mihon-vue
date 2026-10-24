@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/MigrateSearchView.vue', 'utf8')
+const source = readFileSync('src/features/migration/views/MigrateSearchView.vue', 'utf8')
 
 /**
  * Pixel-parity guardrails for Mihon's `MigrateSearchScreen`

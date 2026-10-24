@@ -3,17 +3,17 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const source = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/GeneralSettingsPage.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/GeneralSettingsPage.vue'),
   'utf8',
 )
 
 const dialogSource = readFileSync(
-  resolve(process.cwd(), 'src/components/reader/ReaderSettingsDialog.vue'),
+  resolve(process.cwd(), 'src/features/reader/components/ReaderSettingsDialog.vue'),
   'utf8',
 )
 
 const storeSource = readFileSync(
-  resolve(process.cwd(), 'src/stores/readerPreferences.ts'),
+  resolve(process.cwd(), 'src/features/reader/stores/readerPreferences.ts'),
   'utf8',
 )
 

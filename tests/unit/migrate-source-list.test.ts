@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/MigrateSourceList.vue', 'utf8')
-const browseView = readFileSync('src/views/BrowseView.vue', 'utf8')
+const source = readFileSync('src/features/migration/components/MigrateSourceList.vue', 'utf8')
+const browseView = readFileSync('src/features/browse/views/BrowseView.vue', 'utf8')
 
 /**
- * Verification of `src/components/MigrateSourceList.vue` against Mihon:
+ * Verification of `src/features/migration/components/MigrateSourceList.vue` against Mihon:
  * - `eu/kanade/presentation/browse/MigrateSourceScreen.kt`
  * - `eu/kanade/tachiyomi/ui/browse/migration/sources/MigrateSourceTab.kt`
  * - `eu/kanade/tachiyomi/ui/browse/migration/sources/MigrateSourceViewModel.kt`

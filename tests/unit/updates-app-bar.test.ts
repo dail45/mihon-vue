@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
 describe('UpdatesAppBar matches the Mihon reference', () => {
-  const source = readFileSync('src/components/UpdatesAppBar.vue', 'utf8')
+  const source = readFileSync('src/features/updates/components/UpdatesAppBar.vue', 'utf8')
 
   it('uses Material 3 TopAppBar container height and surface tokens', () => {
     expect(source).toMatch(/height="64"/)

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const source = readFileSync(resolve(process.cwd(), 'src/components/ChapterHeader.vue'), 'utf8')
+const source = readFileSync(resolve(process.cwd(), 'src/features/manga/components/ChapterHeader.vue'), 'utf8')
 
 describe('ChapterHeader (ChapterHeader.kt) pixel-parity', () => {
   it('implements the reference structure: Row with Column content and optional filter action', () => {

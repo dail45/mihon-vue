@@ -13,12 +13,13 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
-import { useTabletUi } from '../../composables/useTabletUi'
-import { useBottomNavVisibility } from '../../composables/useBottomNavVisibility'
-import { usePreferencesStore } from '../../stores/preferences'
-import { useSuwayomiStore } from '../../stores/suwayomi'
-import AppStateBanners from '../../components/AppStateBanners.vue'
-import { stringResource, MR } from '../../i18n'
+import { useTabletUi } from '@/core/composables/useTabletUi'
+import { useBottomNavVisibility } from '@/core/composables/useBottomNavVisibility'
+import { usePreferencesStore } from '@/features/settings/stores/preferences'
+import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
+import AppStateBanners from '@/core/components/AppStateBanners.vue'
+import { stringResource, MR } from '@/core/i18n'
+import type { Source } from '@/core/api/types'
 
 const props = withDefaults(defineProps<{
   indexing?: boolean
@@ -49,7 +50,7 @@ const toolbarTitle = computed(() => {
     return stringResource(MR.strings.label_settings) || 'Settings'
   }
   if (route.meta.catalogue) {
-    return server.sources.find(s => s.id === route.params.sourceId)?.displayName || 'Source'
+    return server.sources.find((s: Source) => s.id === route.params.sourceId)?.displayName || 'Source'
   }
   if (route.meta.title) {
     return stringResource(route.meta.title as string) || (route.meta.title as string)

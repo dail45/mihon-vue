@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const aboutViewSource = readFileSync('src/views/AboutView.vue', 'utf8')
+const aboutViewSource = readFileSync('src/features/settings/views/AboutView.vue', 'utf8')
 const routerSource = readFileSync('src/router/index.ts', 'utf8')
 
 describe('AboutView parity with Mihon AboutScreen.kt', () => {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/RestoreBackupView.vue', 'utf8')
+const source = readFileSync('src/features/settings/views/RestoreBackupView.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/views/RestoreBackupView.vue` with
+ * Guards for the pixel parity of `src/features/settings/views/RestoreBackupView.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/data/RestoreBackupScreen.kt.
  * The reference is Kotlin, so the invariants are asserted on the ported metrics.
  */

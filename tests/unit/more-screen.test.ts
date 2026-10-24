@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const moreViewSource = readFileSync('src/views/MoreView.vue', 'utf8')
-const prefWidgetSource = readFileSync('src/components/MorePreferenceWidget.vue', 'utf8')
+const moreViewSource = readFileSync('src/features/settings/views/MoreView.vue', 'utf8')
+const prefWidgetSource = readFileSync('src/core/components/MorePreferenceWidget.vue', 'utf8')
 
 describe('MoreScreen matches Mihon reference (MoreScreen.kt / LogoHeader.kt)', () => {
   it('renders LogoHeader with 64dp icon, 32dp vertical padding and outlineVariant divider', () => {

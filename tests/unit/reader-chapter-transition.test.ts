@@ -6,9 +6,9 @@ import {
   transitionChapterGap,
   transitionLabels,
   type TransitionChapter,
-} from '../../src/components/reader/chapterTransition'
+} from '@/features/reader/utils/chapterTransition'
 
-const vueSource = readFileSync('src/components/reader/ChapterTransition.vue', 'utf8')
+const vueSource = readFileSync('src/features/reader/components/ChapterTransition.vue', 'utf8')
 
 function chapter(name: string, chapterNumber: number, scanlator: string | null = null, downloaded = false): TransitionChapter {
   return { name, scanlator, chapterNumber, downloaded }

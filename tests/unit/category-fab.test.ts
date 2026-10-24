@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/CategoryFab.vue', 'utf8')
+const source = readFileSync('src/features/library/components/CategoryFab.vue', 'utf8')
 
 describe('CategoryFab matches the Mihon reference', () => {
   it('renders the "Add" label and the Material Symbols Add icon', () => {

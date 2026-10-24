@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const sourceView = readFileSync('src/views/SourceView.vue', 'utf8')
+const sourceView = readFileSync('src/features/browse/views/SourceView.vue', 'utf8')
 
 describe('BrowseSourceToolbar parity with Mihon reference (item 34)', () => {
   it('implements Material 3 TopAppBar container (64dp height, surface color, flat elevation, 4dp padding)', () => {

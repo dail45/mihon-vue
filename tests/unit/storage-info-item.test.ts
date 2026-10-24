@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/StorageInfoItem.vue', 'utf8')
+const source = readFileSync('src/core/components/StorageInfoItem.vue', 'utf8')
 
 /**
- * Guards for the pixel parity of `src/components/StorageInfoItem.vue` with
+ * Guards for the pixel parity of `src/core/components/StorageInfoItem.vue` with
  * mihon/app/src/main/java/eu/kanade/presentation/more/settings/screen/data/StorageInfo.kt.
  * The reference is Kotlin, so the invariants are asserted on the ported metrics.
  */

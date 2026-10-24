@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { getSourceDisplayName } from '../../src/utils/sourceLanguage'
+import { getSourceDisplayName } from '@/features/browse/utils/sourceLanguage'
 
-const browseViewSource = readFileSync('src/views/BrowseView.vue', 'utf8')
+const browseViewSource = readFileSync('src/features/browse/views/BrowseView.vue', 'utf8')
 
 /**
  * Parity tests for BrowseView Sources tab against Mihon Jetpack Compose:

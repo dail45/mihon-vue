@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/views/UpcomingView.vue', 'utf8')
+const source = readFileSync('src/features/updates/views/UpcomingView.vue', 'utf8')
 
 /**
  * Upcoming release calendar parity test.

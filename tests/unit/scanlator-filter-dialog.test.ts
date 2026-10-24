@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const vueSource = readFileSync('src/components/ScanlatorFilterDialog.vue', 'utf8')
+const vueSource = readFileSync('src/features/manga/components/ScanlatorFilterDialog.vue', 'utf8')
 
 describe('ScanlatorFilterDialog (CHECKLIST #78) - Parity with Mihon Compose', () => {
   describe('Reference Structure & Tokens', () => {

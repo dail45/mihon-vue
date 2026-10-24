@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync('src/components/ExtensionTrustDialog.vue', 'utf8')
+const source = readFileSync('src/features/browse/components/ExtensionTrustDialog.vue', 'utf8')
 
 /**
  * Pixel-parity guardrails for Mihon's `ExtensionTrustDialog`

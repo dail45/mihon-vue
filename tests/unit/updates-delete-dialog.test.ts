@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
 describe('UpdatesDeleteDialog matches the Mihon reference', () => {
-  const source = readFileSync('src/components/UpdatesDeleteDialog.vue', 'utf8')
+  const source = readFileSync('src/features/updates/components/UpdatesDeleteDialog.vue', 'utf8')
 
   it('renders only the reference text (no title, no icon)', () => {
     expect(source).toContain('Are you sure you want to delete the selected chapters?')

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { APP_THEME_SCHEMES } from '../../src/theme/appThemes'
 
-const source = readFileSync('src/components/onboarding/ThemeStep.vue', 'utf8')
+const source = readFileSync('src/features/onboarding/components/ThemeStep.vue', 'utf8')
 
 /**
- * Parity tests for `src/components/onboarding/ThemeStep.vue` with Mihon references:
+ * Parity tests for `src/features/onboarding/components/ThemeStep.vue` with Mihon references:
  * - `mihon/app/src/main/java/eu/kanade/presentation/more/onboarding/ThemeStep.kt`
  * - `mihon/app/src/main/java/eu/kanade/presentation/more/settings/widget/AppThemeModePreferenceWidget.kt`
  * - `mihon/app/src/main/java/eu/kanade/presentation/more/settings/widget/AppThemePreferenceWidget.kt`

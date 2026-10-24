@@ -17,11 +17,11 @@
 import { computed, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import { useRoute, useRouter } from 'vue-router'
-import { appChannel, appVersion } from '../../constants/appInfo'
-import { useTabletUi } from '../../composables/useTabletUi'
-import { usePreferencesStore } from '../../stores/preferences'
-import { usePreferenceHighlight } from '../../composables/usePreferenceHighlight'
-import { t, MR } from '../../i18n'
+import { appChannel, appVersion } from '@/constants/appInfo'
+import { useTabletUi } from '@/core/composables/useTabletUi'
+import { usePreferencesStore } from '@/features/settings/stores/preferences'
+import { usePreferenceHighlight } from '@/core/composables/usePreferenceHighlight'
+import { t, MR } from '@/core/i18n'
 
 const route = useRoute()
 const router = useRouter()
