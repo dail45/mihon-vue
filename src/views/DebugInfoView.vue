@@ -37,7 +37,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ofetch } from 'ofetch'
+import { fetchAboutServer } from '../api/serverSettings'
 import { appBuildDate, appChannel, appVersion } from '../constants/appInfo'
 import { useSuwayomiStore } from '../stores/suwayomi'
 
@@ -162,11 +162,7 @@ async function fetchServerAbout() {
     return
   }
   try {
-    const res = await ofetch<Record<string, unknown>>(`${server.apiUrl}/settings/about`, {
-      timeout: 5000,
-      retry: 0,
-      credentials: 'include',
-    })
+    const res = await fetchAboutServer(server.apiUrl)
     serverVersion.value = String(res.version || res.buildVersion || (server.connected ? 'Connected' : 'Unknown'))
     serverRevision.value = String(res.revision || res.commit || res.buildTime || 'N/A')
     serverChannel.value = String(res.channel || res.buildType || 'Stable')

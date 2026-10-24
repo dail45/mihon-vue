@@ -41,3 +41,21 @@ export async function saveServerSettings(apiUrl: string, changes: ServerSettings
   if (Object.entries(changes).some(([key, value]) => returned[key] !== value)) throw new Error('The server did not confirm the requested values. Reload before retrying.')
   return returned
 }
+
+export interface ServerAboutInfo {
+  version?: string
+  build?: string
+  revision?: string
+  buildType?: string
+  [key: string]: unknown
+}
+
+export async function fetchAboutServer(apiUrl: string, signal?: AbortSignal): Promise<ServerAboutInfo> {
+  const normalized = normalizeApiUrl(apiUrl)
+  return ofetch<ServerAboutInfo>(`${normalized}/settings/about`, {
+    credentials: 'include',
+    timeout: 10000,
+    retry: 0,
+    signal,
+  })
+}

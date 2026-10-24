@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-const view = readFileSync('src/views/CategoriesView.vue', 'utf8')
+const view = readFileSync('src/views/CategoriesView.vue', 'utf8') + '\n' + readFileSync('src/components/category/CategoryManagerPanel.vue', 'utf8')
 const api = readFileSync('src/api/categoryReorder.ts', 'utf8')
 const item = readFileSync('src/components/category/CategoryListItem.vue', 'utf8')
 

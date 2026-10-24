@@ -1,21 +1,8 @@
 import { ref, watch } from 'vue'
 import { readPreference, writePreference } from '../stores/preferences'
 
-/**
- * Browse settings preferences.
- *
- * Mihon keeps them in `SourcePreferences` (an Android DataStore):
- *   - `hideInLibraryItems`          → "browse_hide_in_library_items"   (default false)
- *   - `enabledContentWarnings`      → setOf(SAFE, MIXED, NSFW)          (default all three)
- *   - `applyContentWarningsToInstalled` → true
- *
- * The web client is a headless REST client for Suwayomi-Server, which stores no such
- * preferences, so they live in this browser's local storage (same approach as the other
- * UI-only preferences in `stores/preferences.ts`).
- */
 export type ContentWarningKey = 'safe' | 'mixed' | 'nsfw'
 
-/** MR.strings.ext_content_warning_safe / _mixed / _nsfw */
 export const contentWarningEntries: { key: ContentWarningKey; title: string }[] = [
   { key: 'safe', title: 'Safe' },
   { key: 'mixed', title: 'Mixed' },
