@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useSuwayomiStore } from '../stores/suwayomi'
 import type { Manga } from '@/core/api/types'
 import { useLibraryDetails } from '../stores/libraryDetails'
@@ -134,11 +134,29 @@ const itemsByCategory = computed(() => {
   }
   return result
 })
+const categoryScrollPositions = new Map<number, number>()
+
 /** `onChangeCurrentPage(pagerState.currentPage)`. */
 function onChangeCurrentPage(page: number) {
   const category = categories.value[page]
-  if (category && category.id !== server.activeCategoryId) server.activeCategoryId = category.id
+  if (category && category.id !== server.activeCategoryId) {
+    if (server.activeCategoryId != null) {
+      categoryScrollPositions.set(server.activeCategoryId, window.scrollY)
+    }
+    server.activeCategoryId = category.id
+    const targetScroll = categoryScrollPositions.get(category.id) ?? 0
+    nextTick(() => {
+      window.scrollTo({ top: targetScroll, behavior: 'instant' as ScrollBehavior })
+    })
+  }
 }
+
+onBeforeRouteLeave((to) => {
+  if (to.path.startsWith('/manga/')) {
+    sessionStorage.setItem('mihon.library.scrollY', String(window.scrollY))
+    sessionStorage.setItem('mihon.library.activeCategory', String(server.activeCategoryId))
+  }
+})
 
 /**
  * `LibraryContent.kt`:
@@ -358,7 +376,19 @@ function loadDetails(retry = false) {
 async function reload() { details.clear(); await server.loadLibrary(); loadDetails() }
 watch(() => [server.apiUrl, server.library, requiresDetails.value, preferences.categoryCounts], () => loadDetails(), { immediate: true })
 watch(() => [preferences.localBadge, preferences.languageBadge, server.apiUrl], () => { if ((preferences.localBadge || preferences.languageBadge) && !server.sources.length) void server.loadSources() }, { immediate: true })
-onMounted(() => { void reload() })
+onMounted(() => {
+  void reload()
+  const savedScroll = sessionStorage.getItem('mihon.library.scrollY')
+  if (savedScroll) {
+    sessionStorage.removeItem('mihon.library.scrollY')
+    const y = parseInt(savedScroll, 10)
+    if (!isNaN(y) && y > 0) {
+      nextTick(() => {
+        window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior })
+      })
+    }
+  }
+})
 </script>
 
 <template>

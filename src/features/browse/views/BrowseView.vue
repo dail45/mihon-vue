@@ -10,6 +10,7 @@ import SourceOptionsDialog from '../components/SourceOptionsDialog.vue'
 import SearchAppBar from '@/core/components/SearchAppBar.vue'
 import Md3CircularProgress from '@/core/components/Md3CircularProgress.vue'
 import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'
+import Md3PrimaryTabs, { type Md3TabItem } from '@/core/components/Md3PrimaryTabs.vue'
 import ExtensionsView from '@/features/browse/components/BrowseExtensionsTab.vue'
 import MigrateSourceList from '@/features/migration/components/MigrateSourceList.vue'
 import { fetchExtensionList, type ExtensionDto } from '@/core/api/extensions'
@@ -234,6 +235,11 @@ function openMigrationGuide() {
    (ExtensionsTab.kt: badgeNumber = viewModel.state.value.updates). */
 const extensionList = ref<ExtensionDto[]>([])
 const updatesCount = computed(() => extensionList.value.filter(entry => entry.installed && entry.hasUpdate).length)
+const browseTabs = computed<Md3TabItem<string>[]>(() => [
+  { value: 'sources', label: 'Sources' },
+  { value: 'extensions', label: 'Extensions', badge: updatesCount.value || null },
+  { value: 'migrate', label: 'Migrate' },
+])
 async function loadExtensionCount() {
   try { extensionList.value = await fetchExtensionList(server.apiUrl) } catch { extensionList.value = [] }
 }
@@ -392,21 +398,14 @@ onBeforeUnmount(() => {
     </SearchAppBar>
 
     <!-- PrimaryTabRow (TabbedScreen.kt:63-75): 48dp row, 3dp primary indicator, labelLarge tabs. -->
-    <v-tabs v-model="activeTab" color="primary" align-tabs="start" class="sources-tabs" aria-label="Browse sections" hide-slider @update:model-value="onTabChange">
-      <v-tab value="sources" class="text-none">
-        <span class="tab-label">Sources</span>
-      </v-tab>
-      <v-tab value="extensions" class="text-none">
-        <span class="tab-label">
-          Extensions
-          <!-- TabText: Pill badge with the number of pending updates (10sp). -->
-          <span v-if="updatesCount" class="tab-badge">{{ updatesCount }}</span>
-        </span>
-      </v-tab>
-      <v-tab value="migrate" class="text-none">
-        <span class="tab-label">Migrate</span>
-      </v-tab>
-    </v-tabs>
+    <Md3PrimaryTabs
+      v-model="activeTab"
+      :items="browseTabs"
+      :scrollable="false"
+      class="sources-tabs"
+      aria-label="Browse sections"
+      @update:model-value="onTabChange"
+    />
 
     <!-- HorizontalPager: the content of the visible tab. -->
     <div v-show="activeTab === 'extensions'" class="browse-pane">
@@ -514,70 +513,8 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-/* TabText: the label and the Pill badge sit next to each other (Tabs.kt:17-31). */
-.tab-label { display: inline-flex; align-items: center; }
-/*
- * Pill (Pill.kt:25-43): a Surface with shapes.extraLarge (12dp) that starts 4dp after the
- * label and pads the text by 6dp vertical / 1dp horizontal. The tab badge uses the
- * onBackground colour with 8% alpha (12% in the dark theme, Tabs.kt:15).
- */
-.tab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-inline-start: 4px;
-  padding: 1px 6px;
-  border-radius: 12px;
-  background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 8%, transparent);
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 10px;
-  line-height: 14px;
-  font-weight: 400;
-  letter-spacing: .5px;
-}
-@media (prefers-color-scheme: dark) {
-  .tab-badge { background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 12%, transparent); }
-}
-
 /* TopAppBar title: titleLarge (22sp / 28sp, weight 400). */
 .sources-toolbar :deep(.v-toolbar__title) { font-size: 22px; font-weight: 400; }
-
-/* PrimaryTabRow (TabbedScreen.kt:63-75): 48dp row height, labelLarge labels (14sp / 20sp,
-   Medium), 3dp primary indicator, unselected label colour = onSurface. */
-.sources-tabs :deep(.v-tab) {
-  flex: 1 1 0;
-  min-width: 0;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 500;
-  letter-spacing: .1px;
-  text-transform: none;
-  color: rgb(var(--v-theme-on-surface));
-  position: relative;
-}
-.sources-tabs :deep(.v-tab .tab-label) {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-.sources-tabs :deep(.v-tab--selected) { color: rgb(var(--v-theme-primary)); }
-.sources-tabs :deep(.v-tab--selected .tab-label::after) {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: rgb(var(--v-theme-primary));
-}
-@media (hover: none) {
-  .sources-tabs :deep(.v-tab:not(:active):not(:focus-visible) .v-btn__overlay) {
-    opacity: 0 !important;
-  }
-}
 
 /* ScrollbarLazyColumn: contentPadding = contentPadding + topSmallPaddingValues (top 8dp).
    In Compose, the LazyColumn has a vertical scrollbar (thickness 4dp, onSurface 36.4% alpha). */

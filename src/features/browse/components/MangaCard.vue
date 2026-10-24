@@ -160,6 +160,8 @@ onBeforeUnmount(onPointerUp)
             cover
             alt=""
             class="manga-cover-image"
+            loading="lazy"
+            decoding="async"
             :class="{
               'in-library-cover': catalogue && manga.inLibrary,
               'in-library-cover-fav': catalogue && !manga.inLibrary && Boolean(manga.favorite),

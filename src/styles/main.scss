@@ -139,6 +139,8 @@ body {
 }
 // `GridItemSpan(maxLineSpan)`: the loading row of the catalogue grid spans the whole line.
 .library-grid-loading { grid-column: 1 / -1; }
+.library-grid-spacer { grid-column: 1 / -1; width: 100%; pointer-events: none; }
+.manga-list-spacer { width: 100%; pointer-events: none; }
 .v-container.manga-detail { max-width: 900px; }
 .manga-description-collapsed { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
 .description-text { white-space: pre-line; overflow-wrap: anywhere; }

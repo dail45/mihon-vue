@@ -187,6 +187,8 @@ onBeforeUnmount(onPointerUp)
             cover
             alt=""
             class="comfortable-cover-image"
+            loading="lazy"
+            decoding="async"
             @error="broken = true"
           />
           <!--

@@ -228,6 +228,8 @@ onBeforeUnmount(onPointerUp)
         height="40"
         cover
         alt=""
+        loading="lazy"
+        decoding="async"
         @error="broken = true"
       />
       <span

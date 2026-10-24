@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const source = readFileSync(resolve(process.cwd(), 'src/features/library/components/LibraryCategoryTabs.vue'), 'utf8')
+const source = readFileSync(resolve(process.cwd(), 'src/core/components/Md3PrimaryTabs.vue'), 'utf8')
 
 describe('LibraryCategoryTabs Material 3 parity', () => {
   it('sizes indicator to label content width rather than full tab width', () => {

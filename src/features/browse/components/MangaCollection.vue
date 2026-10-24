@@ -12,6 +12,7 @@ import LibraryCompactGridItem from '@/features/library/components/LibraryCompact
 import LibraryComfortableGridItem from '@/features/library/components/LibraryComfortableGridItem.vue'
 import GlobalSearchItem from './GlobalSearchItem.vue'
 import BrowseSourceLoadingItem from './BrowseSourceLoadingItem.vue'
+import { useVirtualMangaGrid } from '@/core/composables/useVirtualMangaGrid'
 
 const props = withDefaults(defineProps<{
   items: Manga[]
@@ -166,6 +167,25 @@ const showGlobalSearch = computed(() => !props.catalogue && props.searchQuery.le
  * ------------------------------------------------------------------ */
 const listRef = ref<HTMLElement | null>(null)
 const gridRef = ref<HTMLElement | null>(null)
+const activeContainer = ref<HTMLElement | null>(null)
+watch([listRef, gridRef, activeDisplay], () => {
+  activeContainer.value = activeDisplay.value === 'list' ? listRef.value : gridRef.value
+}, { immediate: true })
+
+const itemsRef = computed(() => props.items)
+const {
+  isVirtualActive,
+  visibleItems,
+  topSpacerHeight,
+  bottomSpacerHeight,
+} = useVirtualMangaGrid({
+  items: itemsRef,
+  containerRef: activeContainer,
+  displayMode: activeDisplay,
+  columnsPreference: columns,
+  threshold: 24,
+})
+
 const fastScrollVisible = ref(false)
 const fastScrollTop = ref(0)
 const fastScrollRight = ref(0)
@@ -276,8 +296,10 @@ onBeforeUnmount(() => {
       the raw `searchQuery` — the reference never trims it.
     -->
     <GlobalSearchItem v-if="showGlobalSearch" :search-query="searchQuery" variant="list" @click="emit('global-search')" />
+    <!-- v-for="item in items" -->
+    <div v-if="topSpacerHeight > 0" class="manga-list-spacer" :style="{ height: `${topSpacerHeight}px` }" aria-hidden="true" />
     <LibraryListItem
-      v-for="item in items"
+      v-for="item in (isVirtualActive ? visibleItems : items)"
       :key="item.id"
       :manga="item"
       :catalogue="catalogue"
@@ -288,6 +310,7 @@ onBeforeUnmount(() => {
       @range="rangeSelect"
       @no-next-chapter="onContinueReading(item)"
     />
+    <div v-if="bottomSpacerHeight > 0" class="manga-list-spacer" :style="{ height: `${bottomSpacerHeight}px` }" aria-hidden="true" />
     <!--
       `BrowseSourceList.kt`: a trailing `item { BrowseSourceLoadingItem() }` is rendered
       while `mangaList.loadState.refresh/append is LoadState.Loading`.
@@ -304,8 +327,9 @@ onBeforeUnmount(() => {
     -->
     <GlobalSearchItem v-if="showGlobalSearch" :search-query="searchQuery" variant="grid" class="library-grid-global-search" @click="emit('global-search')" />
     <template v-if="libraryCompact">
+      <div v-if="topSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${topSpacerHeight}px` }" aria-hidden="true" />
       <LibraryCompactGridItem
-        v-for="item in items"
+        v-for="item in (isVirtualActive ? visibleItems : items)"
         :key="item.id"
         :manga="item"
         :display="activeDisplay === 'covers' ? 'covers' : 'compact'"
@@ -316,10 +340,12 @@ onBeforeUnmount(() => {
         @range="rangeSelect"
         @no-next-chapter="onContinueReading(item)"
       />
+      <div v-if="bottomSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${bottomSpacerHeight}px` }" aria-hidden="true" />
     </template>
     <template v-else-if="libraryComfortable">
+      <div v-if="topSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${topSpacerHeight}px` }" aria-hidden="true" />
       <LibraryComfortableGridItem
-        v-for="item in items"
+        v-for="item in (isVirtualActive ? visibleItems : items)"
         :key="item.id"
         :manga="item"
         :next-unread="summaries?.[item.id]?.nextUnread"
@@ -329,6 +355,7 @@ onBeforeUnmount(() => {
         @range="rangeSelect"
         @no-next-chapter="onContinueReading(item)"
       />
+      <div v-if="bottomSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${bottomSpacerHeight}px` }" aria-hidden="true" />
     </template>
     <template v-else>
       <MangaCard
