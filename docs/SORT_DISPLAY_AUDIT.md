@@ -2,11 +2,11 @@
 
 Reference: Mihon `446f6df82c390ab760802c2fce3b677bce3f31c1`.
 
-This is a targeted **behavioral audit**, not proof that all 190 presentation files have been implemented or validated. The previous [inventory](PARITY_AUDIT.md) lists coverage, not verified parity. Rows below name inspected source files and their concrete consequences. Comparator/preferences/domain files are included because inspecting visual composables alone missed the functional bugs.
+This is a targeted **behavioral audit**, not proof that all presentation files have been implemented or validated. Rows below name inspected source files and their concrete consequences. Comparator/preferences/domain files are included because inspecting visual composables alone missed the functional bugs.
 
 ## Material 3: what is established
 
-`src/plugins/vuetify.ts` now uses Vuetify 4 native MD3 typography/elevation; the previous v3 `md3` blueprint import has been removed. See [the v4 migration record](VUETIFY4_MIGRATION.md). The app uses Vuetify components, self-hosted Roboto and rounded Material Symbols, and the pinned Mihon static light/dark color roles. This is a **Material 3-based web adaptation**, not Android Compose Material3 and not guaranteed pixel-perfect Mihon. Custom CSS and web components must still be validated individually. The old “Material-style” wording was not sufficient evidence of behavioral parity.
+`src/plugins/vuetify.ts` now uses Vuetify 4 native MD3 typography/elevation; the previous v3 `md3` blueprint import has been removed. The app uses Vuetify components, self-hosted Roboto and rounded Material Symbols, and the pinned Mihon static light/dark color roles. This is a **Material 3-based web adaptation**, not Android Compose Material3 and not guaranteed pixel-perfect Mihon. Custom CSS and web components must still be validated individually. The old “Material-style” wording was not sufficient evidence of behavioral parity.
 
 ## Source-to-web comparison
 
