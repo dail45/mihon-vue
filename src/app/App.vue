@@ -127,9 +127,7 @@ const layoutComponent = computed(() => {
 
     <component :is="layoutComponent" :indexing="indexing">
       <router-view v-slot="{ Component }">
-        <keep-alive include="LibraryView">
-          <component :is="Component" />
-        </keep-alive>
+        <component :is="Component" />
       </router-view>
     </component>
 

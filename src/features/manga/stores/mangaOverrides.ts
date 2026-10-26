@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
 import type { Manga } from '@/core/api/types'
 
 export const STORAGE_KEY_MANGA_OVERRIDES = 'mihon.manga_overrides'
@@ -47,7 +47,7 @@ export function applyMangaOverride<T extends Manga>(
   const ogStatus = mAny.ogStatus ?? manga.status
 
   if (!override) {
-    return {
+    return markRaw({
       ...manga,
       ogTitle,
       ogAuthor,
@@ -56,9 +56,10 @@ export function applyMangaOverride<T extends Manga>(
       ogDescription,
       ogGenre,
       ogStatus,
+      _searchTitle: (ogTitle || '').toLowerCase(),
       hasCustomCover: false,
       isOverridden: false,
-    }
+    })
   }
 
   const hasCustomCover = Boolean(
@@ -77,7 +78,7 @@ export function applyMangaOverride<T extends Manga>(
     (override.status !== undefined && override.status !== ogStatus),
   )
 
-  return {
+  return markRaw({
     ...manga,
     ogTitle,
     ogAuthor,
@@ -94,8 +95,9 @@ export function applyMangaOverride<T extends Manga>(
     genre: override.genre !== undefined ? override.genre : ogGenre,
     status: override.status !== undefined ? override.status : ogStatus,
     hasCustomCover,
+    _searchTitle: (override.title?.trim() || ogTitle || '').toLowerCase(),
     isOverridden,
-  }
+  })
 }
 
 export const useMangaOverridesStore = defineStore('mangaOverrides', () => {

@@ -21,6 +21,7 @@ import Md3CircularProgress from '@/core/components/Md3CircularProgress.vue'
 import Md3PullToRefresh from '@/core/components/Md3PullToRefresh.vue'
 import { stringResource, MR } from '@/core/i18n'
 import { useBottomNavVisibility } from '@/core/composables/useBottomNavVisibility'
+import { useDeferredValue } from '@/core/composables/useDeferredValue'
 
 /**
  * Pixel-parity port of Mihon's `ui/library/LibraryTab.kt`
@@ -82,6 +83,12 @@ const details = useLibraryDetails()
 const sort = computed(() => preferences.getLibrarySort(server.apiUrl, server.activeCategoryId))
 const requiresDetails = computed(() => preferences.filters.bookmarked !== 'all' || preferences.showContinue || ['latestChapter', 'chapterFetched'].includes(sort.value.type) || (sort.value.type === 'lastRead' && server.library.some(m => m.lastReadAt == null)))
 
+// Defer heavy list computation so toolbar/sheet buttons paint click/ripple on frame 1
+const deferredSort = useDeferredValue(() => sort.value)
+const deferredFilters = useDeferredValue(() => ({ ...preferences.filters }))
+const deferredGroupMode = useDeferredValue(() => preferences.groupMode)
+const deferredDownloadedOnly = useDeferredValue(() => preferences.downloadedOnly)
+
 const mangaCategoriesMap = computed(() => {
   const map = new Map<number, number[]>()
   for (const [catIdStr, mangas] of Object.entries(server.libraryByCategory)) {
@@ -95,22 +102,40 @@ const mangaCategoriesMap = computed(() => {
   return map
 })
 
-const matches = (m: Manga) =>
-  m.title.toLocaleLowerCase().includes(search.value.toLocaleLowerCase()) &&
-  matchesLibrary(
-    m,
-    {
-      ...preferences.filters,
-      filterCategories: preferences.filterCategories,
-      filterCategoriesInclude: preferences.filterCategoriesInclude,
-      filterCategoriesExclude: preferences.filterCategoriesExclude,
-    },
-    preferences.downloadedOnly,
-    details.summaries[m.id],
-    server.sources,
-    mangaCategoriesMap.value.get(m.id) ?? [],
-  )
-const visibleManga = computed(() => sortLibrary(server.library.filter(matches), sort.value, details.summaries, preferences.sortTags))
+const matcher = computed(() => {
+  const searchLower = search.value.toLowerCase()
+  const filters = deferredFilters.value
+  const downloadedOnly = deferredDownloadedOnly.value
+  const catMap = mangaCategoriesMap.value
+  const summaries = details.summaries
+  const sources = server.sources
+  const filterCategories = preferences.filterCategories
+  const filterCategoriesInclude = preferences.filterCategoriesInclude
+  const filterCategoriesExclude = preferences.filterCategoriesExclude
+
+  return (m: Manga) => {
+    if (searchLower) {
+      const titleLower = m._searchTitle ?? m.title.toLowerCase()
+      if (!titleLower.includes(searchLower)) return false
+    }
+    return matchesLibrary(
+      m,
+      {
+        ...filters,
+        filterCategories,
+        filterCategoriesInclude,
+        filterCategoriesExclude,
+      },
+      downloadedOnly,
+      summaries[m.id],
+      sources,
+      catMap.get(m.id) ?? [],
+    )
+  }
+})
+
+const matches = (m: Manga) => matcher.value(m)
+const visibleManga = computed(() => sortLibrary(server.library.filter(matches), deferredSort.value, details.summaries, preferences.sortTags))
 const hasFilters = computed(
   () =>
     preferences.downloadedOnly ||
@@ -153,8 +178,8 @@ function openGettingStartedGuide() {
  * a library entry belongs to it (`showSystemCategory = favorites.any { it.libraryManga.categories.contains(0) }`).
  */
 const virtualData = computed(() => {
-  if (preferences.groupMode === 0) return null
-  return deriveVirtualCategories(server.library, preferences.groupMode, {
+  if (deferredGroupMode.value === 0) return null
+  return deriveVirtualCategories(server.library, deferredGroupMode.value, {
     sources: server.sources,
     t: (key: string) => t(key),
   })
@@ -203,7 +228,7 @@ const itemsByCategory = computed(() => {
       ? (virtualData.value.itemsByCategory[category.id] || [])
       : (server.libraryByCategory[category.id] || [])
     const items = rawItems.filter(matches)
-    result[category.id] = sortLibrary(items, sort.value, details.summaries, preferences.sortTags)
+    result[category.id] = sortLibrary(items, deferredSort.value, details.summaries, preferences.sortTags)
   }
   return result
 })

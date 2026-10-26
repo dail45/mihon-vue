@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, shallowRef, triggerRef } from 'vue'
 import { createSuwayomiApi, apiErrorMessage } from '@/core/api/client'
 import { summarizeChapters, type ChapterSummary } from '@/core/utils/library'
 export const useLibraryDetails = defineStore('library-details', () => {
-  const summaries = ref<Record<number, ChapterSummary>>({}), errors = ref<Record<number, string>>({}), pendingCount = ref(0)
+  const summaries = shallowRef<Record<number, ChapterSummary>>({}), errors = shallowRef<Record<number, string>>({}), pendingCount = ref(0)
   let generation = 0, address = '', pending = new Set<number>()
   function clear() { generation++; summaries.value = {}; errors.value = {}; pending = new Set(); pendingCount.value = 0 }
   async function ensure(apiUrl: string, ids: number[], retry = false) {
@@ -16,8 +16,8 @@ export const useLibraryDetails = defineStore('library-details', () => {
     await Promise.all(Array.from({ length: Math.min(4, queue.length) }, async () => {
       while (queue.length && request === generation) {
         const id = queue.shift()!
-        try { const chapters = await api.chapters(id, false); if (request === generation) { summaries.value[id] = summarizeChapters(chapters); delete errors.value[id] } }
-        catch (e) { if (request === generation) errors.value[id] = apiErrorMessage(e) }
+        try { const chapters = await api.chapters(id, false); if (request === generation) { summaries.value[id] = summarizeChapters(chapters); delete errors.value[id]; triggerRef(summaries); triggerRef(errors) } }
+        catch (e) { if (request === generation) { errors.value[id] = apiErrorMessage(e); triggerRef(errors) } }
         finally { if (request === generation) { pending.delete(id); pendingCount.value = pending.size } }
       }
     }))

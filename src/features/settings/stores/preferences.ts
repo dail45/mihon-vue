@@ -86,12 +86,12 @@ export const usePreferencesStore = defineStore('preferences', () => {
   // Dynamic Library Grouping: 0 = Default, 1 = Source, 2 = Status, 3 = Track, 4 = Ungrouped
   const savedGroupMode = Number(readPreference('mihon.library.groupMode'))
   const groupMode = ref<LibraryGroupMode>([0, 1, 2, 3, 4].includes(savedGroupMode) ? savedGroupMode as LibraryGroupMode : 0)
-  watch(groupMode, v => writePreference('mihon.library.groupMode', String(v)), { flush: 'sync' })
+  watch(groupMode, v => writePreference('mihon.library.groupMode', String(v)))
 
   // Tag Priority Sorting
   const rawSortTags = json('mihon.library.sortTags')
   const sortTags = ref<string[]>(Array.isArray(rawSortTags) ? rawSortTags.filter(t => typeof t === 'string') : [])
-  watch(sortTags, v => writePreference('mihon.library.sortTags', JSON.stringify(v)), { deep: true, flush: 'sync' })
+  watch(sortTags, v => writePreference('mihon.library.sortTags', JSON.stringify(v)), { deep: true })
 
   function numberArray(key: string, fallback: number[] = []) {
     const raw = json(key)

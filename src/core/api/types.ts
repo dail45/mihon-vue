@@ -1,4 +1,4 @@
-﻿/** Hand-written REST v1 DTOs from Suwayomi e2ce828. See docs/REFERENCES.md.
+/** Hand-written REST v1 DTOs from Suwayomi e2ce828. See docs/REFERENCES.md.
  * Kotlin Long/Float -> number; source IDs are strings, never numbers.
  * Nullable Kotlin fields stay nullable. @JsonIgnore fields are excluded.
  * Types describe wire payloads, not local business entities.
@@ -38,6 +38,7 @@ export interface Manga {
   lastReadAt: number | null; lastChapterRead: Chapter | null; age: number | null;
   chaptersAge: number | null; trackers: MangaTracker[] | null; lastModifiedAt: number; version: number;
   favorite?: boolean; readerOrientation?: number | null; viewer?: number | null; categories?: number[];
+  _searchTitle?: string;
 }
 export interface Category {
   id: number; order: number; name: string; default: boolean;

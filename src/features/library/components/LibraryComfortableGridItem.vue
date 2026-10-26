@@ -160,6 +160,7 @@ onBeforeUnmount(onPointerUp)
     so the link below carries the 4dp padding while the selection rectangle is
     painted behind the content.
   -->
+  <!-- v-ripple replaced by CSS :hover / :active for performance -->
   <div class="comfortable-tile" :class="{ 'comfortable-tile-selected': selected }">
     <router-link
       :to="`/manga/${manga.id}`"
@@ -174,7 +175,6 @@ onBeforeUnmount(onPointerUp)
       @pointercancel="onPointerUp"
       @pointerleave="onPointerUp"
       @contextmenu="onContextMenu"
-      v-ripple
     >
       <!-- Column { MangaGridCover(...), GridItemTitle(...) } -->
       <div class="comfortable-cover" :class="{ 'comfortable-cover-panorama': isPanorama }">
@@ -184,10 +184,9 @@ onBeforeUnmount(onPointerUp)
           the whole cover plate, the loaded image as well as the error drawable.
         -->
         <div class="comfortable-cover-media" :class="{ 'comfortable-cover-selected': selected }">
-          <v-img
+          <img
             v-if="!broken"
             :src="server.thumbnailUrl(manga.id)"
-            cover
             alt=""
             class="comfortable-cover-image"
             loading="lazy"
@@ -232,7 +231,6 @@ onBeforeUnmount(onPointerUp)
         class="continue-reading comfortable-continue"
         :style="{ width: `${continueSize}px`, height: `${continueSize}px` }"
         :aria-label="`Resume ${manga.title}`"
-        v-ripple
         @click.stop
         @pointerdown.stop
         @pointerup.stop
@@ -245,7 +243,6 @@ onBeforeUnmount(onPointerUp)
         class="continue-reading comfortable-continue"
         :style="{ width: `${continueSize}px`, height: `${continueSize}px` }"
         :aria-label="`Resume ${manga.title}`"
-        v-ripple
         @click.stop="onContinueClick"
         @pointerdown.stop
         @pointerup.stop
@@ -270,6 +267,7 @@ onBeforeUnmount(onPointerUp)
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  contain: layout paint style;
 }
 
 .comfortable-tile-link {
@@ -280,6 +278,15 @@ onBeforeUnmount(onPointerUp)
   border-radius: 8px;
   color: inherit;
   text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.comfortable-tile-link:hover {
+  opacity: 0.92;
+}
+
+.comfortable-tile-link:active {
+  opacity: 0.84;
 }
 
 /*
@@ -423,5 +430,9 @@ onBeforeUnmount(onPointerUp)
 
 .comfortable-continue:hover {
   background: color-mix(in srgb, rgb(var(--v-theme-on-primary-container)) 8%, color-mix(in srgb, rgb(var(--v-theme-primary-container)) 90%, transparent));
+}
+
+.comfortable-continue:active {
+  opacity: 0.8;
 }
 </style>

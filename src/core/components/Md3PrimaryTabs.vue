@@ -60,8 +60,8 @@ const indicatorStyle = ref<IndicatorStyle>({
   opacity: '0',
 })
 
-function updateIndicator() {
-  const index = selectedIndex.value
+function updateIndicator(targetIndex = selectedIndex.value) {
+  const index = targetIndex
   const tab = tabRefs.value[index]
   if (!tab) {
     indicatorStyle.value = {
@@ -92,6 +92,7 @@ function scrollToSelectedTab(smooth = true) {
 }
 
 function onTabClick(event: MouseEvent, item: Md3TabItem<T>, index: number) {
+  updateIndicator(index)
   emit('update:modelValue', item.value)
   emit('tab-click', item, index)
   ;(event.currentTarget as HTMLElement | null)?.blur()
@@ -116,6 +117,7 @@ function onKeydown(event: KeyboardEvent) {
     event.preventDefault()
     const targetItem = props.items[next]
     if (targetItem) {
+      updateIndicator(next)
       emit('update:modelValue', targetItem.value)
       emit('tab-click', targetItem, next)
       void nextTick(() => {
@@ -132,9 +134,8 @@ function onResize() {
   scrollToSelectedTab(false)
 }
 
-watch(selectedIndex, async () => {
-  await nextTick()
-  updateIndicator()
+watch(selectedIndex, (newIndex) => {
+  updateIndicator(newIndex)
   scrollToSelectedTab(true)
 })
 
@@ -458,7 +459,10 @@ onBeforeUnmount(() => {
   background: rgb(var(--v-theme-primary));
   pointer-events: none;
   z-index: 1;
-  transition: transform 250ms cubic-bezier(0.2, 0, 0, 1), width 250ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms ease-in-out;
+  transition: transform 250ms cubic-bezier(0.2, 0, 0, 1),
+              width 250ms cubic-bezier(0.2, 0, 0, 1),
+              opacity 150ms ease-in-out;
+  will-change: transform, width;
 }
 
 .md3-tab-pill,

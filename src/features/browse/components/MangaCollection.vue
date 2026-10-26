@@ -98,6 +98,7 @@ watch(() => server.apiUrl, () => { broken.value = new Set() })
  * ------------------------------------------------------------------ */
 const localSelection = ref<number[]>([])
 const selection = computed(() => props.selection ?? localSelection.value)
+const selectedIds = computed(() => new Set(selection.value))
 const selectionActive = computed(() => selection.value.length > 0)
 const lastSelected = ref<number | null>(null)
 
@@ -105,11 +106,11 @@ function commitSelection(next: number[]) {
   if (props.selection === undefined) localSelection.value = next
   else emit('update:selection', next)
 }
-function isSelected(id: number) { return selection.value.includes(id) }
+function isSelected(id: number) { return selectedIds.value.has(id) }
 
 /** Mihon `toggleSelection`: a tap toggles a single entry while a selection exists. */
 function toggleSelection(id: number) {
-  const next = selection.value.includes(id) ? selection.value.filter(value => value !== id) : [...selection.value, id]
+  const next = isSelected(id) ? selection.value.filter(value => value !== id) : [...selection.value, id]
   lastSelected.value = next.includes(id) ? id : null
   commitSelection(next)
 }
@@ -282,26 +283,25 @@ onBeforeUnmount(() => {
     <GlobalSearchItem v-if="showGlobalSearch" :search-query="searchQuery" variant="list" @click="emit('global-search')" />
     <!-- v-for="item in items" -->
     <RecycleScroller
-      v-if="rows.length > 0"
+      v-if="items.length > 0"
       class="manga-recycle-scroller"
-      :items="rows"
-      :item-size="rowHeight"
-      :buffer="1200"
+      :items="items"
+      :item-size="56"
+      :buffer="250"
       key-field="id"
       :page-mode="true"
-      #default="{ item: rowItem }"
+      #default="{ item: manga }"
     >
       <div class="manga-scroller-list-row">
         <LibraryListItem
-          v-if="rowItem.items[0]"
-          :manga="rowItem.items[0]"
+          :manga="manga"
           :catalogue="catalogue"
-          :next-unread="summaries?.[rowItem.items[0].id]?.nextUnread"
-          :selected="isSelected(rowItem.items[0].id)"
+          :next-unread="summaries?.[manga.id]?.nextUnread"
+          :selected="selectedIds.has(manga.id)"
           :selection-mode="selectionActive"
           @toggle="toggleSelection"
           @range="rangeSelect"
-          @no-next-chapter="onContinueReading(rowItem.items[0])"
+          @no-next-chapter="onContinueReading(manga)"
         />
       </div>
     </RecycleScroller>
@@ -322,7 +322,7 @@ onBeforeUnmount(() => {
       class="manga-recycle-scroller"
       :items="rows"
       :item-size="rowHeight"
-      :buffer="1200"
+      :buffer="350"
       key-field="id"
       :page-mode="true"
       #default="{ item: rowItem }"
@@ -338,13 +338,13 @@ onBeforeUnmount(() => {
           gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))`
         }"
       >
-        <template v-for="item in rowItem.items" :key="item.id">
+        <template v-for="(item, colIndex) in rowItem.items" :key="colIndex">
           <LibraryCompactGridItem
             v-if="libraryCompact"
             :manga="item"
             :display="activeDisplay === 'covers' ? 'covers' : 'compact'"
             :next-unread="summaries?.[item.id]?.nextUnread"
-            :selected="isSelected(item.id)"
+            :selected="selectedIds.has(item.id)"
             :selection-mode="selectionActive"
             @toggle="toggleSelection"
             @range="rangeSelect"
@@ -355,7 +355,7 @@ onBeforeUnmount(() => {
             :manga="item"
             :panorama="activeDisplay === 'comfortable-panorama'"
             :next-unread="summaries?.[item.id]?.nextUnread"
-            :selected="isSelected(item.id)"
+            :selected="selectedIds.has(item.id)"
             :selection-mode="selectionActive"
             @toggle="toggleSelection"
             @range="rangeSelect"
@@ -367,7 +367,7 @@ onBeforeUnmount(() => {
             :display="activeDisplay"
             :catalogue="catalogue"
             :next-unread="summaries?.[item.id]?.nextUnread"
-            :selected="isSelected(item.id)"
+            :selected="selectedIds.has(item.id)"
             :selection-mode="selectionActive"
             @toggle="toggleSelection"
             @range="rangeSelect"
@@ -401,6 +401,7 @@ onBeforeUnmount(() => {
 
 .manga-scroller-list-row {
   width: 100%;
+  contain: layout paint style;
 }
 
 .manga-scroller-grid-row {
@@ -409,5 +410,6 @@ onBeforeUnmount(() => {
   padding: 0;
   width: 100%;
   box-sizing: border-box;
+  contain: layout paint style;
 }
 </style>

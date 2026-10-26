@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { apiErrorMessage, createSuwayomiApi } from '@/core/api/client'
 import type { Manga, RawSourceFilterObject } from '@/core/api/types'
+import { prepareManga } from '@/features/library/stores/library'
 export type CatalogueMode = 'popular' | 'latest' | 'search'
 export const useCatalogueStore = defineStore('catalogue', () => {
-  const items = ref<Manga[]>([]), loading = ref(false), error = ref<string | null>(null)
+  const items = shallowRef<Manga[]>([]), loading = ref(false), error = ref<string | null>(null)
   const hasNextPage = ref(false), page = ref(0)
   let generation = 0
   let selection: { apiUrl: string; sourceId: string; mode: CatalogueMode; query: string; filters?: RawSourceFilterObject[] } | null = null
@@ -27,7 +28,7 @@ export const useCatalogueStore = defineStore('catalogue', () => {
       const unique = result.mangaList.filter(m => {
         if (existing.has(m.id)) return false
         existing.add(m.id); return true
-      })
+      }).map(prepareManga)
       items.value = [...items.value, ...unique]
       page.value = next; hasNextPage.value = result.hasNextPage
     } catch (reason) { if (request === generation) error.value = apiErrorMessage(reason) }

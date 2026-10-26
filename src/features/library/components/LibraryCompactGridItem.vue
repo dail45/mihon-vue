@@ -141,6 +141,7 @@ onBeforeUnmount(onPointerUp)
     so the link below carries the 4dp padding while the selection rectangle is
     painted behind the content.
   -->
+  <!-- v-ripple replaced by CSS :hover / :active for performance -->
   <div class="compact-tile" :class="{ 'compact-tile-selected': selected }">
     <router-link
       :to="`/manga/${manga.id}`"
@@ -155,7 +156,6 @@ onBeforeUnmount(onPointerUp)
       @pointercancel="onPointerUp"
       @pointerleave="onPointerUp"
       @contextmenu="onContextMenu"
-      v-ripple
     >
       <!-- MangaGridCover.kt: fillMaxWidth + aspectRatio(MangaCover.Book.ratio = 2f/3f). -->
       <div class="compact-cover">
@@ -165,10 +165,9 @@ onBeforeUnmount(onPointerUp)
           the whole cover plate, the loaded image as well as the error drawable.
         -->
         <div class="compact-cover-media" :class="{ 'compact-cover-selected': selected }">
-          <v-img
+          <img
             v-if="!broken"
             :src="server.thumbnailUrl(manga.id)"
-            cover
             alt=""
             class="compact-cover-image"
             loading="lazy"
@@ -208,7 +207,6 @@ onBeforeUnmount(onPointerUp)
       class="continue-reading compact-continue"
       :style="{ width: `${continueSize}px`, height: `${continueSize}px` }"
       :aria-label="`Resume ${manga.title}`"
-      v-ripple
       @click.stop
       @pointerdown.stop
       @pointerup.stop
@@ -221,7 +219,6 @@ onBeforeUnmount(onPointerUp)
       class="continue-reading compact-continue"
       :style="{ width: `${continueSize}px`, height: `${continueSize}px` }"
       :aria-label="`Resume ${manga.title}`"
-      v-ripple
       @click.stop="onContinueClick"
       @pointerdown.stop
       @pointerup.stop
@@ -245,6 +242,7 @@ onBeforeUnmount(onPointerUp)
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  contain: layout paint style;
 }
 
 .compact-tile-link {
@@ -254,6 +252,15 @@ onBeforeUnmount(onPointerUp)
   border-radius: 8px;
   color: inherit;
   text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.compact-tile-link:hover {
+  opacity: 0.92;
+}
+
+.compact-tile-link:active {
+  opacity: 0.84;
 }
 
 /*
@@ -284,6 +291,7 @@ onBeforeUnmount(onPointerUp)
 .compact-cover-image {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
 /* GRID_SELECTED_COVER_ALPHA = 0.76. */
@@ -395,5 +403,9 @@ onBeforeUnmount(onPointerUp)
 
 .compact-continue:hover {
   background: color-mix(in srgb, rgb(var(--v-theme-on-primary-container)) 8%, color-mix(in srgb, rgb(var(--v-theme-primary-container)) 90%, transparent));
+}
+
+.compact-continue:active {
+  opacity: 0.8;
 }
 </style>

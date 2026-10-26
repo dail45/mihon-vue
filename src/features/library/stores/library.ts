@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, onScopeDispose, ref } from 'vue'
+import { computed, markRaw, onScopeDispose, ref, shallowRef, triggerRef } from 'vue'
 import { apiErrorMessage, createSuwayomiApi } from '@/core/api/client'
 import { deleteChapterDownload, enqueueChapterDownloadsBatch } from '@/core/api/chapterDownloads'
 import { updateChaptersBatch } from '@/core/api/chaptersBatch'
@@ -19,13 +19,18 @@ export type BatchDownloadAction =
   | 'UNREAD_CHAPTERS'
   | 'BOOKMARKED_CHAPTERS'
 
+export function prepareManga(m: Manga): Manga {
+  m._searchTitle = (m.title || '').toLowerCase()
+  return markRaw(m)
+}
+
 export const useLibraryStore = defineStore('library', () => {
   const connection = useConnectionStore()
   const overridesStore = useMangaOverridesStore()
   const updateErrorsStore = useLibraryUpdateErrorsStore()
 
-  const categories = ref<Category[]>([])
-  const rawLibraryByCategory = ref<Record<number, Manga[]>>({})
+  const categories = shallowRef<Category[]>([])
+  const rawLibraryByCategory = shallowRef<Record<number, Manga[]>>({})
   const activeCategoryId = ref<number | null>(null)
   const loadingLibrary = ref(false)
   const libraryError = ref<string | null>(null)
@@ -78,7 +83,10 @@ export const useLibraryStore = defineStore('library', () => {
     try {
       const fetchedCategories = (await api.categories()).sort((a, b) => a.order - b.order)
       const entries = await Promise.all(
-        fetchedCategories.map(async c => [c.id, await api.categoryManga(c.id)] as const),
+        fetchedCategories.map(async c => {
+          const mangaList = await api.categoryManga(c.id)
+          return [c.id, mangaList.map(prepareManga)] as const
+        }),
       )
       if (request !== libraryRequest) return
       categories.value = fetchedCategories
@@ -116,7 +124,10 @@ export const useLibraryStore = defineStore('library', () => {
     try {
       const fetchedCategories = (await api.categories()).sort((a, b) => a.order - b.order)
       const entries = await Promise.all(
-        fetchedCategories.map(async c => [c.id, await api.categoryManga(c.id)] as const),
+        fetchedCategories.map(async c => {
+          const mangaList = await api.categoryManga(c.id)
+          return [c.id, mangaList.map(prepareManga)] as const
+        }),
       )
       if (request !== libraryRequest || gen !== connection.serverGeneration) return
 
@@ -165,6 +176,7 @@ export const useLibraryStore = defineStore('library', () => {
             currentList.splice(i, 1)
           } else {
             Object.assign(item, updated)
+            markRaw(item)
             currentIds.add(item.id)
           }
         }
@@ -176,6 +188,8 @@ export const useLibraryStore = defineStore('library', () => {
           }
         }
       }
+
+      triggerRef(rawLibraryByCategory)
 
       isInitialized.value = true
       lastFetched.value = Date.now()
@@ -296,6 +310,7 @@ export const useLibraryStore = defineStore('library', () => {
       await (inLibrary ? api.addToLibrary(mangaId) : api.removeFromLibrary(mangaId))
       if (gen !== connection.serverGeneration) return false
       await loadLibrary()
+      triggerRef(rawLibraryByCategory)
       return true
     } catch (error) {
       if (gen === connection.serverGeneration) {
@@ -444,6 +459,7 @@ export const useLibraryStore = defineStore('library', () => {
     }
 
     libraryByCategory.value = next
+    triggerRef(rawLibraryByCategory)
   }
 
   /**

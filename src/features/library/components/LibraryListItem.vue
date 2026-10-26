@@ -187,10 +187,10 @@ onBeforeUnmount(onPointerUp)
 </script>
 
 <template>
+  <!-- v-ripple replaced by CSS :hover / :active for performance -->
   <div
     class="manga-list-row"
     :class="{ 'is-selected': selected }"
-    v-ripple
     @click="onRowClick"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
@@ -219,15 +219,13 @@ onBeforeUnmount(onPointerUp)
         MangaCover.Square: fillMaxHeight() = 40px, aspectRatio = 1f (40x40),
         clip shape: shapes.extraSmall (4dp). Placeholder plate #8888881f.
       -->
-      <v-img
+      <img
         v-if="!broken"
         :src="server.thumbnailUrl(manga.id)"
         class="list-cover-image"
         :style="{ opacity: coverAlpha }"
         width="40"
-        min-width="40"
         height="40"
-        cover
         alt=""
         loading="lazy"
         decoding="async"
@@ -260,7 +258,6 @@ onBeforeUnmount(onPointerUp)
       :to="continueHref"
       class="continue-reading list-continue"
       :aria-label="`Resume ${manga.title}`"
-      v-ripple
       @click.stop
       @pointerdown.stop
       @pointerup.stop
@@ -272,7 +269,6 @@ onBeforeUnmount(onPointerUp)
       type="button"
       class="continue-reading list-continue"
       :aria-label="`Resume ${manga.title}`"
-      v-ripple
       @click.stop="onContinueClick"
       @pointerdown.stop
       @pointerup.stop
@@ -300,14 +296,38 @@ onBeforeUnmount(onPointerUp)
   user-select: none;
   cursor: pointer;
   background: transparent;
+  contain: layout paint style;
+  transition: background-color 0.15s ease;
+}
+
+.manga-list-row:hover {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.manga-list-row:active {
+  background: rgba(var(--v-theme-on-surface), 0.1);
 }
 
 /* Modifier.selectedBackground(isSelected): secondary tint (0.16 dark, 0.22 light) */
 .manga-list-row.is-selected {
   background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 22%, transparent);
+  background: rgba(var(--v-theme-secondary), 0.22);
+}
+.manga-list-row.is-selected:hover {
+  background: rgba(var(--v-theme-secondary), 0.28);
+}
+.manga-list-row.is-selected:active {
+  background: rgba(var(--v-theme-secondary), 0.34);
 }
 .v-theme--mihonDark .manga-list-row.is-selected {
   background: color-mix(in srgb, rgb(var(--v-theme-secondary)) 16%, transparent);
+  background: rgba(var(--v-theme-secondary), 0.16);
+}
+.v-theme--mihonDark .manga-list-row.is-selected:hover {
+  background: rgba(var(--v-theme-secondary), 0.22);
+}
+.v-theme--mihonDark .manga-list-row.is-selected:active {
+  background: rgba(var(--v-theme-secondary), 0.28);
 }
 
 .manga-list-link {
@@ -329,6 +349,7 @@ onBeforeUnmount(onPointerUp)
   min-width: 40px;
   max-width: 40px;
   height: 40px;
+  object-fit: cover;
   border-radius: 4px;
   overflow: hidden;
   box-sizing: border-box;

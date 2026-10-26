@@ -131,11 +131,11 @@ onBeforeUnmount(onPointerUp)
       The 4dp padding of the reference box lives on the link, so the whole tile - padding
       included - is the clickable and the ripple target, exactly like `Box.padding(4.dp)`.
     -->
+    <!-- v-ripple replaced by CSS :hover / :active for performance -->
     <router-link
       :to="`/manga/${manga.id}`"
       class="manga-card manga-tile-link"
       :class="`manga-card-${display}`"
-      v-ripple
       :aria-label="catalogue ? `${manga.title}${manga.inLibrary ? ', in library' : ''}` : `${manga.title}, ${manga.unreadCount ?? 'unknown'} unread chapters`"
       :aria-pressed="selected ? 'true' : undefined"
       @click="onClick"
@@ -154,10 +154,9 @@ onBeforeUnmount(onPointerUp)
           The cover box is not clipped, so the badge groups keep their own shape.
         -->
         <div class="manga-cover-media" :class="{ 'manga-cover-selected': selected }">
-          <v-img
+          <img
             v-if="!broken"
             :src="server.thumbnailUrl(manga.id)"
-            cover
             alt=""
             class="manga-cover-image"
             loading="lazy"
@@ -218,7 +217,6 @@ onBeforeUnmount(onPointerUp)
         class="continue-reading"
         :class="`continue-reading-${continueSize}`"
         :aria-label="manga.title ? `Resume ${manga.title}` : 'Resume'"
-        v-ripple
         @click.stop
         @pointerdown.stop
         @pointerup.stop
@@ -231,7 +229,6 @@ onBeforeUnmount(onPointerUp)
         class="continue-reading"
         :class="`continue-reading-${continueSize}`"
         :aria-label="manga.title ? `Resume ${manga.title}` : 'Resume'"
-        v-ripple
         @click.stop="onContinueClick"
         @pointerdown.stop
         @pointerup.stop
@@ -243,6 +240,16 @@ onBeforeUnmount(onPointerUp)
 </template>
 
 <style scoped>
+.manga-tile {
+  contain: layout paint style;
+}
+
+.manga-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .manga-tile-selected {
   outline: 2px solid rgb(var(--v-theme-primary));
   outline-offset: -2px;
