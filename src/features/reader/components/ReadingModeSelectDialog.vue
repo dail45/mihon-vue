@@ -51,7 +51,7 @@ const modes: ModeEntry[] = [
   { id: 'rtl', label: 'Paged (right to left)', path: READER_MODE_ICONS.rtl, store: 'rtl' },
   { id: 'vertical', label: 'Paged (vertical)', path: READER_MODE_ICONS.vertical, unsupported: 'Paged (vertical) is not supported in the web version. Use a paged left-to-right or right-to-left mode, or the long strip.' },
   { id: 'webtoon', label: 'Long strip', path: READER_MODE_ICONS.webtoon, store: 'webtoon' },
-  { id: 'continuous', label: 'Long strip with gaps', path: READER_MODE_ICONS.continuous, unsupported: 'Long strip with gaps is not supported in the web version. Use the long strip instead.' },
+  { id: 'continuous', label: 'Long strip with gaps', path: READER_MODE_ICONS.continuous, store: 'continuous', unsupported: 'Long strip with gaps is not supported in the web version. Use the long strip instead.' },
 ]
 
 /**

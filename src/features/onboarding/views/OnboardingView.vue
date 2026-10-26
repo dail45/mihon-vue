@@ -81,7 +81,6 @@ const props = withDefaults(
 
 const currentStep = ref(0)
 const steps = ['theme', 'storage', 'permission', 'guides'] as const
-const stepTitles = ['Theme', 'Storage', 'Permissions', 'Guides']
 const isLastStep = computed(() => currentStep.value === steps.length - 1)
 
 /** Selected app theme (`AppTheme` enum name), owned by the theme step. */
@@ -199,21 +198,6 @@ onBeforeUnmount(() => {
       <div class="onboarding-content">
         <!-- icon: 48dp, tint primary, bottom padding 8dp -->
         <span class="material-symbols-rounded onboarding-icon" aria-hidden="true">rocket_launch</span>
-
-        <!-- Step indicator stepper -->
-        <div class="onboarding-stepper" role="tablist" aria-label="Onboarding steps">
-          <div
-            v-for="(stepName, index) in steps"
-            :key="stepName"
-            class="onboarding-step-indicator"
-            :class="{
-              'is-active': index === currentStep,
-              'is-complete': index < currentStep,
-            }"
-            :aria-label="`Step ${index + 1} of ${steps.length}: ${stepTitles[index]}`"
-            :aria-current="index === currentStep ? 'step' : undefined"
-          />
-        </div>
 
         <!-- heading: headlineLarge -->
         <h1 class="onboarding-heading">{{ props.headingText || 'Welcome!' }}</h1>
@@ -368,29 +352,6 @@ onBeforeUnmount(() => {
     color: rgb(var(--v-theme-primary));
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
     margin-bottom: 8px;
-  }
-
-  /* MD3 Step Indicator Stepper */
-  .onboarding-stepper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  .onboarding-step-indicator {
-    height: 4px;
-    width: 20px;
-    border-radius: 2px;
-    background: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 20%, transparent);
-    transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.3s ease;
-  }
-  .onboarding-step-indicator.is-complete {
-    width: 20px;
-    background: color-mix(in srgb, rgb(var(--v-theme-primary)) 60%, transparent);
-  }
-  .onboarding-step-indicator.is-active {
-    width: 36px;
-    background: rgb(var(--v-theme-primary));
   }
 
   /* headlineLarge: 32sp / 40sp, weight 400. */

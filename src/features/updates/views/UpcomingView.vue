@@ -878,6 +878,7 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 8px 8px 8px 16px;
   box-sizing: border-box;
+  scroll-margin-top: 72px;
 }
 
 .release-heading-label {

@@ -308,7 +308,7 @@ function resetSearch() {
 /* Active filter state: MaterialTheme.colorScheme.active. */
 .updates-app-bar__action.action--active,
 .updates-app-bar__action.action--active :deep(.v-icon) {
-  color: var(--active-color, #FFC107);
+  color: inherit;
 }
 
 /* The search field takes the available title slot (BasicTextField fillMaxWidth). */

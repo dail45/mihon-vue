@@ -140,8 +140,10 @@ describe('canvasStitch', () => {
         height = 300
         naturalWidth = 200
         naturalHeight = 300
-        src = ''
-        constructor() {
+        _src = ''
+        get src() { return this._src }
+        set src(v: string) {
+          this._src = v
           setTimeout(() => this.onload?.(), 10)
         }
       }
@@ -192,8 +194,10 @@ describe('canvasStitch', () => {
         height = 300
         naturalWidth = 200
         naturalHeight = 300
-        src = ''
-        constructor() {
+        _src = ''
+        get src() { return this._src }
+        set src(v: string) {
+          this._src = v
           setTimeout(() => this.onload?.(), 10)
         }
       }

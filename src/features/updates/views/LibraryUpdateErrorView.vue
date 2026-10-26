@@ -4,7 +4,7 @@
  *   komikku/app/src/main/java/eu/kanade/presentation/libraryUpdateError/LibraryUpdateErrorScreen.kt
  *   komikku/app/src/main/java/eu/kanade/tachiyomi/ui/libraryUpdateError/LibraryUpdateErrorScreenModel.kt
  */
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { useLibraryUpdateErrorsStore, type LibraryUpdateError } from '../stores/libraryUpdateErrors'
@@ -169,6 +169,21 @@ function scrollToNextGroup() {
     scrollToBottom()
   }
 }
+
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && selectionMode.value) {
+    event.preventDefault()
+    selectAll(false)
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+})
 </script>
 
 <template>
@@ -188,7 +203,7 @@ function scrollToNextGroup() {
         <h1 class="toolbar-title">
           {{ stringResource(MR.strings.label_library_update_errors, totalCount) || `Library update errors (${totalCount})` }}
         </h1>
-        <div class="toolbar-actions">
+        <div v-if="totalCount > 0" class="toolbar-actions">
           <v-btn
             icon="refresh"
             variant="text"
@@ -250,7 +265,7 @@ function scrollToNextGroup() {
     </header>
 
     <!-- Main Content -->
-    <main ref="listContainer" class="update-error-content">
+    <main ref="listContainer" class="update-error-content" :class="{ 'has-bottom-bar': groups.length > 0 }">
       <template v-if="groups.length">
         <div v-for="group in groups" :key="group.message" class="error-group">
           <!-- Group Header: sticky header with error message and badge -->
@@ -335,7 +350,7 @@ function scrollToNextGroup() {
     </main>
 
     <!-- Bottom Action Bar (Navigation and Multi-Migration Handoff) -->
-    <footer class="update-error-bottom-bar" :class="{ 'has-selection': selectionMode }">
+    <footer v-if="groups.length > 0" class="update-error-bottom-bar" :class="{ 'has-selection': selectionMode }">
       <v-btn
         icon="vertical_align_top"
         variant="text"
@@ -431,6 +446,9 @@ function scrollToNextGroup() {
 
 .update-error-content {
   flex: 1 1 auto;
+}
+
+.update-error-content.has-bottom-bar {
   padding-bottom: 72px;
 }
 

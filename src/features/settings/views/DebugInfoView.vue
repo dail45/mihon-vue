@@ -812,7 +812,7 @@ onBeforeUnmount(() => {
 
 .debug-action-tooltip {
   position: absolute;
-  bottom: calc(100% + 4px);
+  top: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 4;
@@ -825,11 +825,18 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
   transition: opacity 0.15s ease;
+}
+.debug-action-wrap:last-child .debug-action-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 .debug-action-wrap:hover .debug-action-tooltip,
 .debug-action-wrap:focus-within .debug-action-tooltip {
   opacity: 1;
+  visibility: visible;
 }
 
 /* PreferenceScreen: the list scrolls with the page; the group spacing below is 12dp. */

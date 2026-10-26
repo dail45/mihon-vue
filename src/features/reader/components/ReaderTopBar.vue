@@ -268,9 +268,9 @@ async function share() {
 }
 .mr-tooltip {
   position: absolute;
-  bottom: 100%;
+  top: calc(100% + 4px);
   left: 50%;
-  transform: translateX(-50%) translateY(2px);
+  transform: translateX(-50%);
   z-index: 40;
   padding: 4px 8px;
   border-radius: 4px;
@@ -283,6 +283,11 @@ async function share() {
   opacity: 0;
   pointer-events: none;
   transition: opacity 100ms ease;
+}
+.mr-topbar-btn-wrap:last-child .mr-tooltip {
+  right: 0;
+  left: auto;
+  transform: none;
 }
 .mr-topbar-btn-wrap:hover .mr-tooltip,
 .mr-topbar-btn-wrap:focus-within .mr-tooltip { opacity: 1; }

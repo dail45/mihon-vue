@@ -52,8 +52,8 @@ describe('BackupSchemaView parity with Mihon', () => {
     expect(source).toContain('navigator.clipboard.writeText(content)')
   })
 
-  it('provides an MD3 PlainTooltip above the copy action button', () => {
-    expect(source).toMatch(/\.backup-action-tooltip \{[^}]*bottom: calc\(100% \+ 4px\)/)
+  it('provides an MD3 PlainTooltip for the copy action button', () => {
+    expect(source).toMatch(/\.backup-action-tooltip \{[^}]*top: calc\(100% \+ 4px\)/)
     expect(source).toMatch(/\.backup-action-tooltip \{[^}]*background: rgb\(var\(--v-theme-inverse-surface\)\)/)
     expect(source).toMatch(/\.backup-action-tooltip \{[^}]*color: rgb\(var\(--v-theme-inverse-on-surface\)\)/)
     expect(source).toMatch(/\.backup-action-tooltip \{[^}]*border-radius: 4px/)

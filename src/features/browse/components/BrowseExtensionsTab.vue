@@ -412,10 +412,17 @@ function uninstallExtension(extension: UiExtension) {
 
 /* ExtensionsTab: long click on available installs it; on installed one opens the uninstall
    confirmation dialog. */
+const TOUCH_SLOP_PX = 8
 let pressTimer: number | undefined
 let longPressed = false
-function pressStart(extension: UiExtension) {
+let startX = 0
+let startY = 0
+
+function pressStart(event: PointerEvent, extension: UiExtension) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return
   longPressed = false
+  startX = event.clientX
+  startY = event.clientY
   if (pressTimer) window.clearTimeout(pressTimer)
   pressTimer = window.setTimeout(() => {
     pressTimer = undefined
@@ -428,6 +435,15 @@ function pressStart(extension: UiExtension) {
     }
   }, 500)
 }
+
+function pressMove(event: PointerEvent) {
+  if (pressTimer === undefined) return
+  if (Math.hypot(event.clientX - startX, event.clientY - startY) > TOUCH_SLOP_PX) {
+    window.clearTimeout(pressTimer)
+    pressTimer = undefined
+  }
+}
+
 function pressEnd() {
   if (pressTimer) { window.clearTimeout(pressTimer); pressTimer = undefined }
 }
@@ -644,7 +660,8 @@ onBeforeUnmount(() => {
             :aria-label="extension.name"
             @click="onRowClick(extension)"
             @keydown.enter="onRowClick(extension)"
-            @pointerdown="pressStart(extension)"
+            @pointerdown="pressStart($event, extension)"
+            @pointermove="pressMove($event)"
             @pointerup="pressEnd"
             @pointerleave="pressEnd"
             @pointercancel="pressEnd"
@@ -855,13 +872,13 @@ onBeforeUnmount(() => {
 @layer app-components {
 .extensions-screen {
   position: relative;
-  height: calc(100dvh - var(--v-layout-top, 0px));
+  height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
   background: rgb(var(--v-theme-background));
 }
 
 /* Embedded in the Browse tab: list fills remaining height minus tab row (48px). */
 .extensions-screen.is-embedded {
-  height: calc(100dvh - var(--v-layout-top, 0px) - 48px);
+  height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px) - 48px);
 }
 
 /* IconButton of material3: 48dp touch target with 24dp icon. */

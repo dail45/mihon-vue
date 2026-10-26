@@ -14,26 +14,6 @@ function advance() {
   value.value = nextTriState(value.value)
 }
 
-const iconName = computed(() => {
-  switch (value.value) {
-    case 'include':
-      return 'check_box'
-    case 'exclude':
-      return 'disabled_by_default'
-    default:
-      return 'check_box_outline_blank'
-  }
-})
-
-const isFilled = computed(() => value.value === 'include' || value.value === 'exclude')
-
-const iconColor = computed(() => {
-  if (props.disabled || value.value === 'all') {
-    return 'rgb(var(--v-theme-on-surface-variant))'
-  }
-  return 'rgb(var(--v-theme-primary))'
-})
-
 const ariaChecked = computed(() => {
   if (value.value === 'include') return 'true'
   if (value.value === 'exclude') return 'mixed'
@@ -54,12 +34,46 @@ const ariaChecked = computed(() => {
     @click="advance"
   >
     <span class="settings-icon-slot">
-      <v-icon
-        :icon="iconName"
-        :class="{ 'filled-symbol': isFilled }"
-        :style="{ color: iconColor }"
-        size="24"
-      />
+      <span
+        class="m3-checkbox"
+        :class="{
+          'm3-checkbox--checked': value === 'include',
+          'm3-checkbox--excluded': value === 'exclude',
+        }"
+      >
+        <!-- include: MD3 checkmark -->
+        <svg
+          v-if="value === 'include'"
+          class="m3-checkbox-icon"
+          viewBox="0 0 18 18"
+          aria-hidden="true"
+        >
+          <path
+            d="M 3.5 9.5 L 7 13 L 14.5 5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <!-- exclude: MD3 cross -->
+        <svg
+          v-else-if="value === 'exclude'"
+          class="m3-checkbox-icon"
+          viewBox="0 0 18 18"
+          aria-hidden="true"
+        >
+          <path
+            d="M 4.5 4.5 L 13.5 13.5 M 13.5 4.5 L 4.5 13.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </span>
     </span>
     <span class="settings-row-label">{{ label }}</span>
   </button>
@@ -105,6 +119,27 @@ const ariaChecked = computed(() => {
   flex: 0 0 24px;
   display: grid;
   place-items: center;
+}
+.m3-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  border: 2px solid rgb(var(--v-theme-on-surface-variant));
+  display: grid;
+  place-items: center;
+  color: rgb(var(--v-theme-on-primary));
+  transition: background-color 150ms ease, border-color 150ms ease;
+  box-sizing: border-box;
+}
+.m3-checkbox--checked,
+.m3-checkbox--excluded {
+  background: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
+}
+.m3-checkbox-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 .settings-row-label {
   flex: 1;

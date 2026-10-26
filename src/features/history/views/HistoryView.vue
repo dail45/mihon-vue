@@ -203,17 +203,38 @@ async function load() {
   }
   const unique = uniqueLibraryManga.value
   const api = createSuwayomiApi(server.apiUrl)
-  const details = await Promise.all(unique.map(async manga => {
-    const chapters = await api.chapters(manga.id).catch(() => [] as Chapter[])
-    let last: Chapter | null = null
-    for (const chapter of chapters) {
-      if (!chapter.read && !(chapter.lastReadAt > 0)) continue
-      if (!last || (chapter.lastReadAt || 0) > (last.lastReadAt || 0)) last = chapter
+
+  // Prioritize manga with known read timestamps, then any remaining library manga up to limit
+  const withRead = unique.filter(m => m.lastReadAt && m.lastReadAt > 0).sort((a, b) => (b.lastReadAt || 0) - (a.lastReadAt || 0))
+  const withoutRead = unique.filter(m => !m.lastReadAt || m.lastReadAt <= 0)
+  // Process up to 150 most recent read manga (or first 50 unread fallback if none marked)
+  const candidates = withRead.length > 0 ? withRead.slice(0, 150) : withoutRead.slice(0, 50)
+
+  const queue = [...candidates]
+  const details: { manga: Manga; last: Chapter | null; readAt: number; hasUnread: boolean }[] = []
+  const workers = Array.from({ length: Math.min(6, queue.length) }, async () => {
+    while (queue.length > 0) {
+      if (token !== generation) return
+      const manga = queue.shift()
+      if (!manga) break
+      try {
+        const chapters = await api.chapters(manga.id).catch(() => [] as Chapter[])
+        let last: Chapter | null = null
+        for (const chapter of chapters) {
+          if (!chapter.read && !(chapter.lastReadAt > 0)) continue
+          if (!last || (chapter.lastReadAt || 0) > (last.lastReadAt || 0)) last = chapter
+        }
+        const rawReadAt = (last?.lastReadAt || 0) || (manga.lastReadAt || 0)
+        // Suwayomi returns lastReadAt in epoch seconds; convert to epoch milliseconds
+        const readAt = rawReadAt > 0 && rawReadAt < 100_000_000_000 ? rawReadAt * 1000 : rawReadAt
+        const hasUnread = manga.unreadCount != null && manga.unreadCount > 0 ? true : chapters.some(c => !c.read)
+        details.push({ manga, last, readAt, hasUnread })
+      } catch {
+        // Skip on fetch failure
+      }
     }
-    const readAt = (last?.lastReadAt || 0) || (manga.lastReadAt || 0)
-    const hasUnread = manga.unreadCount != null && manga.unreadCount > 0 ? true : chapters.some(c => !c.read)
-    return { manga, last, readAt, hasUnread }
-  }))
+  })
+  await Promise.all(workers)
   if (token !== generation) return
   entries.value = details
     .filter(detail => detail.readAt > 0 && detail.last !== null)

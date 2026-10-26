@@ -317,8 +317,8 @@ watch(value, () => {
 
 <template>
   <div class="custom-color-picker-view">
-    <!-- Top App Bar -->
-    <header class="custom-picker-bar">
+    <!-- Top App Bar (rendered only in standalone mode; SettingsView provides the app bar when embedded) -->
+    <header v-if="standalone" class="custom-picker-bar">
       <button
         type="button"
         class="custom-picker-bar__back"

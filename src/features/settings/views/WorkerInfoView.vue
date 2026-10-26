@@ -194,13 +194,12 @@ onBeforeUnmount(() => {
   white-space: pre;
 }
 
-/* AppBarActions wraps the action in a TooltipBox with a PlainTooltip above the icon button. */
+/* AppBarActions wraps the action in a TooltipBox with a PlainTooltip below the icon button. */
 .worker-action-wrap { position: relative; display: inline-flex; align-items: center; }
 .worker-action-tooltip {
   position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(100% + 4px);
+  right: 0;
   z-index: 4;
   padding: 4px 8px;
   border-radius: 4px;
@@ -210,11 +209,12 @@ onBeforeUnmount(() => {
   line-height: 20px;
   white-space: nowrap;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transition: opacity .15s ease;
 }
 .worker-action-wrap:hover .worker-action-tooltip,
-.worker-action-wrap:focus-within .worker-action-tooltip { opacity: 1; }
+.worker-action-wrap:focus-within .worker-action-tooltip { opacity: 1; visibility: visible; }
 
 /* The limitation note is not part of the reference screen. */
 .worker-note {

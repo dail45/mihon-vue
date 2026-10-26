@@ -21,7 +21,21 @@ const checked = defineModel<boolean>({ required: true })
   >
     <span class="settings-checkbox-slot">
       <span class="m3-checkbox" :class="{ 'm3-checkbox--checked': checked }">
-        <v-icon v-if="checked" icon="check" size="14" />
+        <svg
+          v-if="checked"
+          class="m3-checkbox-icon"
+          viewBox="0 0 18 18"
+          aria-hidden="true"
+        >
+          <path
+            d="M 3.5 9.5 L 7 13 L 14.5 5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </span>
     </span>
     <span class="settings-row-label">{{ label }}</span>
@@ -80,6 +94,11 @@ const checked = defineModel<boolean>({ required: true })
 .m3-checkbox--checked {
   background: rgb(var(--v-theme-primary));
   border-color: rgb(var(--v-theme-primary));
+}
+.m3-checkbox-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 .settings-row-label {
   flex: 1;

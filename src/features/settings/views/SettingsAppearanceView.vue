@@ -244,7 +244,7 @@ const activeListDialog = computed(() => {
       detail pane's sticky TopAppBar provides the title and back navigation. In standalone mode,
       the local app bar is rendered.
     -->
-    <div v-if="isLanguageScreen" class="appearance-language-screen">
+    <div v-else-if="isLanguageScreen" class="appearance-language-screen">
       <div v-if="standalone" class="appearance-language-bar">
         <button type="button" class="appearance-language-bar__up" aria-label="Back" @click="closeLanguage">
           <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>

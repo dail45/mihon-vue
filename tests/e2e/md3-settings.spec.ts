@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { category, manga } from '../fixtures'
 test.beforeEach(async ({page}) => {
-  await page.addInitScript(() => localStorage.setItem('mihon.apiUrl','/api/v1'))
+  await page.addInitScript(() => { localStorage.setItem('mihon.apiUrl','/api/v1'); localStorage.setItem('mihon.onboarding.shown','true') })
   await page.route('**/api/v1/**', r => r.fulfill({json:new URL(r.request().url()).pathname.endsWith('/category') ? [category(4,'Default')] : [manga(1,'Alpha')]}))
 })
 test('primary modal tabs have text-sized indicators and no Done; discrete slider has ticks and a bar', async ({page}) => {

@@ -580,7 +580,7 @@ onBeforeUnmount(() => {
   border-radius: 3px;
 }
 
-/* AppBarActions wraps the action in a TooltipBox with a PlainTooltip above the icon button. */
+/* AppBarActions wraps the action in a TooltipBox with a PlainTooltip below the icon button. */
 .backup-action-wrap {
   position: relative;
   display: inline-flex;
@@ -589,9 +589,8 @@ onBeforeUnmount(() => {
 
 .backup-action-tooltip {
   position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(100% + 4px);
+  right: 0;
   z-index: 4;
   padding: 4px 8px;
   border-radius: 4px;
@@ -601,6 +600,7 @@ onBeforeUnmount(() => {
   line-height: 20px;
   white-space: nowrap;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transition: opacity .15s ease;
 }
@@ -608,6 +608,7 @@ onBeforeUnmount(() => {
 .backup-action-wrap:hover .backup-action-tooltip,
 .backup-action-wrap:focus-within .backup-action-tooltip {
   opacity: 1;
+  visibility: visible;
 }
 
 /* ContextExtensions.copyToClipboard() toast, rendered as an MD3 snackbar (inverseSurface, 4dp shape). */

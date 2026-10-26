@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
+import { RecycleScroller } from 'vue-virtual-scroller'
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import type { Manga } from '@/core/api/types'
 import type { DisplayMode } from '@/features/settings/stores/preferences'
 import type { ChapterSummary } from '@/core/utils/library'
@@ -12,7 +14,7 @@ import LibraryCompactGridItem from '@/features/library/components/LibraryCompact
 import LibraryComfortableGridItem from '@/features/library/components/LibraryComfortableGridItem.vue'
 import GlobalSearchItem from './GlobalSearchItem.vue'
 import BrowseSourceLoadingItem from './BrowseSourceLoadingItem.vue'
-import { useVirtualMangaGrid } from '@/core/composables/useVirtualMangaGrid'
+import { useResponsiveGridRows } from '@/core/composables/useResponsiveGridRows'
 
 const props = withDefaults(defineProps<{
   items: Manga[]
@@ -33,6 +35,8 @@ const props = withDefaults(defineProps<{
   columns?: number
   /** Additional bottom padding (e.g. navigation bar / actions bar) for `contentPadding + PaddingValues(8.dp)`. */
   contentPaddingBottom?: number | string
+  /** Whether this collection is on the active pager page (in library). */
+  isActivePage?: boolean
 }>(), {
   display: 'compact',
   variant: undefined,
@@ -43,6 +47,7 @@ const props = withDefaults(defineProps<{
   loading: false,
   columns: undefined,
   contentPaddingBottom: 0,
+  isActivePage: true,
 })
 
 const emit = defineEmits<{
@@ -105,8 +110,6 @@ function isSelected(id: number) { return selection.value.includes(id) }
 /** Mihon `toggleSelection`: a tap toggles a single entry while a selection exists. */
 function toggleSelection(id: number) {
   const next = selection.value.includes(id) ? selection.value.filter(value => value !== id) : [...selection.value, id]
-  // LibraryViewModel.kt: `lastSelection = …takeIf { manga.id in newSelection }` - the anchor
-  // only survives while the entry stays selected.
   lastSelected.value = next.includes(id) ? id : null
   commitSelection(next)
 }
@@ -132,22 +135,12 @@ function rangeSelect(id: number) {
 
 /* ------------------------------------------------------------------ *
  * Continue reading snackbar (LibraryTab.kt)
- * When the server has no next chapter the reader is not opened and the
- * `no_next_chapter` snackbar is shown instead.
  * ------------------------------------------------------------------ */
 const noNextChapter = ref(false)
 let noNextChapterTimer: number | undefined
-/**
- * `LibraryTab.kt`: when the server has no next chapter the reader is not opened and the
- * `no_next_chapter` snackbar is shown instead.
- *
- * The chapter data of the entry must be known first: an entry whose summary was not
- * loaded yet does not have "no next chapter", it simply has no known next chapter.
- */
 function onContinueReading(item: Manga, event?: Event) {
   const summary = props.summaries[item.id]
   if (!summary) {
-    // The chapter list is still loading - Mihon always knows the next chapter here.
     event?.preventDefault()
     return
   }
@@ -169,23 +162,18 @@ const showGlobalSearch = computed(() => !props.catalogue && props.searchQuery.le
  * ------------------------------------------------------------------ */
 const listRef = ref<HTMLElement | null>(null)
 const gridRef = ref<HTMLElement | null>(null)
-const activeContainer = ref<HTMLElement | null>(null)
-watch([listRef, gridRef, activeDisplay], () => {
-  activeContainer.value = activeDisplay.value === 'list' ? listRef.value : gridRef.value
-}, { immediate: true })
+const activeContainer = computed(() => activeDisplay.value === 'list' ? listRef.value : gridRef.value)
 
 const itemsRef = computed(() => props.items)
 const {
-  isVirtualActive,
-  visibleItems,
-  topSpacerHeight,
-  bottomSpacerHeight,
-} = useVirtualMangaGrid({
+  rows,
+  rowHeight,
+  columnsCount,
+} = useResponsiveGridRows({
   items: itemsRef,
   containerRef: activeContainer,
   displayMode: activeDisplay,
   columnsPreference: columns,
-  threshold: 24,
 })
 
 const fastScrollVisible = ref(false)
@@ -198,19 +186,16 @@ let dragging = false
 function scrollMetrics() {
   const element = listRef.value ?? gridRef.value
   if (!element) return null
-  const rect = element.getBoundingClientRect()
-  const top = Math.max(rect.top, 0)
+  const topBarHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--v-layout-top')) || 64
+  const tabsEl = document.querySelector('.library-tabs-container') as HTMLElement | null
+  const tabsHeight = tabsEl ? tabsEl.getBoundingClientRect().height : 0
+  const top = topBarHeight + tabsHeight
   const bottomNav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--v-layout-bottom')) || 0
-  const bottom = Math.min(rect.bottom, window.innerHeight - bottomNav)
-  const height = bottom - top
+  const bottom = window.innerHeight - bottomNav
+  const height = Math.max(120, bottom - top)
   const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-  // The two fast scrollers inset the 12dp bar differently:
-  // - `VerticalFastScroller` (the list) gives the thumb `padding(horizontal = 8.dp)`, so the
-  //   bar keeps 8dp between it and the end of the list content;
-  // - `VerticalGridFastScroller` (the grid) only pads the end by `Dp.Hairline`, so the bar
-  //   sits flush at the end of the grid (the 8dp content padding of `LazyLibraryGrid.kt`
-  //   lives inside the grid and does not move the scroller).
   const endPadding = listRef.value ? 8 : 0
+  const rect = element.getBoundingClientRect()
   const right = Math.max(0, window.innerWidth - rect.right) + endPadding
   return { top, height, max, right }
 }
@@ -222,13 +207,11 @@ function updateFastScroll() {
   fastScrollRight.value = metrics.right
   fastScrollVisible.value = true
 }
-/**
- * `VerticalFastScroller.kt` only draws the thumb while the list is scrolling: the alpha
- * snaps to 1 on every scroll event and fades out after `ScrollBarVisibilityDuration`
- * (2 seconds). It is also hidden when the whole content fits on screen.
- */
+
 function onWindowScroll() {
-  updateFastScroll()
+  if (!dragging) {
+    updateFastScroll()
+  }
   scheduleFastScrollHide()
 }
 function scheduleFastScrollHide() {
@@ -237,7 +220,7 @@ function scheduleFastScrollHide() {
 }
 function startFastScrollDrag(event: PointerEvent) {
   const metrics = scrollMetrics()
-  if (!metrics) return
+  if (!metrics || metrics.max < 8) return
   dragging = true
   window.clearTimeout(hideTimer)
   const target = event.currentTarget as HTMLElement
@@ -269,10 +252,9 @@ function startFastScrollDrag(event: PointerEvent) {
   window.addEventListener('pointerup', up)
   window.addEventListener('pointercancel', up)
 }
-// `FastScrollLazyVerticalGrid` (LazyLibraryGrid.kt) and `FastScrollLazyColumn` (LibraryList.kt)
-// both draw the vertical fast scroller, so the grid needs it as well.
 const fastScrollEnabled = computed(() => !props.catalogue)
-watch(fastScrollEnabled, (enabled, was) => {
+const fastScrollActive = computed(() => fastScrollEnabled.value && props.isActivePage)
+watch(fastScrollActive, (enabled, was) => {
   if (enabled && !was) {
     window.addEventListener('scroll', onWindowScroll, { passive: true })
     window.addEventListener('resize', onWindowScroll)
@@ -282,7 +264,7 @@ watch(fastScrollEnabled, (enabled, was) => {
     fastScrollVisible.value = false
   }
 }, { immediate: true })
-onMounted(() => { if (fastScrollEnabled.value) updateFastScroll() })
+onMounted(() => { if (fastScrollActive.value) updateFastScroll() })
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', onWindowScroll)
   window.removeEventListener('resize', onWindowScroll)
@@ -299,24 +281,30 @@ onBeforeUnmount(() => {
     -->
     <GlobalSearchItem v-if="showGlobalSearch" :search-query="searchQuery" variant="list" @click="emit('global-search')" />
     <!-- v-for="item in items" -->
-    <div v-if="topSpacerHeight > 0" class="manga-list-spacer" :style="{ height: `${topSpacerHeight}px` }" aria-hidden="true" />
-    <LibraryListItem
-      v-for="item in (isVirtualActive ? visibleItems : items)"
-      :key="item.id"
-      :manga="item"
-      :catalogue="catalogue"
-      :next-unread="summaries?.[item.id]?.nextUnread"
-      :selected="isSelected(item.id)"
-      :selection-mode="selectionActive"
-      @toggle="toggleSelection"
-      @range="rangeSelect"
-      @no-next-chapter="onContinueReading(item)"
-    />
-    <div v-if="bottomSpacerHeight > 0" class="manga-list-spacer" :style="{ height: `${bottomSpacerHeight}px` }" aria-hidden="true" />
-    <!--
-      `BrowseSourceList.kt`: a trailing `item { BrowseSourceLoadingItem() }` is rendered
-      while `mangaList.loadState.refresh/append is LoadState.Loading`.
-    -->
+    <RecycleScroller
+      v-if="rows.length > 0"
+      class="manga-recycle-scroller"
+      :items="rows"
+      :item-size="rowHeight"
+      :buffer="2400"
+      key-field="id"
+      :page-mode="true"
+      #default="{ item: rowItem }"
+    >
+      <div class="manga-scroller-list-row">
+        <LibraryListItem
+          v-if="rowItem.items[0]"
+          :manga="rowItem.items[0]"
+          :catalogue="catalogue"
+          :next-unread="summaries?.[rowItem.items[0].id]?.nextUnread"
+          :selected="isSelected(rowItem.items[0].id)"
+          :selection-mode="selectionActive"
+          @toggle="toggleSelection"
+          @range="rangeSelect"
+          @no-next-chapter="onContinueReading(rowItem.items[0])"
+        />
+      </div>
+    </RecycleScroller>
     <BrowseSourceLoadingItem v-if="loading" label="Loading more titles" />
     <Transition name="fast-scroll-fade">
       <div v-if="fastScrollVisible" class="fast-scroll-thumb" :style="{ top: `${fastScrollTop}px`, right: `${fastScrollRight}px` }" aria-hidden="true" @pointerdown="startFastScrollDrag" />
@@ -328,58 +316,66 @@ onBeforeUnmount(() => {
       and keeps the content width of the button at the start of the row.
     -->
     <GlobalSearchItem v-if="showGlobalSearch" :search-query="searchQuery" variant="grid" class="library-grid-global-search" @click="emit('global-search')" />
-    <template v-if="libraryCompact">
-      <div v-if="topSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${topSpacerHeight}px` }" aria-hidden="true" />
-      <LibraryCompactGridItem
-        v-for="item in (isVirtualActive ? visibleItems : items)"
-        :key="item.id"
-        :manga="item"
-        :display="activeDisplay === 'covers' ? 'covers' : 'compact'"
-        :next-unread="summaries?.[item.id]?.nextUnread"
-        :selected="isSelected(item.id)"
-        :selection-mode="selectionActive"
-        @toggle="toggleSelection"
-        @range="rangeSelect"
-        @no-next-chapter="onContinueReading(item)"
-      />
-      <div v-if="bottomSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${bottomSpacerHeight}px` }" aria-hidden="true" />
-    </template>
-    <template v-else-if="libraryComfortable || activeDisplay === 'comfortable-panorama'">
-      <div v-if="topSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${topSpacerHeight}px` }" aria-hidden="true" />
-      <LibraryComfortableGridItem
-        v-for="item in (isVirtualActive ? visibleItems : items)"
-        :key="item.id"
-        :manga="item"
-        :panorama="activeDisplay === 'comfortable-panorama'"
-        :next-unread="summaries?.[item.id]?.nextUnread"
-        :selected="isSelected(item.id)"
-        :selection-mode="selectionActive"
-        @toggle="toggleSelection"
-        @range="rangeSelect"
-        @no-next-chapter="onContinueReading(item)"
-      />
-      <div v-if="bottomSpacerHeight > 0" class="library-grid-spacer" :style="{ gridColumn: '1 / -1', height: `${bottomSpacerHeight}px` }" aria-hidden="true" />
-    </template>
-    <template v-else>
-      <MangaCard
-        v-for="item in items"
-        :key="item.id"
-        :manga="item"
-        :display="activeDisplay"
-        :catalogue="catalogue"
-        :next-unread="summaries?.[item.id]?.nextUnread"
-        :selected="isSelected(item.id)"
-        :selection-mode="selectionActive"
-        @toggle="toggleSelection"
-        @range="rangeSelect"
-        @no-next-chapter="onContinueReading(item)"
-      />
-    </template>
-    <!--
-      `BrowseSourceCompactGrid.kt` / `BrowseSourceComfortableGrid.kt`: the loading item spans
-      the whole line (`GridItemSpan(maxLineSpan)`), so it is drawn as a full-width row at the
-      end of the grid, after the last manga item.
-    -->
+    <!-- v-for="item in items" -->
+    <RecycleScroller
+      v-if="rows.length > 0"
+      class="manga-recycle-scroller"
+      :items="rows"
+      :item-size="rowHeight"
+      :buffer="2400"
+      key-field="id"
+      :page-mode="true"
+      #default="{ item: rowItem }"
+    >
+      <div
+        class="manga-scroller-grid-row"
+        :style="{
+          display: 'grid',
+          gap: '4px',
+          padding: '0',
+          width: '100%',
+          boxSizing: 'border-box',
+          gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))`
+        }"
+      >
+        <template v-for="item in rowItem.items" :key="item.id">
+          <LibraryCompactGridItem
+            v-if="libraryCompact"
+            :manga="item"
+            :display="activeDisplay === 'covers' ? 'covers' : 'compact'"
+            :next-unread="summaries?.[item.id]?.nextUnread"
+            :selected="isSelected(item.id)"
+            :selection-mode="selectionActive"
+            @toggle="toggleSelection"
+            @range="rangeSelect"
+            @no-next-chapter="onContinueReading(item)"
+          />
+          <LibraryComfortableGridItem
+            v-else-if="libraryComfortable || activeDisplay === 'comfortable-panorama'"
+            :manga="item"
+            :panorama="activeDisplay === 'comfortable-panorama'"
+            :next-unread="summaries?.[item.id]?.nextUnread"
+            :selected="isSelected(item.id)"
+            :selection-mode="selectionActive"
+            @toggle="toggleSelection"
+            @range="rangeSelect"
+            @no-next-chapter="onContinueReading(item)"
+          />
+          <MangaCard
+            v-else
+            :manga="item"
+            :display="activeDisplay"
+            :catalogue="catalogue"
+            :next-unread="summaries?.[item.id]?.nextUnread"
+            :selected="isSelected(item.id)"
+            :selection-mode="selectionActive"
+            @toggle="toggleSelection"
+            @range="rangeSelect"
+            @no-next-chapter="onContinueReading(item)"
+          />
+        </template>
+      </div>
+    </RecycleScroller>
     <BrowseSourceLoadingItem v-if="loading" class="library-grid-loading" label="Loading titles" />
     <Transition name="fast-scroll-fade">
       <div
@@ -396,3 +392,22 @@ onBeforeUnmount(() => {
     Next chapter not found
   </v-snackbar>
 </template>
+
+<style scoped>
+.manga-recycle-scroller {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.manga-scroller-list-row {
+  width: 100%;
+}
+
+.manga-scroller-grid-row {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+</style>

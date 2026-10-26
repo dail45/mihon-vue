@@ -182,6 +182,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (toastTimer) clearTimeout(toastTimer)
 })
+
+defineExpose({
+  selectAll,
+  invertSelection,
+  loading,
+  itemsCount: computed(() => items.value.length),
+})
 </script>
 
 <template>

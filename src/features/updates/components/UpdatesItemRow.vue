@@ -74,17 +74,31 @@ const progress = computed(() => {
 const coverStyle = computed(() => (props.coverUrl ? { backgroundImage: `url(${props.coverUrl})` } : undefined))
 
 const LONG_PRESS_MS = 500
+const TOUCH_SLOP_PX = 8
 let pressTimer: number | undefined
 let longPressed = false
+let startX = 0
+let startY = 0
 
-function onPointerDown() {
+function onPointerDown(event: PointerEvent) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return
   window.clearTimeout(pressTimer)
   longPressed = false
+  startX = event.clientX
+  startY = event.clientY
   pressTimer = window.setTimeout(() => {
     longPressed = true
     emit('long-press')
     try { navigator.vibrate?.(20) } catch { /* haptics are optional in the browser */ }
   }, LONG_PRESS_MS)
+}
+
+function onPointerMove(event: PointerEvent) {
+  if (pressTimer === undefined) return
+  if (Math.hypot(event.clientX - startX, event.clientY - startY) > TOUCH_SLOP_PX) {
+    window.clearTimeout(pressTimer)
+    pressTimer = undefined
+  }
 }
 
 function onPointerUp() {
@@ -118,6 +132,7 @@ function onDownloadAction(action: 'start' | 'start-now' | 'cancel' | 'delete') {
     @click="onClick"
     @keydown.enter.prevent="onClick"
     @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
     @pointerup="onPointerUp"
     @pointerleave="onPointerUp"
     @pointercancel="onPointerUp"

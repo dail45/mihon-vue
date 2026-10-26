@@ -1087,7 +1087,7 @@ onMounted(() => {
  */
 .toolbar-tooltip {
   position: absolute;
-  bottom: calc(100% + 4px);
+  top: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 8px;
@@ -1104,6 +1104,17 @@ onMounted(() => {
   visibility: hidden;
   transition: opacity 0.1s linear;
   z-index: 1000;
+}
+
+.toolbar-action-wrap:first-child .toolbar-tooltip {
+  left: 0;
+  transform: none;
+}
+
+.toolbar-action-wrap:last-child .toolbar-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 .toolbar-action-wrap:hover .toolbar-tooltip,

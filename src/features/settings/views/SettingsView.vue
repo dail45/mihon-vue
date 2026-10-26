@@ -58,6 +58,7 @@ const route = useRoute()
 const router = useRouter()
 const storesViewRef = ref<InstanceType<typeof ExtensionStoresView> | null>(null)
 const debugViewRef = ref<InstanceType<typeof DebugInfoView> | null>(null)
+const clearDatabaseRef = ref<InstanceType<typeof ClearDatabaseView> | null>(null)
 const server = useSuwayomiStore()
 const preferences = usePreferencesStore()
 const connectionOpen = ref(false)
@@ -305,6 +306,28 @@ watch([section, subSection], () => {
             <v-tooltip activator="parent" location="bottom">Copy to clipboard</v-tooltip>
           </button>
         </div>
+        <div v-else-if="subSection === 'clear-database' && clearDatabaseRef && !clearDatabaseRef.loading && clearDatabaseRef.itemsCount" class="settings-header-actions">
+          <button
+            type="button"
+            class="settings-icon-btn"
+            aria-label="Select all"
+            title="Select all"
+            @click="clearDatabaseRef?.selectAll?.()"
+          >
+            <v-icon icon="select_all" size="24" />
+            <v-tooltip activator="parent" location="bottom">Select all</v-tooltip>
+          </button>
+          <button
+            type="button"
+            class="settings-icon-btn"
+            aria-label="Select inverse"
+            title="Select inverse"
+            @click="clearDatabaseRef?.invertSelection?.()"
+          >
+            <v-icon icon="flip_to_back" size="24" />
+            <v-tooltip activator="parent" location="bottom">Select inverse</v-tooltip>
+          </button>
+        </div>
       </header>
 
       <!-- Scrollable content area for the selected settings screen -->
@@ -343,7 +366,7 @@ watch([section, subSection], () => {
         </template>
 
         <!-- SettingsAdvancedScreen.kt: the whole "Advanced" preference screen -->
-        <ClearDatabaseView v-if="section === 'advanced' && subSection === 'clear-database'" embedded />
+        <ClearDatabaseView v-if="section === 'advanced' && subSection === 'clear-database'" ref="clearDatabaseRef" embedded />
         <DebugInfoView v-else-if="section === 'advanced' && subSection === 'debug'" ref="debugViewRef" embedded />
         <SettingsAdvancedView v-else-if="section === 'advanced'" />
 

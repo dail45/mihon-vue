@@ -53,7 +53,6 @@ import MihonEmptyScreen from '@/core/components/MihonEmptyScreen.vue'
 import UpdatesItemRow from '../components/UpdatesItemRow.vue'
 import UpdatesBottomBar from '../components/UpdatesBottomBar.vue'
 import UpdatesFilterDialog from '../components/UpdatesFilterDialog.vue'
-import UpdatesCalendarDialog from '../components/UpdatesCalendarDialog.vue'
 import { deleteDownloadedChapter, dequeueChapterDownload, enqueueChapterDownload, startDownloader } from '@/core/api/downloads'
 import { localDateKey, relativeDateText, latestFetchedAt } from '@/core/utils/dates'
 
@@ -214,7 +213,6 @@ const lastUpdatedTimestamp = computed(() =>
  * App bar actions
  * ------------------------------------------------------------------ */
 const filterOpen = ref(false)
-const calendarOpen = ref(false)
 /** "Update library" has no Suwayomi REST equivalent; the dialog explains the limitation. */
 const updateStubOpen = ref(false)
 
@@ -536,7 +534,6 @@ onUnmounted(() => {
     />
 
     <UpdatesFilterDialog v-model="filterOpen" />
-    <UpdatesCalendarDialog v-model="calendarOpen" />
 
     <!-- The honest stub of the "Update library" action. -->
     <v-dialog v-model="updateStubOpen" max-width="560">
@@ -656,14 +653,14 @@ onUnmounted(() => {
   padding: 16px;
 }
 .updates-load-more { min-width: 140px; }
-/* FastScrollLazyColumn handle (VerticalFastScroller.kt) */
+/* FastScrollLazyColumn handle (VerticalFastScroller.kt: ThumbLength = 48dp, ThumbThickness = 12dp, radius = 6dp) */
 .updates-fast-scroll {
   position: fixed;
   right: 2px;
   top: 64px;
-  width: 6px;
+  width: 12px;
   height: 48px;
-  border-radius: 3px;
+  border-radius: 6px;
   border: 0;
   padding: 0;
   background: rgb(var(--v-theme-primary));

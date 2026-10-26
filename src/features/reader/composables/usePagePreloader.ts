@@ -59,7 +59,6 @@ export function usePagePreloader(options: PagePreloaderOptions): PagePreloaderRe
     if (!url) return
 
     const img = new Image()
-    img.crossOrigin = 'anonymous'
     img.decoding = 'async'
     img.src = url
 

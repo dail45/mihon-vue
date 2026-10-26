@@ -68,7 +68,7 @@ watch(() => server.apiUrl, () => { void refreshQueue() })
 const queueSummary = computed(() => {
   if (!queuePending.value) return null
   const rem = pluralStringResource(MR.plurals.download_queue_summary, queuePending.value, queuePending.value)
-  if (queueState.value === 'STOPPED') return `${t(MR.strings.action_pause) || 'Paused'} • ${rem}`
+  if (queueState.value === 'STOPPED') return `${t(MR.strings.paused) || 'Paused'} • ${rem}`
   return rem
 })
 
