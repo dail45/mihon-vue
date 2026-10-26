@@ -54,32 +54,78 @@ interface IndicatorStyle {
   opacity: string
 }
 
+interface TabGeometry {
+  left: number
+  width: number
+}
+
 const indicatorStyle = ref<IndicatorStyle>({
   transform: 'translateX(0px)',
   width: '0px',
   opacity: '0',
 })
 
+const tabGeometries = ref<TabGeometry[]>([])
+let rafMeasureId: number | null = null
+
+function measureTabGeometries() {
+  const geometries: TabGeometry[] = []
+  for (let i = 0; i < props.items.length; i++) {
+    const tab = tabRefs.value[i]
+    if (!tab) continue
+    const label = tab.querySelector<HTMLElement>('.library-tab-label') || tab.querySelector<HTMLElement>('.md3-tab-label')
+    const width = label ? label.offsetWidth : tab.offsetWidth
+    const left = label ? tab.offsetLeft + label.offsetLeft : tab.offsetLeft
+    geometries[i] = { left, width }
+  }
+  tabGeometries.value = geometries
+}
+
+function scheduleMeasurement(updateAfter = true) {
+  if (rafMeasureId !== null) cancelAnimationFrame(rafMeasureId)
+  rafMeasureId = requestAnimationFrame(() => {
+    rafMeasureId = null
+    measureTabGeometries()
+    if (updateAfter) {
+      updateIndicator(selectedIndex.value)
+    }
+  })
+}
+
 function updateIndicator(targetIndex = selectedIndex.value) {
-  const index = targetIndex
-  const tab = tabRefs.value[index]
-  if (!tab) {
+  let geom = tabGeometries.value[targetIndex]
+  if (!geom) {
+    const tab = tabRefs.value[targetIndex]
+    if (!tab) {
+      indicatorStyle.value = {
+        transform: 'translateX(0px)',
+        width: '0px',
+        opacity: '0',
+      }
+      return
+    }
+    const label = tab.querySelector<HTMLElement>('.library-tab-label') || tab.querySelector<HTMLElement>('.md3-tab-label')
+    const width = label ? label.offsetWidth : tab.offsetWidth
+    const left = label ? tab.offsetLeft + label.offsetLeft : tab.offsetLeft
+    geom = { left, width }
+    tabGeometries.value[targetIndex] = geom
     indicatorStyle.value = {
-      transform: 'translateX(0px)',
-      width: '0px',
-      opacity: '0',
+      transform: `translateX(${left}px)`,
+      width: `${width}px`,
+      opacity: '1',
     }
     return
   }
-  const label = tab.querySelector<HTMLElement>('.library-tab-label') || tab.querySelector<HTMLElement>('.md3-tab-label')
-  const width = label ? label.offsetWidth : tab.offsetWidth
-  const left = label ? tab.offsetLeft + label.offsetLeft : tab.offsetLeft
+
+  const left = geom.left
+  const width = geom.width
   indicatorStyle.value = {
     transform: `translateX(${left}px)`,
     width: `${width}px`,
     opacity: '1',
   }
 }
+
 
 function scrollToSelectedTab(smooth = true) {
   if (!props.scrollable) return
@@ -130,7 +176,7 @@ function onKeydown(event: KeyboardEvent) {
 let resizeObserver: ResizeObserver | null = null
 
 function onResize() {
-  updateIndicator()
+  scheduleMeasurement(true)
   scrollToSelectedTab(false)
 }
 
@@ -139,38 +185,34 @@ watch(selectedIndex, (newIndex) => {
   scrollToSelectedTab(true)
 })
 
-watch(() => props.items, async () => {
+const itemsSignature = computed(() =>
+  props.items.map(i => `${String(i.value)}:${i.label}:${i.badge ?? ''}`).join('|')
+)
+
+watch(itemsSignature, () => {
   tabRefs.value = tabRefs.value.slice(0, props.items.length)
-  await nextTick()
-  updateIndicator()
-  scrollToSelectedTab(false)
-}, { deep: true })
+  scheduleMeasurement(true)
+})
 
 watch(() => props.scrollable, async () => {
   await nextTick()
-  updateIndicator()
+  scheduleMeasurement(true)
   scrollToSelectedTab(false)
 })
 
-onMounted(async () => {
-  await nextTick()
-  updateIndicator()
+onMounted(() => {
+  scheduleMeasurement(true)
   scrollToSelectedTab(false)
   window.addEventListener('resize', onResize)
   if (typeof ResizeObserver !== 'undefined' && listRef.value) {
     resizeObserver = new ResizeObserver(() => {
-      updateIndicator()
+      scheduleMeasurement(true)
     })
     resizeObserver.observe(listRef.value)
   }
   if (typeof document !== 'undefined' && 'fonts' in document) {
     void document.fonts.ready.then(() => {
-      updateIndicator()
-    })
-  }
-  if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
-    requestAnimationFrame(() => {
-      updateIndicator()
+      scheduleMeasurement(true)
     })
   }
 })
@@ -179,6 +221,10 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
   resizeObserver?.disconnect()
   resizeObserver = null
+  if (rafMeasureId !== null) {
+    cancelAnimationFrame(rafMeasureId)
+    rafMeasureId = null
+  }
 })
 </script>
 

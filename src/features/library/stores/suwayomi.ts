@@ -52,6 +52,10 @@ export const useSuwayomiStore = defineStore('suwayomi', () => {
     get: () => libraryStore.libraryByCategory,
     set: (val: Record<number, Manga[]>) => { libraryStore.libraryByCategory = val },
   })
+  const rawLibraryByCategory = computed({
+    get: () => libraryStore.rawLibraryByCategory,
+    set: (val: Record<number, Manga[]>) => { libraryStore.rawLibraryByCategory = val },
+  })
   const activeCategoryId = computed({
     get: () => libraryStore.activeCategoryId,
     set: (val: number | null) => { libraryStore.activeCategoryId = val },
@@ -205,6 +209,7 @@ export const useSuwayomiStore = defineStore('suwayomi', () => {
     thumbnailUrl,
     categories,
     libraryByCategory,
+    rawLibraryByCategory,
     activeCategoryId,
     loadingLibrary,
     libraryError,

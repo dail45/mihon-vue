@@ -215,9 +215,7 @@ let startX = 0
 let startY = 0
 let startPosition = 0
 let axis: 'x' | 'y' | null = null
-let lastX = 0
-let lastTime = 0
-let velocity = 0
+let recentMoves: Array<{ x: number, time: number }> = []
 
 function measure() {
   const element = container.value
@@ -254,10 +252,8 @@ function onPointerDown(event: PointerEvent) {
   pointerId = event.pointerId
   startX = event.clientX
   startY = event.clientY
-  lastX = event.clientX
-  lastTime = event.timeStamp
+  recentMoves = [{ x: event.clientX, time: event.timeStamp }]
   startPosition = position.value
-  velocity = 0
   axis = null
   window.addEventListener('pointermove', onPointerMove)
   window.addEventListener('pointerup', onPointerUp)
@@ -269,9 +265,9 @@ function onPointerMove(event: PointerEvent) {
   const dx = event.clientX - startX
   const dy = event.clientY - startY
   const now = event.timeStamp
-  if (now > lastTime) velocity = (event.clientX - lastX) / (now - lastTime)
-  lastX = event.clientX
-  lastTime = now
+
+  recentMoves = recentMoves.filter(m => now - m.time <= 100)
+  recentMoves.push({ x: event.clientX, time: now })
 
   if (axis === null) {
     if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
@@ -288,7 +284,6 @@ function onPointerMove(event: PointerEvent) {
   }
 
   if (axis !== 'x') return
-  // A horizontal drag must not select the text of the page.
   event.preventDefault()
   const pageWidth = width.value || container.value?.clientWidth || 1
   let next = startPosition - dx / pageWidth
@@ -303,32 +298,53 @@ function onPointerMove(event: PointerEvent) {
   position.value = next
 }
 
-/** Compose `Compose Foundation` `PagerSnapDistance` thresholds. */
+/** Compose PagerSnapDistance thresholds */
 const SNAP_FRACTION = 0.5
+const SNAP_THRESHOLD = 0.35 * (SNAP_FRACTION / 0.5)
 const FLING_VELOCITY = 0.4
 
 function onPointerUp(event: PointerEvent) {
   if (pointerId === null || event.pointerId !== pointerId) return
-  const dx = event.clientX - startX
-  const pageWidth = width.value || container.value?.clientWidth || 1
   const wasDragging = dragging.value
-  const flung = Math.abs(velocity) > FLING_VELOCITY
   dragging.value = false
   pointerId = null
   axis = null
   stopListening()
   if (!wasDragging) return
 
-  let target = currentPage.value
-  // A slow drag needs half of the page width, a fling only needs the velocity.
-  if (dx <= -pageWidth * SNAP_FRACTION || (flung && dx < -24)) {
-    if (currentPage.value < pageCount.value - 1) target = currentPage.value + 1
-  } else if (dx >= pageWidth * SNAP_FRACTION || (flung && dx > 24)) {
-    if (currentPage.value > 0) target = currentPage.value - 1
+  const now = event.timeStamp
+  const lastMove = recentMoves[recentMoves.length - 1]
+  let releaseVx = 0
+  if (lastMove && now - lastMove.time <= 80 && recentMoves.length > 1) {
+    const oldest = recentMoves[0]!
+    const dt = now - oldest.time
+    if (dt > 10) {
+      releaseVx = (event.clientX - oldest.x) / dt
+    }
   }
 
-  // The swipe must not open the item that was touched.
+  // pageVelocity > 0 means movement toward currentPage + 1 (left swipe),
+  // pageVelocity < 0 means movement toward currentPage - 1 (right swipe).
+  const pageVelocity = -releaseVx
+  const deltaPages = position.value - currentPage.value
+  let target = currentPage.value
+
+  if (deltaPages > 0 && currentPage.value < pageCount.value - 1) {
+    const conditionA = deltaPages >= SNAP_THRESHOLD && pageVelocity >= -0.1
+    const conditionB = pageVelocity >= FLING_VELOCITY && deltaPages > 0.05
+    if (conditionA || conditionB) {
+      target = currentPage.value + 1
+    }
+  } else if (deltaPages < 0 && currentPage.value > 0) {
+    const conditionA = deltaPages <= -SNAP_THRESHOLD && pageVelocity <= 0.1
+    const conditionB = pageVelocity <= -FLING_VELOCITY && deltaPages < -0.05
+    if (conditionA || conditionB) {
+      target = currentPage.value - 1
+    }
+  }
+
   suppressNextClick()
+  const previousPosition = position.value
   position.value = target
   if (target !== currentPage.value) {
     isAnimating.value = true
@@ -337,6 +353,12 @@ function onPointerUp(event: PointerEvent) {
       isAnimating.value = false
     }, 280)
     emit('update:currentPage', target)
+  } else if (previousPosition !== currentPage.value) {
+    isAnimating.value = true
+    window.clearTimeout(animateTimer)
+    animateTimer = window.setTimeout(() => {
+      isAnimating.value = false
+    }, 280)
   }
 }
 
@@ -348,10 +370,17 @@ function onPointerCancel(event: PointerEvent) {
   axis = null
   stopListening()
   if (!wasDragging) return
+  const previousPosition = position.value
   position.value = currentPage.value
+  if (previousPosition !== currentPage.value) {
+    isAnimating.value = true
+    window.clearTimeout(animateTimer)
+    animateTimer = window.setTimeout(() => {
+      isAnimating.value = false
+    }, 280)
+  }
 }
 
-/** A finished swipe must not trigger the click of the touched item. */
 let clickGuard = 0
 function suppressNextClick() {
   window.clearTimeout(clickGuard)
@@ -428,7 +457,7 @@ const emptyPaddingBottom = computed(() => {
     <div
       ref="track"
       class="library-pager-track"
-      :style="{ left: trackOffset }"
+      :style="{ transform: `translate3d(${trackOffset}, 0, 0)` }"
     >
       <section
         v-for="page in pages"
@@ -436,6 +465,7 @@ const emptyPaddingBottom = computed(() => {
         class="library-pager-page"
         :class="{
           'library-pager-page--active': page.index === currentPage,
+          'library-pager-page--neighbor': page.index !== currentPage && (dragging || isAnimating),
           'library-pager-page--inactive': page.index !== currentPage && !dragging && !isAnimating,
         }"
         :data-page="page.index"
@@ -517,7 +547,8 @@ const emptyPaddingBottom = computed(() => {
   display: flex;
   align-items: flex-start;
   width: 100%;
-  transition: left 260ms cubic-bezier(0.2, 0, 0, 1);
+  transition: left 260ms cubic-bezier(0.2, 0, 0, 1), transform 260ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
 }
 
 .library-pager-dragging .library-pager-track {
@@ -535,12 +566,20 @@ const emptyPaddingBottom = computed(() => {
   flex-direction: column;
 }
 
+.library-pager-page--neighbor {
+  height: calc(100dvh - 192px);
+  max-height: calc(100dvh - 192px);
+  overflow: hidden !important;
+  visibility: visible;
+  pointer-events: none;
+}
+
 .library-pager-page--inactive {
-  height: 0 !important;
-  max-height: 0 !important;
-  min-height: 0 !important;
+  height: calc(100dvh - 192px);
+  max-height: calc(100dvh - 192px);
   overflow: hidden !important;
   visibility: hidden;
+  pointer-events: none;
 }
 
 /*

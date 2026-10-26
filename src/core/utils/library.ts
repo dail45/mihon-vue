@@ -202,7 +202,7 @@ export function sortLibrary(
       case 'latestChapter':
         return summaries[m.id]?.latestUpload ?? null
       case 'chapterFetched':
-        return summaries[m.id]?.fetchedAt ?? null
+        return summaries[m.id]?.fetchedAt ?? finite(m.chaptersLastFetchedAt) ?? null
       case 'added':
         return finite(m.inLibraryAt)
       case 'trackerScore': {

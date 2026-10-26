@@ -81,7 +81,34 @@ const snackbar = ref(false)
 const snackbarText = ref('')
 const details = useLibraryDetails()
 const sort = computed(() => preferences.getLibrarySort(server.apiUrl, server.activeCategoryId))
-const requiresDetails = computed(() => preferences.filters.bookmarked !== 'all' || preferences.showContinue || ['latestChapter', 'chapterFetched'].includes(sort.value.type) || (sort.value.type === 'lastRead' && server.library.some(m => m.lastReadAt == null)))
+const isSortChapterDependent = computed(() => {
+  const t = sort.value.type
+  if (t === 'latestChapter') return true
+  if (t === 'chapterFetched') {
+    return server.library.some(m => m.chaptersLastFetchedAt == null)
+  }
+  if (t === 'lastRead') {
+    return server.library.some(m => m.lastReadAt == null)
+  }
+  return false
+})
+
+const requiresDetails = computed(() =>
+  preferences.filters.bookmarked !== 'all' ||
+  preferences.showContinue ||
+  isSortChapterDependent.value
+)
+
+const activeCategoryId = computed(() => server.activeCategoryId ?? categories.value[currentPage.value]?.id)
+const activeCategoryItems = computed(() => {
+  const id = activeCategoryId.value
+  return id != null ? (server.libraryByCategory[id] || []) : []
+})
+const activeCategoryPendingDetails = computed(() => {
+  if (!isSortChapterDependent.value) return false
+  const items = activeCategoryItems.value
+  return items.some(m => !details.summaries[m.id] && !details.errors[m.id])
+})
 
 // Defer heavy list computation so toolbar/sheet buttons paint click/ripple on frame 1
 const deferredSort = useDeferredValue(() => sort.value)
@@ -135,7 +162,11 @@ const matcher = computed(() => {
 })
 
 const matches = (m: Manga) => matcher.value(m)
-const visibleManga = computed(() => sortLibrary(server.library.filter(matches), deferredSort.value, details.summaries, preferences.sortTags))
+const visibleManga = computed(() => {
+  const activeId = server.activeCategoryId
+  if (activeId == null) return []
+  return itemsByCategory.value[activeId] || []
+})
 const hasFilters = computed(
   () =>
     preferences.downloadedOnly ||
@@ -510,13 +541,29 @@ onBeforeUnmount(() => {
   showBottomNav(true)
 })
 
-function loadDetails(retry = false) {
+async function loadDetails(retry = false) {
   if (requiresDetails.value) {
-    const items = preferences.categoryCounts && preferences.filters.bookmarked !== 'all' ? Object.values(server.libraryByCategory).flat() : server.library
-    void details.ensure(server.apiUrl, items.map(m => m.id), retry)
+    const activeId = activeCategoryId.value
+    const activeCatItems = activeId != null ? (server.libraryByCategory[activeId] || []) : []
+    const activeIds = activeCatItems.map(m => m.id)
+    const activeIdSet = new Set(activeIds)
+    const allItems = preferences.categoryCounts && preferences.filters.bookmarked !== 'all'
+      ? Object.values(server.libraryByCategory).flat()
+      : server.library
+    const otherIds = allItems.filter(m => !activeIdSet.has(m.id)).map(m => m.id)
+
+    if (isSortChapterDependent.value && activeIds.length > 0) {
+      await details.ensure(server.apiUrl, activeIds, retry, true)
+    } else if (activeIds.length > 0) {
+      void details.ensure(server.apiUrl, activeIds, retry)
+    }
+
+    if (otherIds.length > 0) {
+      void details.ensure(server.apiUrl, otherIds, retry)
+    }
   }
 }
-watch(() => [server.apiUrl, server.library, requiresDetails.value, preferences.categoryCounts], () => loadDetails(), { immediate: true })
+watch(() => [server.apiUrl, server.rawLibraryByCategory, requiresDetails.value, preferences.categoryCounts], () => loadDetails(), { immediate: true })
 watch(() => [preferences.localBadge, preferences.languageBadge, preferences.sourceBadge, server.apiUrl], () => {
   if ((preferences.localBadge || preferences.languageBadge || preferences.sourceBadge) && !server.sources.length) {
     void server.loadSources()
@@ -596,6 +643,15 @@ onMounted(() => {
         <span class="library-empty-action-label">Getting started guide</span>
       </button>
     </MihonEmptyScreen>
+
+    <div
+      v-else-if="activeCategoryPendingDetails && details.pendingCount"
+      class="library-loading"
+      role="status"
+      aria-label="Loading chapter data"
+    >
+      <Md3CircularProgress label="Loading chapter data" />
+    </div>
 
     <MihonEmptyScreen
       v-else-if="detailsIncomplete && details.pendingCount && !visibleManga.length"

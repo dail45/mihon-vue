@@ -5,11 +5,67 @@ export type DisplayMode = 'compact' | 'comfortable' | 'comfortable-panorama' | '
 export type TabletUiMode = 'automatic' | 'always' | 'landscape' | 'never'
 export type ThemeMode = 'system' | 'light' | 'dark'
 // Only harmless UI preferences are stored; no manga database or credentials.
-export function readPreference(key: string): string | null {
-  try { return localStorage.getItem(key) } catch { return null }
+const pendingWrites = new Map<string, string>()
+let flushScheduled = false
+
+export function flushPendingPreferences() {
+  if (pendingWrites.size === 0) return
+  try {
+    for (const [key, value] of pendingWrites.entries()) {
+      localStorage.setItem(key, value)
+    }
+  } catch {
+    /* private mode: session-only preference */
+  } finally {
+    pendingWrites.clear()
+    flushScheduled = false
+  }
 }
-export function writePreference(key: string, value: string) {
-  try { localStorage.setItem(key, value) } catch { /* private mode: session-only preference */ }
+
+export function readPreference(key: string): string | null {
+  if (pendingWrites.has(key)) {
+    return pendingWrites.get(key)!
+  }
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+export function writePreference(key: string, value: string, immediate = false) {
+  if (immediate) {
+    pendingWrites.delete(key)
+    try {
+      localStorage.setItem(key, value)
+    } catch {
+      /* private mode: session-only preference */
+    }
+    return
+  }
+
+  pendingWrites.set(key, value)
+
+  if (typeof window === 'undefined') {
+    flushPendingPreferences()
+    return
+  }
+
+  if (!flushScheduled) {
+    flushScheduled = true
+    const schedule = typeof window.requestIdleCallback === 'function'
+      ? window.requestIdleCallback
+      : (cb: () => void) => setTimeout(cb, 100)
+    schedule(() => {
+      flushPendingPreferences()
+    })
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    flushPendingPreferences()
+  })
 }
 export const usePreferencesStore = defineStore('preferences', () => {
   const savedTablet = readPreference('mihon.tabletUiMode')
@@ -55,12 +111,12 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const chapterSwipeEndAction = swipePref('mihon.chapters.swipeStartAction', 'toggle-read')
   function bool(key: string, fallback: boolean, sync = false) {
     const stored = readPreference(key), value = ref(stored === null ? fallback : stored === 'true')
-    watch(value, v => writePreference(key, String(v)), sync ? { flush: 'sync' } : undefined); return value
+    watch(value, v => writePreference(key, String(v), sync), sync ? { flush: 'sync' } : undefined); return value
   }
   function str(key: string, fallback = '', sync = false) {
     const stored = readPreference(key)
     const value = ref(stored !== null ? stored : fallback)
-    watch(value, v => writePreference(key, v), sync ? { flush: 'sync' } : undefined)
+    watch(value, v => writePreference(key, v, sync), sync ? { flush: 'sync' } : undefined)
     return value
   }
   function columns(key: string) {

@@ -194,7 +194,8 @@ function scrollMetrics() {
   const bottomNav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--v-layout-bottom')) || 0
   const bottom = window.innerHeight - bottomNav
   const height = Math.max(120, bottom - top)
-  const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  const scrollElement = document.scrollingElement || document.documentElement
+  const max = Math.max(0, scrollElement.scrollHeight - window.innerHeight)
   const endPadding = listRef.value ? 8 : 0
   const rect = element.getBoundingClientRect()
   const right = Math.max(0, window.innerWidth - rect.right) + endPadding
@@ -203,7 +204,8 @@ function scrollMetrics() {
 function updateFastScroll() {
   const metrics = scrollMetrics()
   if (!metrics || metrics.height < 120 || metrics.max < 8) { fastScrollVisible.value = false; return }
-  const ratio = Math.min(1, Math.max(0, window.scrollY / metrics.max))
+  const scrollY = window.scrollY || document.documentElement.scrollTop || 0
+  const ratio = Math.min(1, Math.max(0, scrollY / metrics.max))
   fastScrollTop.value = metrics.top + ratio * (metrics.height - THUMB_LENGTH)
   fastScrollRight.value = metrics.right
   fastScrollVisible.value = true
@@ -306,9 +308,11 @@ onBeforeUnmount(() => {
       </div>
     </RecycleScroller>
     <BrowseSourceLoadingItem v-if="loading" label="Loading more titles" />
-    <Transition name="fast-scroll-fade">
-      <div v-if="fastScrollVisible" class="fast-scroll-thumb" :style="{ top: `${fastScrollTop}px`, right: `${fastScrollRight}px` }" aria-hidden="true" @pointerdown="startFastScrollDrag" />
-    </Transition>
+    <Teleport to="body">
+      <Transition name="fast-scroll-fade">
+        <div v-if="fastScrollVisible" class="fast-scroll-thumb" :style="{ top: `${fastScrollTop}px`, right: `${fastScrollRight}px` }" aria-hidden="true" @pointerdown="startFastScrollDrag" />
+      </Transition>
+    </Teleport>
   </div>
   <div v-else ref="gridRef" class="library-grid" :class="{ 'library-grid-compact': libraryCompact, 'library-grid-panorama': activeDisplay === 'comfortable-panorama' }" :style="gridStyle" :aria-label="`${activeDisplay} manga grid`">
     <!--
@@ -338,7 +342,7 @@ onBeforeUnmount(() => {
           gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))`
         }"
       >
-        <template v-for="(item, colIndex) in rowItem.items" :key="colIndex">
+        <template v-for="item in rowItem.items" :key="item.id">
           <LibraryCompactGridItem
             v-if="libraryCompact"
             :manga="item"
@@ -377,15 +381,17 @@ onBeforeUnmount(() => {
       </div>
     </RecycleScroller>
     <BrowseSourceLoadingItem v-if="loading" class="library-grid-loading" label="Loading titles" />
-    <Transition name="fast-scroll-fade">
-      <div
-        v-if="fastScrollVisible"
-        class="fast-scroll-thumb"
-        :style="{ top: `${fastScrollTop}px`, right: `${fastScrollRight}px` }"
-        aria-hidden="true"
-        @pointerdown="startFastScrollDrag"
-      />
-    </Transition>
+    <Teleport to="body">
+      <Transition name="fast-scroll-fade">
+        <div
+          v-if="fastScrollVisible"
+          class="fast-scroll-thumb"
+          :style="{ top: `${fastScrollTop}px`, right: `${fastScrollRight}px` }"
+          aria-hidden="true"
+          @pointerdown="startFastScrollDrag"
+        />
+      </Transition>
+    </Teleport>
   </div>
   <!-- `LibraryTab.kt`: the `no_next_chapter` snackbar of the `SnackbarHost`. -->
   <v-snackbar v-model="noNextChapter" :timeout="4000" color="inverse-surface" location="bottom">

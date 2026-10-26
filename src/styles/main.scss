@@ -337,7 +337,7 @@ background: color-mix(in srgb, color-mix(in srgb, rgb(var(--v-theme-secondary)) 
 .manga-cover-anchor { position: absolute; left: 4px; right: 4px; top: 4px; aspect-ratio: 2 / 3; pointer-events: none; }
 .manga-cover-anchor .continue-reading { position: absolute; right: 6px; bottom: 6px; pointer-events: auto; }
 // VerticalFastScroller.kt: 12x48dp pill shape, primary color, 250ms fade-out animation.
-.fast-scroll-thumb { position: fixed; width: 12px; height: 48px; border-radius: 6px; background: rgb(var(--v-theme-primary)); pointer-events: auto; z-index: 10; touch-action: none; cursor: pointer; user-select: none; }
+.fast-scroll-thumb { position: fixed !important; width: 12px; height: 48px; border-radius: 6px; background: rgb(var(--v-theme-primary)); pointer-events: auto; z-index: 1000; touch-action: none; cursor: pointer; user-select: none; }
 .fast-scroll-fade-enter-active { transition: opacity 0ms; }
 .fast-scroll-fade-leave-active { transition: opacity 250ms ease-out; }
 .fast-scroll-fade-enter-from, .fast-scroll-fade-leave-to { opacity: 0; }
