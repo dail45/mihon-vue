@@ -17,6 +17,7 @@ import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { readDownloadQueue } from '@/core/api/downloads'
 import { resolveDeepLink } from '@/core/utils/deepLinks'
 import DonationCampaignSheet from '@/core/components/DonationCampaignSheet.vue'
+import PwaUpdateSnackbar from '@/core/components/PwaUpdateSnackbar.vue'
 import OnboardingView from '@/features/onboarding/views/OnboardingView.vue'
 import { useAppearancePreferences } from '@/features/settings/composables/useAppearancePreferences'
 import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
@@ -28,7 +29,7 @@ import { DefaultLayout, ReaderLayout, FullscreenLayout } from '@/layouts'
 const route = useRoute(), router = useRouter(), preferences = usePreferencesStore(), server = useSuwayomiStore()
 const updateErrors = useLibraryUpdateErrorsStore()
 const theme = useTheme()
-const { applyCurrentTheme } = useAppearancePreferences()
+const { applyCurrentTheme, amoled } = useAppearancePreferences()
 const media = window.matchMedia('(prefers-color-scheme: dark)'), systemDark = ref(media.matches)
 const updateSystemTheme = (e: MediaQueryListEvent) => { systemDark.value = e.matches }
 onMounted(() => {
@@ -54,6 +55,7 @@ const bannerColor = computed(() => {
   if (indexing.value) return colors.secondary
   if (preferences.downloadedOnly) return colors.tertiary
   if (preferences.incognitoMode) return colors.primary
+  if (dark.value && amoled.value) return '#000000'
   return colors.surface
 })
 watch(bannerColor, color => {
@@ -141,6 +143,7 @@ const layoutComponent = computed(() => {
 
     <!-- ShowDonationCampaign(): the donation sheet of the reference. -->
     <DonationCampaignSheet v-model:open="donationOpen" @dismiss="dismissDonation" />
+    <PwaUpdateSnackbar />
 
     <!-- The Android-only backup restore of the reference has no web counterpart. -->
     <v-snackbar v-model="restoreBackupNotice" timeout="6000" location="bottom">

@@ -1228,6 +1228,11 @@
   "pref_webdav_restore_error": "Не удалось восстановить резервную копию: {0}",
   "pref_webdav_syncing_banner": "Синхронизация с WebDAV...",
   "pref_webdav_not_configured": "Сначала укажите URL и данные для входа WebDAV",
+  "pwa_update_available": "Доступно обновление приложения",
+  "pwa_update_reload": "Обновить",
+  "pwa_update_close": "Позже",
+  "pwa_install_app": "Установить приложение",
+  "pwa_install_app_desc": "Установить Mihon как отдельное веб-приложение",
   "_plurals": {
     "lock_after_mins": {
       "one": "После {0} минуты",

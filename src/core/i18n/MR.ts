@@ -1133,6 +1133,11 @@ export const MR = {
     related_mangas_no_results: 'related_mangas_no_results',
     related_mangas_added_to_library: 'related_mangas_added_to_library',
     related_mangas_website_suggestions: 'related_mangas_website_suggestions',
+    pwa_update_available: 'pwa_update_available',
+    pwa_update_reload: 'pwa_update_reload',
+    pwa_update_close: 'pwa_update_close',
+    pwa_install_app: 'pwa_install_app',
+    pwa_install_app_desc: 'pwa_install_app_desc',
   } as const,
   plurals: {
     day: 'day',

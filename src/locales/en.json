@@ -1225,6 +1225,11 @@
   "pref_webdav_restore_error": "Failed to restore backup: {0}",
   "pref_webdav_syncing_banner": "Syncing with WebDAV...",
   "pref_webdav_not_configured": "WebDAV URL and credentials must be configured first",
+  "pwa_update_available": "New version available",
+  "pwa_update_reload": "Reload",
+  "pwa_update_close": "Close",
+  "pwa_install_app": "Install App",
+  "pwa_install_app_desc": "Install Mihon as a standalone web application",
   "_plurals": {
     "lock_after_mins": {
       "one": "After {0} minute",

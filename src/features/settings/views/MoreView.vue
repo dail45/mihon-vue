@@ -19,6 +19,7 @@ import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
 import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
 import { readDownloadQueue, type DownloaderState } from '@/core/api/downloads'
 import MorePreferenceWidget from '@/core/components/MorePreferenceWidget.vue'
+import { usePwaInstall } from '@/core/composables/usePwaInstall'
 import { t, pluralStringResource, MR } from '@/core/i18n'
 import { MORE_SYMBOLS } from '@/core/assets/moreIcons'
 
@@ -26,6 +27,7 @@ const router = useRouter()
 const preferences = usePreferencesStore()
 const server = useSuwayomiStore()
 const updateErrorsStore = useLibraryUpdateErrorsStore()
+const { canInstall, promptInstall } = usePwaInstall()
 
 /**
  * `pref_incognito_mode` is a Mihon-local reader preference. The Suwayomi REST API has no
@@ -192,6 +194,13 @@ function toggleIncognito() {
     <MorePreferenceWidget title="Support Us" :icon-path="MORE_SYMBOLS.volunteerActivism" @click="openSupportUs" />
     <MorePreferenceWidget title="About" icon="info" @click="router.push('/about')" />
     <MorePreferenceWidget title="Help" icon="help" @click="openHelp" />
+    <MorePreferenceWidget
+      v-if="canInstall"
+      :title="t(MR.strings.pwa_install_app) || 'Install App'"
+      :subtitle="t(MR.strings.pwa_install_app_desc) || 'Install Mihon as a standalone web application'"
+      icon="install_mobile"
+      @click="promptInstall"
+    />
 
     <v-dialog v-model="statsOpen" max-width="420">
       <v-card>
