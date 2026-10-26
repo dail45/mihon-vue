@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "typecheck": "vue-tsc -b",
-    "gen:locales": "node scripts/gen-locales.mjs"
+    "gen:locales": "node scripts/gen-locales.mjs",
+    "generate:pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.2.0",
@@ -28,11 +29,14 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/node": "^24.0.0",
+    "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "sass": "^1.93.0",
     "typescript": "~5.9.0",
     "vite": "^7.0.0",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "^3.2.0",
-    "vue-tsc": "^3.0.0"
+    "vue-tsc": "^3.0.0",
+    "workbox-window": "^7.4.1"
   }
 }

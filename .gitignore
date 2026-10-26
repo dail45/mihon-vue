@@ -12,3 +12,4 @@ komikku
 # Private live acceptance output must remain outside Git.
 live-ui-qa/
 *.png
+!public/*.png
