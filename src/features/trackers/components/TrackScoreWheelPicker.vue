@@ -29,8 +29,9 @@ const wheelScrollTop = ref(0)
 const wheelEl = ref<HTMLElement | null>(null)
 
 function wheelStartIndex(): number {
+  if (props.options.length === 0) return 0
   const index = props.options.indexOf(props.selection)
-  return index > 0 ? index : Math.floor(props.options.length / 2)
+  return index >= 0 ? index : Math.floor(props.options.length / 2)
 }
 
 function scrollWheelTo(index: number) {
@@ -40,7 +41,7 @@ function scrollWheelTo(index: number) {
 
 function onWheelScroll() {
   const el = wheelEl.value
-  if (!el) return
+  if (!el || props.options.length === 0) return
   wheelScrollTop.value = el.scrollTop
   const index = Math.min(props.options.length - 1, Math.max(0, Math.round(el.scrollTop / ROW_HEIGHT)))
   if (index !== wheelSelected.value) wheelSelected.value = index
@@ -52,6 +53,7 @@ function wheelRowAlpha(index: number) {
 }
 
 function selectWheelIndex(index: number) {
+  if (props.options.length === 0) return
   const next = Math.min(props.options.length - 1, Math.max(0, index))
   wheelSelected.value = next
   scrollWheelTo(next)

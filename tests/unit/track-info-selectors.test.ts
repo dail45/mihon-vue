@@ -83,4 +83,10 @@ describe('TrackInfoSelectors matches the Mihon reference (TrackInfoDialogSelecto
     expect(source).toMatch(/gap:\s*8px;/)
     expect(source).toMatch(/justify-content:\s*flex-end;/)
   })
+
+  it('correctly resolves wheelStartIndex for first option at index 0', () => {
+    // Score wheel picker must not skip option 0 (e.g. score '10')
+    const scorePickerSource = readFileSync('src/features/trackers/components/TrackScoreWheelPicker.vue', 'utf8')
+    expect(scorePickerSource).toContain('index >= 0 ? index : Math.floor(props.options.length / 2)')
+  })
 })

@@ -190,6 +190,7 @@ function onPressStart(action: Action, event?: PointerEvent) {
   clearTimers()
   longPressed = false
   if (event) {
+    if (event.pointerType === 'mouse') return
     startX = event.clientX
     startY = event.clientY
   }
@@ -228,7 +229,13 @@ function onPressEnd() {
  * running an action.
  */
 function onClick(action: Action) {
-  if (longPressed) { longPressed = false; return }
+  if (longPressed) {
+    longPressed = false
+    clearTimers()
+    return
+  }
+  clearTimers()
+  confirm.value = confirm.value.map(() => false)
   if (action.key === 'more') { toggleMenu('overflow', overflowActivator.value); return }
   if (action.key === 'download' && props.variant === 'library') {
     toggleMenu('download', downloadActivator.value)
@@ -469,6 +476,7 @@ const DONE_PREVIOUS_PATH = 'M790 -730C779.8 -730 769.5 -726.1 761.7 -718.3L360 -
               @pointerup="onPressEnd"
               @pointerleave="onPressEnd"
               @pointercancel="onPressEnd"
+              @mouseup="onPressEnd"
               @contextmenu.prevent
             >
               <span class="manga-action-column">
@@ -532,7 +540,7 @@ const DONE_PREVIOUS_PATH = 'M790 -730C779.8 -730 769.5 -726.1 761.7 -718.3L360 -
   position: fixed;
   inset-inline-start: var(--v-layout-left, 0px);
   inset-inline-end: var(--v-layout-right, 0px);
-  bottom: 0;
+  bottom: var(--v-layout-bottom, 0px);
   z-index: 1100;
   display: grid;
   grid-template-rows: 0fr;

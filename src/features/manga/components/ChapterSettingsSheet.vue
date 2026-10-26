@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import { usePreferencesStore } from '@/features/settings/stores/preferences'
 import { useChapterSettings } from '../stores/chapterSettings'
@@ -102,6 +102,84 @@ function onTouchEnd(e: TouchEvent) {
   }
 }
 
+// HorizontalPager & animateContentSize parity (TabbedDialog.kt)
+const tabOrder = ['filter', 'sort', 'display']
+const currentTabIndex = computed(() => {
+  const idx = tabOrder.indexOf(tab.value)
+  return idx >= 0 ? idx : 0
+})
+
+const containerEl = ref<HTMLElement | null>(null)
+const filterPageEl = ref<HTMLElement | null>(null)
+const sortPageEl = ref<HTMLElement | null>(null)
+const displayPageEl = ref<HTMLElement | null>(null)
+
+const pageEls = computed(() => [
+  filterPageEl.value,
+  sortPageEl.value,
+  displayPageEl.value,
+])
+
+const containerHeight = ref<number | null>(null)
+
+function updateContainerHeight() {
+  const el = pageEls.value[currentTabIndex.value]
+  if (el) {
+    const h = el.scrollHeight || el.offsetHeight
+    if (h > 0) {
+      containerHeight.value = h
+    }
+  }
+}
+
+const trackStyle = computed(() => ({
+  transform: `translateX(-${currentTabIndex.value * 100}%)`,
+}))
+
+const containerStyle = computed(() => {
+  if (containerHeight.value === null) return {}
+  return {
+    height: `${containerHeight.value}px`,
+  }
+})
+
+watch(tab, () => {
+  updateContainerHeight()
+  nextTick(() => {
+    updateContainerHeight()
+    const scrollEl = containerEl.value?.closest('.settings-scroll')
+    if (scrollEl && scrollEl.scrollTop > 0) {
+      scrollEl.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  })
+})
+
+watch(opened, isOpen => {
+  if (isOpen) {
+    nextTick(updateContainerHeight)
+    setTimeout(updateContainerHeight, 50)
+    setTimeout(updateContainerHeight, 200)
+  }
+}, { immediate: true })
+
+let pageResizeObserver: ResizeObserver | null = null
+onMounted(() => {
+  nextTick(() => {
+    updateContainerHeight()
+    if (typeof ResizeObserver !== 'undefined') {
+      pageResizeObserver = new ResizeObserver(() => updateContainerHeight())
+      pageEls.value.forEach(el => {
+        if (el) pageResizeObserver?.observe(el)
+      })
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  pageResizeObserver?.disconnect()
+  pageResizeObserver = null
+})
+
 // --- Filter page -----------------------------------------------------------------------------
 type FilterKey = 'downloaded' | 'unread' | 'bookmarked'
 const filterRows = computed(() => [
@@ -112,22 +190,6 @@ const filterRows = computed(() => [
 // TriStateItem cycles DISABLED -> ENABLED_IS -> ENABLED_NOT -> DISABLED.
 function advanceFilter(key: FilterKey) {
   store.update(props.apiUrl, props.mangaId, { [key]: nextTriState(settings.value[key]) })
-}
-// TriStateItem.kt: DISABLED -> CheckBoxOutlineBlank, ENABLED_IS -> RoundedFilled.CheckBox,
-// ENABLED_NOT -> RoundedFilled.DisabledByDefault.
-function filterIcon(state: TriState) {
-  if (state === 'include') return 'check_box'
-  if (state === 'exclude') return 'disabled_by_default'
-  return 'check_box_outline_blank'
-}
-function filterIconFilled(state: TriState) { return state !== 'all' }
-// TriStateItem.kt tint: the DISABLED state and a disabled row use onSurfaceVariant, a row
-// without a click handler uses onSurface, every other row uses primary. The alpha of the
-// disabled rows (DISABLED_ALPHA = 0.38) comes from the row opacity.
-function filterIconColor(row: { state: TriState; locked: boolean }) {
-  if (row.state === 'all') return 'on-surface-variant'
-  if (row.locked) return 'on-surface'
-  return 'primary'
 }
 function filterChecked(state: TriState) { return state === 'include' ? 'true' : state === 'exclude' ? 'mixed' : 'false' }
 
@@ -212,100 +274,154 @@ async function saveDefault() {
     </template>
 
     <div
+      ref="containerEl"
       class="chapter-settings-page-container"
+      :style="containerStyle"
       @touchstart="onTouchStart"
       @touchend="onTouchEnd"
     >
-      <!-- FilterPage (ChapterSettingsDialog.kt:131-161) -->
-      <div v-if="tab === 'filter'" class="chapter-filter-page">
-        <button
-          v-for="row in filterRows"
-          :key="row.key"
-          type="button"
-          role="checkbox"
-          class="settings-row chapter-tristate"
-          :class="{ 'chapter-tristate--locked': row.locked }"
-          :aria-checked="filterChecked(row.state)"
-          :aria-label="row.label"
-          :aria-disabled="row.locked ? 'true' : undefined"
-          @click="row.locked ? undefined : advanceFilter(row.key)"
+      <div class="chapter-settings-track" :style="trackStyle">
+        <!-- FilterPage (ChapterSettingsDialog.kt:131-161) -->
+        <div
+          ref="filterPageEl"
+          class="chapter-settings-page chapter-filter-page"
+          data-page="filter"
+          :inert="tab !== 'filter' ? true : undefined"
+          :aria-hidden="tab !== 'filter'"
         >
-          <span class="settings-icon-slot">
-            <v-icon
-              :icon="filterIcon(row.state)"
-              :class="{ 'filled-symbol': filterIconFilled(row.state) }"
-              :color="filterIconColor(row)"
-              size="24"
-            />
-          </span>
-          <span class="settings-row-label">{{ row.label }}</span>
-        </button>
-        <!-- ScanlatorFilterItem.kt: 12dp vertical padding, active amber/yellow "Group" icon while active. -->
-        <button
-          type="button"
-          class="settings-row chapter-scanlator"
-          :class="{ 'chapter-scanlator--active': scanlatorActive }"
-          aria-label="Scanlator"
-          @click="openScanlatorDialog"
-        >
-          <span class="settings-icon-slot">
-            <v-icon
-              icon="group"
-              size="24"
-              :style="{ color: scanlatorActive ? activeColor : undefined }"
-            />
-          </span>
-          <span class="settings-row-label">Scanlator</span>
-        </button>
-      </div>
-
-      <!-- SortPage (ChapterSettingsDialog.kt:192-210) -->
-      <div v-else-if="tab === 'sort'" class="chapter-sort-page">
-        <button
-          v-for="option in chapterSortOptions"
-          :key="option.value"
-          type="button"
-          class="settings-row chapter-sort"
-          :aria-label="option.label"
-          :aria-pressed="settings.sort === option.value"
-          :aria-description="settings.sort === option.value ? (settings.descending ? 'Descending' : 'Ascending') : undefined"
-          @click="chooseSort(option.value)"
-        >
-          <span class="settings-icon-slot">
-            <v-icon
-              v-if="settings.sort === option.value"
-              :icon="settings.descending ? 'arrow_downward' : 'arrow_upward'"
-              color="primary"
-              size="24"
-            />
-          </span>
-          <span class="settings-row-label">{{ option.label }}</span>
-        </button>
-      </div>
-
-      <!-- DisplayPage (ChapterSettingsDialog.kt:212-227) -->
-      <div v-else class="chapter-display-page">
-        <button
-          v-for="option in [{ value: 'title', label: 'Source title' }, { value: 'number', label: 'Chapter number' }] as const"
-          :key="option.value"
-          type="button"
-          role="radio"
-          class="settings-row chapter-radio-item"
-          :aria-checked="settings.display === option.value"
-          :aria-label="option.label"
-          @click="store.update(props.apiUrl, props.mangaId, { display: option.value })"
-        >
-          <span class="settings-icon-slot">
-            <span
-              class="chapter-radio"
-              :class="{ 'chapter-radio--selected': settings.display === option.value }"
-              aria-hidden="true"
-            >
-              <span class="chapter-radio__dot" />
+          <button
+            v-for="row in filterRows"
+            :key="row.key"
+            type="button"
+            role="checkbox"
+            class="settings-row chapter-tristate"
+            :class="{ 'chapter-tristate--locked': row.locked }"
+            :aria-checked="filterChecked(row.state)"
+            :aria-label="row.label"
+            :aria-disabled="row.locked ? 'true' : undefined"
+            @click="row.locked ? undefined : advanceFilter(row.key)"
+          >
+            <span class="settings-icon-slot">
+              <span
+                class="m3-checkbox"
+                :class="{
+                  'm3-checkbox--checked': row.state === 'include',
+                  'm3-checkbox--excluded': row.state === 'exclude',
+                }"
+              >
+                <svg
+                  v-if="row.state === 'include'"
+                  class="m3-checkbox-icon"
+                  viewBox="0 0 18 18"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M 3.5 9.5 L 7 13 L 14.5 5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <svg
+                  v-else-if="row.state === 'exclude'"
+                  class="m3-checkbox-icon"
+                  viewBox="0 0 18 18"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M 4.5 4.5 L 13.5 13.5 M 13.5 4.5 L 4.5 13.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
             </span>
-          </span>
-          <span class="settings-row-label">{{ option.label }}</span>
-        </button>
+            <span class="settings-row-label">{{ row.label }}</span>
+          </button>
+          <!-- ScanlatorFilterItem.kt: 12dp vertical padding, active amber/yellow "Group" icon while active. -->
+          <button
+            type="button"
+            class="settings-row chapter-scanlator"
+            :class="{ 'chapter-scanlator--active': scanlatorActive }"
+            aria-label="Scanlator"
+            @click="openScanlatorDialog"
+          >
+            <span class="settings-icon-slot">
+              <v-icon
+                icon="group"
+                size="24"
+                :style="{ color: scanlatorActive ? activeColor : undefined }"
+              />
+            </span>
+            <span class="settings-row-label">Scanlator</span>
+          </button>
+        </div>
+
+        <!-- SortPage (ChapterSettingsDialog.kt:192-210) -->
+        <div
+          ref="sortPageEl"
+          class="chapter-settings-page chapter-sort-page"
+          data-page="sort"
+          :inert="tab !== 'sort' ? true : undefined"
+          :aria-hidden="tab !== 'sort'"
+        >
+          <button
+            v-for="option in chapterSortOptions"
+            :key="option.value"
+            type="button"
+            class="settings-row chapter-sort"
+            :aria-label="option.label"
+            :aria-pressed="settings.sort === option.value"
+            :aria-description="settings.sort === option.value ? (settings.descending ? 'Descending' : 'Ascending') : undefined"
+            @click="chooseSort(option.value)"
+          >
+            <span class="settings-icon-slot">
+              <v-icon
+                v-if="settings.sort === option.value"
+                :icon="settings.descending ? 'arrow_downward' : 'arrow_upward'"
+                color="primary"
+                size="24"
+              />
+            </span>
+            <span class="settings-row-label">{{ option.label }}</span>
+          </button>
+        </div>
+
+        <!-- DisplayPage (ChapterSettingsDialog.kt:212-227) -->
+        <div
+          ref="displayPageEl"
+          class="chapter-settings-page chapter-display-page"
+          data-page="display"
+          :inert="tab !== 'display' ? true : undefined"
+          :aria-hidden="tab !== 'display'"
+        >
+          <button
+            v-for="option in [{ value: 'title', label: 'Source title' }, { value: 'number', label: 'Chapter number' }] as const"
+            :key="option.value"
+            type="button"
+            role="radio"
+            class="settings-row chapter-radio-item"
+            :aria-checked="settings.display === option.value"
+            :aria-label="option.label"
+            @click="store.update(props.apiUrl, props.mangaId, { display: option.value })"
+          >
+            <span class="settings-icon-slot">
+              <span
+                class="chapter-radio"
+                :class="{ 'chapter-radio--selected': settings.display === option.value }"
+                aria-hidden="true"
+              >
+                <span class="chapter-radio__dot" />
+              </span>
+            </span>
+            <span class="settings-row-label">{{ option.label }}</span>
+          </button>
+        </div>
       </div>
     </div>
   </AdaptiveSettingsSheet>
@@ -370,8 +486,29 @@ async function saveDefault() {
 }
 
 .chapter-settings-page-container {
-  min-height: 196px;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  transition: height 280ms cubic-bezier(0.2, 0, 0, 1);
+  box-sizing: border-box;
   user-select: none;
+}
+
+.chapter-settings-track {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
+}
+
+.chapter-settings-page {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .settings-icon-slot {

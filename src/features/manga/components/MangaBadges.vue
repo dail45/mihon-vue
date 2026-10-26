@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Manga } from '@/core/api/types'
 import { usePreferencesStore } from '@/features/settings/stores/preferences'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
@@ -44,6 +44,23 @@ const props = withDefaults(defineProps<{
 const prefs = usePreferencesStore()
 const server = useSuwayomiStore()
 const failedSourceIcons = ref<Set<string>>(new Set())
+
+function onSourceIconError(sourceId?: string) {
+  if (!sourceId) return
+  const next = new Set(failedSourceIcons.value)
+  next.add(sourceId)
+  failedSourceIcons.value = next
+}
+
+watch(
+  () => [prefs.sourceBadge, server.apiUrl],
+  () => {
+    if (prefs.sourceBadge && !server.sources.length && !server.loadingSources) {
+      void server.loadSources()
+    }
+  },
+  { immediate: true },
+)
 
 /** In-library flag: supports explicit `enabled`, wire `inLibrary`, or domain `favorite`. */
 const inLibrary = computed(() => {
@@ -133,9 +150,22 @@ const badges = computed<BadgeItem[]>(() => {
       }
     }
     if (prefs.sourceBadge && manga.sourceId && !local.value && !failedSourceIcons.value.has(manga.sourceId)) {
-      const source = sourceOf(manga, server.sources)
-      const iconUrl = `${server.apiUrl}/source/${encodeURIComponent(manga.sourceId)}/icon`
-      items.push({ key: 'source', label: source?.name ? `Source: ${source.name}` : 'Source icon', color: 'tertiary', image: iconUrl })
+      // Suwayomi-Server source icons are provided by source.iconUrl (/api/v1/extension/icon/...), not /source/{id}/icon
+      const source = (manga.source?.iconUrl ? manga.source : undefined)
+        ?? server.sources.find(s => String(s.id) === String(manga.sourceId))
+        ?? sourceOf(manga, server.sources)
+      if (source?.iconUrl) {
+        const serverOrigin = server.apiUrl.replace(/\/api\/v1\/?$/, '')
+        const iconUrl = /^https?:\/\//i.test(source.iconUrl)
+          ? source.iconUrl
+          : `${serverOrigin}${source.iconUrl.startsWith('/') ? '' : '/'}${source.iconUrl}`
+        items.push({
+          key: 'source',
+          label: source.name ? `Source: ${source.name}` : 'Source icon',
+          color: 'tertiary',
+          image: iconUrl,
+        })
+      }
     }
   }
   return items
@@ -155,7 +185,8 @@ const badges = computed<BadgeItem[]>(() => {
       :key="badge.key"
       class="manga-badge"
       :class="[
-        badge.svg ? 'bg-transparent manga-badge-flag-container' : (badge.color === 'tertiary' ? 'bg-tertiary' : 'bg-secondary'),
+        (badge.svg || badge.image) ? 'bg-transparent' : (badge.color === 'tertiary' ? 'bg-tertiary' : 'bg-secondary'),
+        badge.svg ? 'manga-badge-flag-container' : '',
         { 'manga-badge-icon-container': Boolean(badge.image) }
       ]"
       :aria-label="badge.label"
@@ -185,7 +216,7 @@ const badges = computed<BadgeItem[]>(() => {
         :src="badge.image"
         alt=""
         loading="lazy"
-        @error="props.manga?.sourceId && failedSourceIcons.add(props.manga.sourceId)"
+        @error="onSourceIconError(props.manga?.sourceId)"
       />
       <template v-else>{{ badge.text }}</template>
     </span>
@@ -268,14 +299,20 @@ const badges = computed<BadgeItem[]>(() => {
 }
 
 .manga-badge-icon-container {
-  padding: 1px 2px;
+  padding: 0;
+  height: 18px;
+  width: 18px;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .manga-badge-favicon {
   display: block;
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-  border-radius: 2px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
 }
 </style>

@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSuwayomiStore } from '@/features/library/stores/suwayomi'
+import { useLibraryStore } from '@/features/library/stores/library'
 import type { DisplayMode } from '@/features/settings/stores/preferences'
 import { useRelatedMangas, type RelatedMangaItem } from '../composables/useRelatedMangas'
 import { stringResource } from '@/core/i18n'
@@ -26,6 +27,7 @@ import type { Manga } from '@/core/api/types'
 const route = useRoute()
 const router = useRouter()
 const server = useSuwayomiStore()
+const libraryStore = useLibraryStore()
 
 const mangaId = computed(() => Number(route.params.id))
 const currentManga = computed(() => {
@@ -212,11 +214,13 @@ async function executeAddFavorite(addToCategories: number[], removeFromCategorie
 
   for (const item of toAdd) {
     if (item.mangaId) {
-      await server.setLibraryMembership(true)
-      if (addToCategories.length || removeFromCategories.length) {
-        await server.setMangaCategories([item.mangaId], addToCategories, removeFromCategories)
+      const success = await libraryStore.setLibraryMembership(item.mangaId, true)
+      if (success) {
+        if (addToCategories.length || removeFromCategories.length) {
+          await server.setMangaCategories([item.mangaId], addToCategories, removeFromCategories)
+        }
+        addedCount++
       }
-      addedCount++
     }
   }
 

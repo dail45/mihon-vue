@@ -104,9 +104,12 @@ function rememberSelection() {
 function restoreSelection() {
   const element = editor.value
   if (!element) return
-  element.focus()
   const selection = window.getSelection()
   if (!selection) return
+  if (selection.rangeCount > 0 && element.contains(selection.getRangeAt(0).commonAncestorContainer) && !selection.isCollapsed) {
+    return
+  }
+  element.focus()
   if (lastRange && element.contains(lastRange.commonAncestorContainer)) {
     selection.removeAllRanges()
     selection.addRange(lastRange)
@@ -195,6 +198,7 @@ onMounted(() => {
   window.visualViewport?.addEventListener('resize', updateKeyboardInset)
   window.visualViewport?.addEventListener('scroll', updateKeyboardInset)
   window.addEventListener('resize', updateKeyboardInset)
+  document.addEventListener('selectionchange', rememberSelection)
   void nextTick(() => { updateMarquee() })
   if (server.manga?.id !== mangaId.value && !server.loadingManga) void server.loadManga(mangaId.value)
 })
@@ -203,6 +207,7 @@ onBeforeUnmount(() => {
   window.visualViewport?.removeEventListener('resize', updateKeyboardInset)
   window.visualViewport?.removeEventListener('scroll', updateKeyboardInset)
   window.removeEventListener('resize', updateKeyboardInset)
+  document.removeEventListener('selectionchange', rememberSelection)
   saveNow()
 })
 
@@ -268,29 +273,29 @@ watch(() => manga.value?.title ?? '', () => { void nextTick(() => updateMarquee(
           <button
             type="button" class="notes-format-button" aria-label="FormatBold"
             :class="{ 'notes-format-button--selected': activeBold }"
-            @mousedown.prevent @click="applyCommand('bold')"
+            @pointerdown.prevent @mousedown.prevent @click="applyCommand('bold')"
           ><span class="material-symbols-rounded">format_bold</span></button>
           <button
             type="button" class="notes-format-button" aria-label="FormatItalic"
             :class="{ 'notes-format-button--selected': activeItalic }"
-            @mousedown.prevent @click="applyCommand('italic')"
+            @pointerdown.prevent @mousedown.prevent @click="applyCommand('italic')"
           ><span class="material-symbols-rounded">format_italic</span></button>
           <button
             type="button" class="notes-format-button" aria-label="FormatUnderlined"
             :class="{ 'notes-format-button--selected': activeUnderline }"
-            @mousedown.prevent @click="applyCommand('underline')"
+            @pointerdown.prevent @mousedown.prevent @click="applyCommand('underline')"
           ><span class="material-symbols-rounded">format_underlined</span></button>
           <!-- VerticalDivider(padding horizontal 4dp, height 24dp). -->
           <span class="notes-divider" role="separator" aria-orientation="vertical" />
           <button
             type="button" class="notes-format-button" aria-label="FormatListBulleted"
             :class="{ 'notes-format-button--selected': activeUnordered }"
-            @mousedown.prevent @click="applyCommand('insertUnorderedList')"
+            @pointerdown.prevent @mousedown.prevent @click="applyCommand('insertUnorderedList')"
           ><span class="material-symbols-rounded">format_list_bulleted</span></button>
           <button
             type="button" class="notes-format-button" aria-label="FormatListNumbered"
             :class="{ 'notes-format-button--selected': activeOrdered }"
-            @mousedown.prevent @click="applyCommand('insertOrderedList')"
+            @pointerdown.prevent @mousedown.prevent @click="applyCommand('insertOrderedList')"
           ><span class="material-symbols-rounded">format_list_numbered</span></button>
         </div>
         <!-- Box(contentAlignment = Center) with the character counter. -->

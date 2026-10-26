@@ -1195,10 +1195,10 @@ function onTouchEnd() {
  * --------------------------------------------------------------------------------------------- */
 .manga-bottom-menu-wrapper {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 6;
+  inset-inline-start: var(--v-layout-left, 0px);
+  inset-inline-end: var(--v-layout-right, 0px);
+  bottom: var(--v-layout-bottom, 0px);
+  z-index: 1100;
   pointer-events: none;
 }
 .manga-bottom-menu-wrapper > * {
