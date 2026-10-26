@@ -108,8 +108,8 @@ async function moveCategory(from: number, to: number) {
   const next = [...list]
   const [moved] = next.splice(from, 1)
   next.splice(to, 0, moved)
-  categories.value = categories.value
-    .map(item => next.find(entry => entry.id === item.id) ?? item)
+  const systemCategories = categories.value.filter(item => item.id === SYSTEM_CATEGORY_ID)
+  categories.value = [...systemCategories, ...next]
   await nextTick()
   await persistOrder(moved, to)
 }

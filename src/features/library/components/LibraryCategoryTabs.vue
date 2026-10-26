@@ -37,6 +37,7 @@ const tabItems = computed<Md3TabItem<number>[]>(() =>
   <Md3PrimaryTabs
     :model-value="currentPage"
     :items="tabItems"
+    :scrollable="true"
     aria-label="Library categories"
     @update:model-value="emit('update:currentPage', $event)"
   />

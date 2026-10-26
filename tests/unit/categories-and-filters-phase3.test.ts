@@ -86,9 +86,8 @@ describe('Worker 3B: Categories & Filters (Phases 3.3, 3.4, 3.5)', () => {
       expect(prefs.showHiddenCategories).toBe(true)
     })
 
-    it('LibrarySettingsSheet contains Show hidden categories switch', () => {
-      expect(librarySettingsSheetSource).toContain('Show hidden categories')
-      expect(librarySettingsSheetSource).toContain('v-model="prefs.showHiddenCategories"')
+    it('LibrarySettingsSheet does not contain Show hidden categories switch (Bug 2 fix)', () => {
+      expect(librarySettingsSheetSource).not.toContain('v-model="prefs.showHiddenCategories"')
     })
 
     it('LibraryView filters out hidden categories unless showHiddenCategories is true', () => {
@@ -188,6 +187,35 @@ describe('Worker 3B: Categories & Filters (Phases 3.3, 3.4, 3.5)', () => {
         filterCategories: true,
         filterCategoriesInclude: [10],
       }, false)).toBe(false)
+
+      // Multiple included categories: OR logic (manga in either 10 or 30 matches)
+      expect(matchesLibrary(mangaA, {
+        ...baseFilters,
+        filterCategories: true,
+        filterCategoriesInclude: [10, 30],
+      }, false)).toBe(true)
+      expect(matchesLibrary(mangaB, {
+        ...baseFilters,
+        filterCategories: true,
+        filterCategoriesInclude: [10, 30],
+      }, false)).toBe(true)
+      expect(matchesLibrary(mangaC, {
+        ...baseFilters,
+        filterCategories: true,
+        filterCategoriesInclude: [10, 30],
+      }, false)).toBe(false)
+
+      // Multiple excluded categories: AND logic (manga must not be in any excluded category)
+      expect(matchesLibrary(mangaA, {
+        ...baseFilters,
+        filterCategories: true,
+        filterCategoriesExclude: [20, 40],
+      }, false)).toBe(false)
+      expect(matchesLibrary(mangaB, {
+        ...baseFilters,
+        filterCategories: true,
+        filterCategoriesExclude: [20, 40],
+      }, false)).toBe(true)
     })
   })
 

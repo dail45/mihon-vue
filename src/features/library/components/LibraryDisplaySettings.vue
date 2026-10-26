@@ -65,7 +65,6 @@ const modes = computed(() => [
 
   <h3 class="settings-heading">{{ t('tabs_header', 'Tabs') }}</h3>
   <PreferenceCheckbox v-model="prefs.categoryTabs" :label="t('action_display_show_tabs', 'Show category tabs')" />
-  <PreferenceCheckbox v-model="prefs.showHiddenCategories" :label="t('action_show_hidden_categories', 'Show hidden categories')" />
   <PreferenceCheckbox v-model="prefs.categoryCounts" :label="t('action_display_show_number_of_items', 'Show number of items')" />
 </template>
 

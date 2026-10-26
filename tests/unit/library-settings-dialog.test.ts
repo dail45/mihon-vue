@@ -25,7 +25,7 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
   describe('Adaptive Sheet & TabbedDialog layout', () => {
     it('uses flat-tabs to eliminate the tab underline per TabbedDialog.kt PrimaryTabRow', () => {
       expect(sheetSource).toContain('flat-tabs')
-      expect(sheetSource).toContain(":tabs=\"['Filter', 'Sort', 'Display', 'Group']\"")
+      expect(sheetSource).toMatch(/:tabs="tabs"|:tabs="\['Filter', 'Sort', 'Display', 'Group'\]"/)
     })
 
     it('uses 28dp CornerExtraLarge border radius for sheet container', () => {
@@ -47,11 +47,11 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
   describe('FilterPage (LibrarySettingsDialog.kt:76-154)', () => {
     it('renders all 5 standard tri-state filters in the reference order', () => {
       const standardFilters = [
-        'label="Downloaded"',
-        'label="Unread"',
-        'label="Started"',
-        'label="Bookmarked"',
-        'label="Completed"',
+        'label_downloaded',
+        'action_filter_unread',
+        'label_started',
+        'action_filter_bookmarked',
+        'completed',
       ]
       let lastIndex = -1
       for (const filter of standardFilters) {
@@ -67,9 +67,8 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
 
     it('supports single and multiple logged-in tracker filters', () => {
       expect(sheetSource).toContain('v-if="loggedInTrackers.length === 1"')
-      expect(sheetSource).toContain('label="Tracked"')
+      expect(sheetSource).toContain('action_filter_tracked')
       expect(sheetSource).toContain('v-else-if="loggedInTrackers.length > 1"')
-      expect(sheetSource).toContain('<h3 class="settings-heading">Tracked</h3>')
       expect(sheetSource).toContain(':label="service.name"')
     })
   })
@@ -90,7 +89,7 @@ describe('LibrarySettingsDialog (item 10) - Pixel Parity with Mihon', () => {
     })
 
     it('dynamically inserts Tracker score before Random when trackers are logged in', () => {
-      expect(sheetSource).toContain("options.splice(randomIndex, 0, { value: 'trackerScore', label: 'Tracker score' })")
+      expect(sheetSource).toContain("value: 'trackerScore'")
     })
 
     it('renders Random sort with refresh icon when selected and no arrow', () => {

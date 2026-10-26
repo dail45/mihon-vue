@@ -77,9 +77,27 @@ export const useSuwayomiStore = defineStore('suwayomi', () => {
   })
   const library = computed(() => libraryStore.library)
   const totalLibraryCount = computed(() => libraryStore.totalLibraryCount)
+  const isInitialized = computed(() => libraryStore.isInitialized)
+  const isLoaded = computed(() => libraryStore.isLoaded)
+  const lastSyncedAt = computed({
+    get: () => libraryStore.lastSyncedAt,
+    set: (val: number) => { libraryStore.lastSyncedAt = val },
+  })
 
-  async function loadLibrary() {
-    return libraryStore.loadLibrary()
+  async function silentRefreshLibrary() {
+    return libraryStore.silentRefreshLibrary()
+  }
+
+  async function triggerUpdate(categoryId?: number | null) {
+    return libraryStore.triggerUpdate(categoryId)
+  }
+
+  async function ensureLibraryLoaded() {
+    return libraryStore.ensureLibraryLoaded()
+  }
+
+  async function loadLibrary(force = true) {
+    return libraryStore.loadLibrary(force)
   }
 
   async function setLibraryMembership(inLibrary: boolean) {
@@ -194,6 +212,12 @@ export const useSuwayomiStore = defineStore('suwayomi', () => {
     mutationError,
     library,
     totalLibraryCount,
+    isInitialized,
+    isLoaded,
+    lastSyncedAt,
+    ensureLibraryLoaded,
+    silentRefreshLibrary,
+    triggerUpdate,
     loadLibrary,
     setLibraryMembership,
     removeMangas,

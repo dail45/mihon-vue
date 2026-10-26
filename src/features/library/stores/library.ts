@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, onScopeDispose, ref } from 'vue'
 import { apiErrorMessage, createSuwayomiApi } from '@/core/api/client'
 import { deleteChapterDownload, enqueueChapterDownloadsBatch } from '@/core/api/chapterDownloads'
 import { updateChaptersBatch } from '@/core/api/chaptersBatch'
 import { updateMangasCategoriesBatch } from '@/core/api/categoriesBatch'
+import { getUpdateSummary, triggerLibraryUpdate, type UpdateSummary } from '@/core/api/updater'
 import { pLimit } from '@/core/utils/pLimit'
 import type { Category, Manga } from '@/core/api/types'
 import { useConnectionStore } from './connection'
 import { useMangaOverridesStore } from '@/features/manga/stores/mangaOverrides'
+import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
 
 export type BatchDownloadAction =
   | 'NEXT_1_CHAPTER'
@@ -20,6 +22,7 @@ export type BatchDownloadAction =
 export const useLibraryStore = defineStore('library', () => {
   const connection = useConnectionStore()
   const overridesStore = useMangaOverridesStore()
+  const updateErrorsStore = useLibraryUpdateErrorsStore()
 
   const categories = ref<Category[]>([])
   const rawLibraryByCategory = ref<Record<number, Manga[]>>({})
@@ -28,6 +31,11 @@ export const useLibraryStore = defineStore('library', () => {
   const libraryError = ref<string | null>(null)
   const mutatingLibrary = ref(false)
   const mutationError = ref<string | null>(null)
+  const isInitialized = ref(false)
+  const isLoaded = computed(() => isInitialized.value && categories.value.length > 0)
+  const lastFetched = ref<number | null>(null)
+  const lastSyncedAt = ref<number>(Date.now())
+  const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
   let libraryRequest = 0
 
@@ -52,10 +60,20 @@ export const useLibraryStore = defineStore('library', () => {
     () => new Set(Object.values(libraryByCategory.value).flat().map(item => item.id)).size,
   )
 
-  async function loadLibrary() {
+  async function loadLibrary(force = true) {
+    if (!force && isInitialized.value && categories.value.length > 0) {
+      const isExpired = lastFetched.value ? (Date.now() - lastFetched.value > CACHE_TTL_MS) : false
+      if (!isExpired) {
+        return
+      }
+      return silentRefreshLibrary()
+    }
+
     const request = ++libraryRequest
     const api = createSuwayomiApi(connection.apiUrl)
-    loadingLibrary.value = true
+    if (!isInitialized.value) {
+      loadingLibrary.value = true
+    }
     libraryError.value = null
     try {
       const fetchedCategories = (await api.categories()).sort((a, b) => a.order - b.order)
@@ -64,10 +82,13 @@ export const useLibraryStore = defineStore('library', () => {
       )
       if (request !== libraryRequest) return
       categories.value = fetchedCategories
-      libraryByCategory.value = Object.fromEntries(entries)
+      rawLibraryByCategory.value = Object.fromEntries(entries)
       if (!fetchedCategories.some(c => c.id === activeCategoryId.value)) {
         activeCategoryId.value = fetchedCategories[0]?.id ?? null
       }
+      isInitialized.value = true
+      lastFetched.value = Date.now()
+      lastSyncedAt.value = Date.now()
       connection.connected = true
     } catch (error) {
       if (request === libraryRequest) {
@@ -78,6 +99,192 @@ export const useLibraryStore = defineStore('library', () => {
       if (request === libraryRequest) loadingLibrary.value = false
     }
   }
+
+  async function ensureLibraryLoaded() {
+    return loadLibrary(false)
+  }
+
+  /**
+   * Performs an in-place merge of categories and category manga from the server,
+   * preserving object identities and avoiding full list replacements so that
+   * virtual scrollers (RecycleScroller) do not unmount or lose scroll position.
+   */
+  async function silentRefreshLibrary(): Promise<void> {
+    const request = ++libraryRequest
+    const gen = connection.serverGeneration
+    const api = createSuwayomiApi(connection.apiUrl)
+    try {
+      const fetchedCategories = (await api.categories()).sort((a, b) => a.order - b.order)
+      const entries = await Promise.all(
+        fetchedCategories.map(async c => [c.id, await api.categoryManga(c.id)] as const),
+      )
+      if (request !== libraryRequest || gen !== connection.serverGeneration) return
+
+      // 1. Update categories.value preserving existing Category objects if unchanged
+      const currentCatsMap = new Map(categories.value.map(c => [c.id, c]))
+      const nextCategories: Category[] = fetchedCategories.map(cat => {
+        const existing = currentCatsMap.get(cat.id)
+        if (existing) {
+          Object.assign(existing, cat)
+          return existing
+        }
+        return cat
+      })
+      categories.value = nextCategories
+
+      if (!nextCategories.some(c => c.id === activeCategoryId.value)) {
+        activeCategoryId.value = nextCategories[0]?.id ?? null
+      }
+
+      // 2. In-place merge of rawLibraryByCategory
+      const fetchedCatIds = new Set(fetchedCategories.map(c => c.id))
+
+      // Clean up categories no longer on server
+      for (const key of Object.keys(rawLibraryByCategory.value)) {
+        const numKey = Number(key)
+        if (!fetchedCatIds.has(numKey)) {
+          delete rawLibraryByCategory.value[numKey]
+        }
+      }
+
+      for (const [catId, fetchedMangaList] of entries) {
+        if (!rawLibraryByCategory.value[catId]) {
+          rawLibraryByCategory.value[catId] = [...fetchedMangaList]
+          continue
+        }
+
+        const currentList = rawLibraryByCategory.value[catId]!
+        const newMangaMap = new Map<number, Manga>(fetchedMangaList.map(m => [m.id, m]))
+        const currentIds = new Set<number>()
+
+        // Update existing items in-place and remove deleted items
+        for (let i = currentList.length - 1; i >= 0; i--) {
+          const item = currentList[i]!
+          const updated = newMangaMap.get(item.id)
+          if (!updated) {
+            currentList.splice(i, 1)
+          } else {
+            Object.assign(item, updated)
+            currentIds.add(item.id)
+          }
+        }
+
+        // Add newly added items to category
+        for (const item of fetchedMangaList) {
+          if (!currentIds.has(item.id)) {
+            currentList.push(item)
+          }
+        }
+      }
+
+      isInitialized.value = true
+      lastFetched.value = Date.now()
+      lastSyncedAt.value = Date.now()
+      connection.connected = true
+    } catch {
+      // Background re-fetch failed; retain current cached memory state
+    }
+  }
+
+  // Tab visibility listener: silently refresh when returning to tab after > 60s
+  if (typeof document !== 'undefined') {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (Date.now() - lastSyncedAt.value > 60 * 1000 && isInitialized.value) {
+          void silentRefreshLibrary()
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    onScopeDispose(() => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    })
+  }
+
+  // Server updater monitoring
+  let updateMonitorTimer: ReturnType<typeof setInterval> | null = null
+  let lastMonitorCompletedCount = -1
+  let lastMonitorSilentRefresh = 0
+
+  function stopUpdateMonitor() {
+    if (updateMonitorTimer !== null) {
+      clearInterval(updateMonitorTimer)
+      updateMonitorTimer = null
+    }
+    lastMonitorCompletedCount = -1
+    lastMonitorSilentRefresh = 0
+  }
+
+  async function checkUpdateStatus(): Promise<UpdateSummary | null> {
+    try {
+      const summary = await getUpdateSummary(connection.apiUrl)
+
+      let total = 0
+      let completed = 0
+      if (summary.mangaStatusMap) {
+        for (const [status, list] of Object.entries(summary.mangaStatusMap)) {
+          const count = Array.isArray(list) ? list.length : 0
+          total += count
+          if (['COMPLETE', 'FAILED', 'SKIPPED'].includes(status.toUpperCase())) {
+            completed += count
+          }
+        }
+      }
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+
+      if (summary.running) {
+        updateErrorsStore.setUpdating(true, pct)
+
+        const now = Date.now()
+        if (completed !== lastMonitorCompletedCount || now - lastMonitorSilentRefresh >= 4000) {
+          lastMonitorCompletedCount = completed
+          lastMonitorSilentRefresh = now
+          void silentRefreshLibrary()
+        }
+      } else {
+        stopUpdateMonitor()
+        updateErrorsStore.setUpdating(false, null)
+        await silentRefreshLibrary()
+
+        if (summary.mangaStatusMap?.FAILED && summary.mangaStatusMap.FAILED.length > 0) {
+          for (const manga of summary.mangaStatusMap.FAILED) {
+            updateErrorsStore.addError({
+              mangaId: manga.id,
+              title: manga.title,
+              sourceId: String(manga.sourceId || ''),
+              sourceName: typeof manga.source === 'string' ? manga.source : manga.source?.name || 'Unknown source',
+              message: (manga as any).errorMessage || (manga as any).message || 'Failed to update manga',
+            })
+          }
+        }
+      }
+
+      return summary
+    } catch {
+      return null
+    }
+  }
+
+  function startUpdateMonitor() {
+    stopUpdateMonitor()
+    void checkUpdateStatus()
+    updateMonitorTimer = setInterval(() => {
+      void checkUpdateStatus()
+    }, 2500)
+  }
+
+  async function triggerUpdate(categoryId?: number | null): Promise<{ started: boolean; categoryId?: number | null }> {
+    const started = await triggerLibraryUpdate(connection.apiUrl, categoryId)
+    if (started) {
+      updateErrorsStore.setUpdating(true, 0)
+      startUpdateMonitor()
+    }
+    return { started, categoryId }
+  }
+
+  onScopeDispose(() => {
+    stopUpdateMonitor()
+  })
 
   async function setLibraryMembership(mangaId: number, inLibrary: boolean): Promise<boolean> {
     if (mutatingLibrary.value) return false
@@ -340,27 +547,42 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   function reset() {
+    stopUpdateMonitor()
     libraryRequest++
     categories.value = []
-    libraryByCategory.value = {}
+    rawLibraryByCategory.value = {}
     activeCategoryId.value = null
     loadingLibrary.value = false
     libraryError.value = null
     mutatingLibrary.value = false
     mutationError.value = null
+    isInitialized.value = false
+    lastFetched.value = null
+    lastSyncedAt.value = Date.now()
   }
 
   return {
     categories,
+    rawLibraryByCategory,
     libraryByCategory,
     activeCategoryId,
     loadingLibrary,
     libraryError,
     mutatingLibrary,
     mutationError,
+    isInitialized,
+    isLoaded,
+    lastFetched,
+    lastSyncedAt,
     library,
     totalLibraryCount,
     loadLibrary,
+    ensureLibraryLoaded,
+    silentRefreshLibrary,
+    triggerUpdate,
+    startUpdateMonitor,
+    checkUpdateStatus,
+    stopUpdateMonitor,
     setLibraryMembership,
     removeMangas,
     markMangasRead,

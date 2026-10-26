@@ -18,9 +18,9 @@ import MangaBottomActionMenu from '@/features/manga/components/MangaBottomAction
 import DeleteLibraryMangaDialog from '../components/DeleteLibraryMangaDialog.vue'
 import ChangeCategoryDialog from '../components/ChangeCategoryDialog.vue'
 import Md3CircularProgress from '@/core/components/Md3CircularProgress.vue'
+import Md3PullToRefresh from '@/core/components/Md3PullToRefresh.vue'
+import { stringResource, MR } from '@/core/i18n'
 import { useBottomNavVisibility } from '@/core/composables/useBottomNavVisibility'
-import { createSuwayomiApi, apiErrorMessage } from '@/core/api/client'
-import { useLibraryUpdateErrorsStore } from '@/features/updates/stores/libraryUpdateErrors'
 
 /**
  * Pixel-parity port of Mihon's `ui/library/LibraryTab.kt`
@@ -400,7 +400,16 @@ function selectAll() {
 /** `onClickInvertSelection` — the selection of the current page is inverted. */
 function invertSelection() {
   const ids = itemsByCategory.value[categories.value[currentPage.value]?.id ?? -1]?.map(m => m.id) ?? []
-  selection.value = ids.filter(id => !selection.value.includes(id))
+  const currentCategoryIds = new Set(ids)
+  const nextSelection = new Set(selection.value)
+  for (const id of currentCategoryIds) {
+    if (nextSelection.has(id)) {
+      nextSelection.delete(id)
+    } else {
+      nextSelection.add(id)
+    }
+  }
+  selection.value = [...nextSelection]
 }
 function clearSelection() { selection.value = [] }
 function onEditCategories() {
@@ -409,156 +418,47 @@ function onEditCategories() {
 }
 
 /* ------------------------------------------------------------------ *
- * Pull to refresh (`LibraryContent.kt` -> `PullRefresh`)
+ * Pull to refresh & Server Update (`LibraryContent.kt` -> `PullRefresh`)
  * ------------------------------------------------------------------ */
-const refreshing = ref(false)
-const pullOffset = ref(0)
-let pullStartY = 0
-let pulling = false
-function onTouchStart(event: TouchEvent) {
-  // `PullRefresh(enabled = selection.isEmpty())`.
-  if (selectionMode.value) return
-  if (window.scrollY > 0) return
-  pullStartY = event.touches[0]!.clientY
-  pulling = true
-}
-function onTouchMove(event: TouchEvent) {
-  if (!pulling) return
-  const delta = event.touches[0]!.clientY - pullStartY
-  if (delta <= 0 || window.scrollY > 0) { pullOffset.value = 0; return }
-  pullOffset.value = Math.min(delta * 0.5, 96)
-}
-function onTouchEnd() {
-  if (!pulling) return
-  pulling = false
-  if (pullOffset.value >= 64) void onRefresh()
-  pullOffset.value = 0
-}
-/**
- * `LibraryContent.kt`: the refresh indicator is shown for one second after the refresh
- * started (`isRefreshing = true; delay(1.seconds); isRefreshing = false`).
- */
-async function onRefresh() {
-  await reload()
-  refreshing.value = true
-  window.setTimeout(() => { refreshing.value = false }, 1000)
+async function onPullToRefresh() {
+  const activeCat = categories.value[currentPage.value]
+  const activeCatId = activeCat?.id ?? server.activeCategoryId
+  notify(
+    activeCatId != null
+      ? (stringResource(MR.strings.updating_category) || 'Updating category')
+      : (stringResource(MR.strings.updating_library) || 'Updating library')
+  )
+  const res = await server.triggerUpdate(activeCatId)
+  if (!res.started) {
+    notify(stringResource(MR.strings.update_already_running) || 'An update is already running')
+  }
 }
 
-/**
- * `PullToRefreshDefaults.Indicator`:
- * Moves down smoothly with pull gesture, centers at top of content, stays at 16px when refreshing.
- */
-const pullIndicatorStyle = computed(() => {
-  if (refreshing.value) {
-    return {
-      transform: 'translate(-50%, 16px)',
-      opacity: '1',
-    }
-  }
-  if (pullOffset.value > 0) {
-    return {
-      transform: `translate(-50%, ${Math.min(pullOffset.value, 64)}px)`,
-      opacity: `${Math.min(pullOffset.value / 40, 1)}`,
-    }
-  }
-  return {
-    transform: 'translate(-50%, 0px)',
-    opacity: '0',
-  }
-})
-
-/* ------------------------------------------------------------------ *
- * Overflow actions
- * ------------------------------------------------------------------ */
-const updateErrorsStore = useLibraryUpdateErrorsStore()
-
-/**
- * `onClickGlobalUpdate` / `onClickRefresh` — Mihon asks the sources to fetch the
- * library again. Updates each entry online with progress reporting and logs failures.
- */
 async function onUpdateLibrary() {
-  await reload()
-  const mangaList = Object.values(server.libraryByCategory).flat()
-  const uniqueManga = Array.from(new Map(mangaList.map(m => [m.id, m])).values())
-  if (!uniqueManga.length) {
-    notify('The library is empty.')
-    return
+  notify(stringResource(MR.strings.updating_library) || 'Updating library')
+  const res = await server.triggerUpdate(null)
+  if (!res.started) {
+    notify(stringResource(MR.strings.update_already_running) || 'An update is already running')
   }
-
-  updateErrorsStore.setUpdating(true, 0)
-  const api = createSuwayomiApi(server.apiUrl)
-  let completed = 0
-  const total = uniqueManga.length
-
-  const BATCH_SIZE = 4
-  for (let i = 0; i < total; i += BATCH_SIZE) {
-    const batch = uniqueManga.slice(i, i + BATCH_SIZE)
-    await Promise.all(
-      batch.map(async manga => {
-        try {
-          await api.chapters(manga.id, true)
-        } catch (err: any) {
-          updateErrorsStore.addError({
-            mangaId: manga.id,
-            title: manga.title,
-            sourceId: String(manga.sourceId || ''),
-            sourceName: typeof manga.source === 'string' ? manga.source : manga.source?.name || 'Unknown source',
-            message: apiErrorMessage(err),
-          })
-        } finally {
-          completed++
-          updateErrorsStore.updateProgress(Math.round((completed / total) * 100))
-        }
-      })
-    )
-  }
-
-  await reload()
-  updateErrorsStore.setUpdating(false, null)
-  notify('Library update completed.')
 }
 
 async function onUpdateCategory() {
-  await reload()
-  const list = server.activeCategoryId != null
-    ? (itemsByCategory.value[server.activeCategoryId] || [])
-    : []
-  if (!list.length) {
-    notify('The category is empty.')
-    return
+  const activeCat = categories.value[currentPage.value]
+  const activeCatId = activeCat?.id ?? server.activeCategoryId
+  notify(
+    activeCatId != null
+      ? (stringResource(MR.strings.updating_category) || 'Updating category')
+      : (stringResource(MR.strings.updating_library) || 'Updating library')
+  )
+  const res = await server.triggerUpdate(activeCatId)
+  if (!res.started) {
+    notify(stringResource(MR.strings.update_already_running) || 'An update is already running')
   }
+}
 
-  updateErrorsStore.setUpdating(true, 0)
-  const api = createSuwayomiApi(server.apiUrl)
-  let completed = 0
-  const total = list.length
-
-  const BATCH_SIZE = 4
-  for (let i = 0; i < total; i += BATCH_SIZE) {
-    const batch = list.slice(i, i + BATCH_SIZE)
-    await Promise.all(
-      batch.map(async manga => {
-        try {
-          await api.chapters(manga.id, true)
-        } catch (err: any) {
-          updateErrorsStore.addError({
-            mangaId: manga.id,
-            title: manga.title,
-            sourceId: String(manga.sourceId || ''),
-            sourceName: typeof manga.source === 'string' ? manga.source : manga.source?.name || 'Unknown source',
-            message: apiErrorMessage(err),
-          })
-        } finally {
-          completed++
-          updateErrorsStore.updateProgress(Math.round((completed / total) * 100))
-        }
-      })
-    )
-  }
-
-  await reload()
-  updateErrorsStore.setUpdating(false, null)
-  notify('Category update completed.')
+async function onSyncLibrary() {
+  await server.silentRefreshLibrary()
+  notify(stringResource(MR.strings.library_synced_with_server) || 'Library synced with server')
 }
 /** `onClickOpenRandomManga` — a random entry of the library is opened. */
 function onOpenRandom() {
@@ -591,11 +491,14 @@ function loadDetails(retry = false) {
     void details.ensure(server.apiUrl, items.map(m => m.id), retry)
   }
 }
-async function reload() { details.clear(); await server.loadLibrary(); loadDetails() }
 watch(() => [server.apiUrl, server.library, requiresDetails.value, preferences.categoryCounts], () => loadDetails(), { immediate: true })
-watch(() => [preferences.localBadge, preferences.languageBadge, server.apiUrl], () => { if ((preferences.localBadge || preferences.languageBadge) && !server.sources.length) void server.loadSources() }, { immediate: true })
+watch(() => [preferences.localBadge, preferences.languageBadge, preferences.sourceBadge, server.apiUrl], () => {
+  if ((preferences.localBadge || preferences.languageBadge || preferences.sourceBadge) && !server.sources.length) {
+    void server.loadSources()
+  }
+}, { immediate: true })
 onMounted(() => {
-  void reload()
+  void server.ensureLibraryLoaded()
   const savedScroll = sessionStorage.getItem('mihon.library.scrollY')
   if (savedScroll) {
     sessionStorage.removeItem('mihon.library.scrollY')
@@ -626,14 +529,13 @@ onMounted(() => {
       @filter="filtersOpen = true"
       @update-library="onUpdateLibrary"
       @update-category="onUpdateCategory"
+      @sync-library="onSyncLibrary"
       @open-random="onOpenRandom"
       @select-all="selectAll"
       @invert-selection="invertSelection"
       @cancel-selection="clearSelection"
     />
-    <v-progress-linear v-if="details.pendingCount" indeterminate color="primary" aria-label="Loading chapter sorting data" />
     <v-alert v-if="requiresDetails && Object.keys(details.errors).length" type="warning" variant="tonal" class="ma-4">Some chapter data could not be loaded. Missing data is not treated as zero or false.<v-btn variant="text" @click="loadDetails(true)">Retry chapter data</v-btn></v-alert>
-    <v-progress-linear v-if="server.loadingLibrary" indeterminate color="primary" aria-label="Loading library" />
     <v-alert v-if="server.libraryError && server.library.length" type="warning" variant="tonal" class="ma-4">Showing previously loaded data. {{ server.libraryError }}</v-alert>
 
     <!-- LoadingScreen.kt: `Box(fillMaxSize, Center) { CircularProgressIndicator() }`. -->
@@ -687,32 +589,22 @@ onMounted(() => {
       }
     -->
     <div v-else class="library-content">
-      <LibraryCategoryTabs
-        v-if="showPageTabs && categories.length && (categories.length > 1 || categories[0]!.id !== 0)"
-        :categories="tabCategories"
-        :current-page="currentPage"
-        @update:current-page="onChangeCurrentPage"
-      />
-
-      <!--
-        PullRefresh(refreshing, enabled = selection.isEmpty()):
-        Indicator container is a 40dp circle (surfaceContainerHigh / surfaceVariant)
-        with elevation shadow and centered onSurfaceVariant spinner.
-      -->
       <div
-        class="library-pull-refresh"
-        @touchstart.passive="onTouchStart"
-        @touchmove.passive="onTouchMove"
-        @touchend.passive="onTouchEnd"
+        v-if="showPageTabs && categories.length && (categories.length > 1 || categories[0]!.id !== 0)"
+        class="library-tabs-container"
       >
-        <div
-          v-if="refreshing || pullOffset > 0"
-          class="library-pull-indicator"
-          :style="pullIndicatorStyle"
-          aria-hidden="true"
-        >
-          <v-progress-circular indeterminate size="24" width="2.5" class="library-pull-spinner" />
-        </div>
+        <LibraryCategoryTabs
+          :categories="tabCategories"
+          :current-page="currentPage"
+          @update:current-page="onChangeCurrentPage"
+        />
+      </div>
+
+      <Md3PullToRefresh
+        :disabled="selectionMode"
+        class="library-pull-refresh"
+        @refresh="onPullToRefresh"
+      >
         <LibraryPager
           :categories="categories"
           :current-page="currentPage"
@@ -726,7 +618,7 @@ onMounted(() => {
           @update:selection="selection = $event"
           @global-search="router.push({ path: '/browse/global-search', query: { q: search } })"
         />
-      </div>
+      </Md3PullToRefresh>
     </div>
 
     <LibrarySettingsSheet v-model="filtersOpen" />
@@ -768,6 +660,14 @@ onMounted(() => {
 .library-content {
   display: flex;
   flex-direction: column;
+  width: 100%;
+}
+
+.library-tabs-container {
+  position: sticky;
+  top: var(--v-layout-top, 64px);
+  z-index: 5;
+  background: rgb(var(--v-theme-surface));
   width: 100%;
 }
 

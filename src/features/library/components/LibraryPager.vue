@@ -207,6 +207,8 @@ const width = ref(0)
 /** The floating page position; `1.5` means the pager is half way between two pages. */
 const position = ref(0)
 const dragging = ref(false)
+const isAnimating = ref(false)
+let animateTimer: number | undefined
 
 let pointerId: number | null = null
 let startX = 0
@@ -236,6 +238,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   observer?.disconnect()
   observer = null
+  window.clearTimeout(animateTimer)
   stopListening()
 })
 
@@ -328,6 +331,11 @@ function onPointerUp(event: PointerEvent) {
   suppressNextClick()
   position.value = target
   if (target !== currentPage.value) {
+    isAnimating.value = true
+    window.clearTimeout(animateTimer)
+    animateTimer = window.setTimeout(() => {
+      isAnimating.value = false
+    }, 280)
     emit('update:currentPage', target)
   }
 }
@@ -363,6 +371,11 @@ watch(currentPage, (page, previous) => {
   }
   if (dragging.value) return
   position.value = page
+  isAnimating.value = true
+  window.clearTimeout(animateTimer)
+  animateTimer = window.setTimeout(() => {
+    isAnimating.value = false
+  }, 280)
 })
 
 watch(pageCount, count => {
@@ -421,6 +434,10 @@ const emptyPaddingBottom = computed(() => {
         v-for="page in pages"
         :key="page.category.id"
         class="library-pager-page"
+        :class="{
+          'library-pager-page--active': page.index === currentPage,
+          'library-pager-page--inactive': page.index !== currentPage && !dragging && !isAnimating,
+        }"
         :data-page="page.index"
         :aria-label="page.category.name"
       >
@@ -433,6 +450,7 @@ const emptyPaddingBottom = computed(() => {
             :search-query="searchQuery"
             :selection="selection"
             :content-padding-bottom="contentPaddingBottom"
+            :is-active-page="page.index === currentPage"
             @update:selection="onSelectionUpdate"
             @range-select="emit('range-select', $event)"
             @global-search="emit('global-search')"
@@ -515,6 +533,14 @@ const emptyPaddingBottom = computed(() => {
   min-height: calc(100dvh - 192px);
   display: flex;
   flex-direction: column;
+}
+
+.library-pager-page--inactive {
+  height: 0 !important;
+  max-height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden;
 }
 
 /*

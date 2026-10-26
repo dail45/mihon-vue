@@ -265,7 +265,7 @@ describe('Template & Contract Verification', () => {
 
   it('LibrarySettingsSheet.vue contains Group tab and tag sorting', () => {
     const source = readFileSync('src/features/library/components/LibrarySettingsSheet.vue', 'utf8')
-    expect(source).toContain(":tabs=\"['Filter', 'Sort', 'Display', 'Group']\"")
+    expect(source).toMatch(/:tabs="tabs"|:tabs="\['Filter', 'Sort', 'Display', 'Group'\]"/)
     expect(source).toContain("prefs.sortTags.length > 0")
     expect(source).toContain("value: 'tagList'")
     expect(source).toContain("groupOptions")

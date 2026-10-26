@@ -163,7 +163,7 @@ onBeforeUnmount(onPointerUp)
   <div class="comfortable-tile" :class="{ 'comfortable-tile-selected': selected }">
     <router-link
       :to="`/manga/${manga.id}`"
-      class="comfortable-tile-link"
+      class="comfortable-tile-link manga-card"
       :aria-label="`${manga.title}, ${manga.unreadCount ?? 'unknown'} unread chapters`"
       :aria-pressed="selected ? 'true' : undefined"
       @click.capture="onClick"

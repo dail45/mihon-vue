@@ -51,10 +51,11 @@ describe('LibraryToolbar matches the Mihon reference (LibraryToolbar.kt & AppBar
     expect(source).toContain('icon="search"')
     expect(source).toContain('icon="more_vert"')
 
-    // Overflow actions: Update library, Update category, Open random entry
-    expect(source).toContain('title="Update library"')
-    expect(source).toContain('title="Update category"')
-    expect(source).toContain('title="Open random entry"')
+    // Overflow actions: Update category, Update library, Sync with server, Open random entry
+    expect(source).toContain('MR.strings.action_update_category')
+    expect(source).toContain('MR.strings.action_update_library')
+    expect(source).toContain('MR.strings.action_sync_library')
+    expect(source).toContain('MR.strings.action_open_random_manga')
   })
 
   it('configures SearchToolbar input with titleMedium 18sp and secondaryItemAlpha', () => {

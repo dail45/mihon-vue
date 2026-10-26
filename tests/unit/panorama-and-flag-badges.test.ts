@@ -102,6 +102,17 @@ describe('3.7 FlagKit Country Icons & Source Favicon Badges', () => {
     expect(badgesSource).toContain('manga-badge-favicon')
   })
 
+  it('correctly resolves source.iconUrl and triggers loadSources for sourceBadge', () => {
+    const badgesSource = readFileSync('src/features/manga/components/MangaBadges.vue', 'utf8')
+    expect(badgesSource).toContain('server.loadSources()')
+    expect(badgesSource).toContain('source?.iconUrl')
+    expect(badgesSource).toContain('server.apiUrl.replace')
+    expect(badgesSource).toContain('onSourceIconError')
+    expect(badgesSource).toMatch(/\.manga-badge-favicon\s*\{[^}]*width:\s*18px/)
+    expect(badgesSource).toMatch(/\.manga-badge-favicon\s*\{[^}]*height:\s*18px/)
+    expect(badgesSource).toMatch(/\.manga-badge-favicon\s*\{[^}]*border-radius:\s*4px/)
+  })
+
   it('contains English and Russian i18n keys for panorama and badges', () => {
     const en = JSON.parse(readFileSync('src/locales/en.json', 'utf8'))
     const ru = JSON.parse(readFileSync('src/locales/ru.json', 'utf8'))

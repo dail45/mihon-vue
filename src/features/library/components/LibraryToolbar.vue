@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useTheme } from 'vuetify'
+import { stringResource, MR } from '@/core/i18n'
 
 /**
  * Pixel-parity port of Mihon's `presentation/library/components/LibraryToolbar.kt`
@@ -72,6 +73,7 @@ const emit = defineEmits<{
   (event: 'filter'): void
   (event: 'update-library'): void
   (event: 'update-category'): void
+  (event: 'sync-library'): void
   (event: 'open-random'): void
   (event: 'select-all'): void
   (event: 'invert-selection'): void
@@ -323,8 +325,8 @@ onBeforeUnmount(() => {
         <v-btn
           icon="filter_list"
           :style="{ color: hasFilters ? activeColor : undefined }"
-          aria-label="Filter"
-          title="Filter"
+          aria-label="Filter and sort library"
+          title="Filter and sort library"
           class="library-toolbar__action"
           @click="emit('filter')"
         />
@@ -351,17 +353,22 @@ onBeforeUnmount(() => {
         </template>
         <v-list density="compact" class="library-toolbar-overflow">
           <v-list-item
-            title="Update library"
-            class="library-toolbar-overflow__item"
-            @click="overflowOpen = false; emit('update-library')"
-          />
-          <v-list-item
-            title="Update category"
+            :title="stringResource(MR.strings.action_update_category)"
             class="library-toolbar-overflow__item"
             @click="overflowOpen = false; emit('update-category')"
           />
           <v-list-item
-            title="Open random entry"
+            :title="stringResource(MR.strings.action_update_library)"
+            class="library-toolbar-overflow__item"
+            @click="overflowOpen = false; emit('update-library')"
+          />
+          <v-list-item
+            :title="stringResource(MR.strings.action_sync_library)"
+            class="library-toolbar-overflow__item"
+            @click="overflowOpen = false; emit('sync-library')"
+          />
+          <v-list-item
+            :title="stringResource(MR.strings.action_open_random_manga)"
             class="library-toolbar-overflow__item"
             @click="overflowOpen = false; emit('open-random')"
           />

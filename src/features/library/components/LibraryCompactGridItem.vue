@@ -144,7 +144,7 @@ onBeforeUnmount(onPointerUp)
   <div class="compact-tile" :class="{ 'compact-tile-selected': selected }">
     <router-link
       :to="`/manga/${manga.id}`"
-      class="compact-tile-link"
+      class="compact-tile-link manga-card"
       :aria-label="`${manga.title}, ${manga.unreadCount ?? 'unknown'} unread chapters`"
       :aria-pressed="selected ? 'true' : undefined"
       @click.capture="onClick"
