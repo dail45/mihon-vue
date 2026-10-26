@@ -145,19 +145,21 @@ export function matchesLibrary(
     }
   }
 
-  // 3.5 Categories Tri-State Filter Dialog (Komikku LibraryScreenModel.kt:516-530)
+  // 3.5 Categories Tri-State Filter Dialog (OR for include, AND for exclude)
   const isCategoryFilterActive = filters.filterCategories ?? filters.categories ?? false
   if (isCategoryFilterActive) {
-    const included = filters.filterCategoriesInclude ?? filters.categoriesInclude ?? []
-    const excluded = filters.filterCategoriesExclude ?? filters.categoriesExclude ?? []
-    const catList = mangaCategories ?? (manga as { categories?: number[] }).categories ?? []
+    const included = (filters.filterCategoriesInclude ?? filters.categoriesInclude ?? []).map(Number)
+    const excluded = (filters.filterCategoriesExclude ?? filters.categoriesExclude ?? []).map(Number)
+    const catList = (mangaCategories ?? (manga as { categories?: number[] }).categories ?? []).map(Number)
     const catSet = new Set(catList)
 
     if (catSet.size === 0) {
       if (included.length > 0) return false
     } else {
+      // Excluded: AND logic (manga must not belong to any excluded category)
       if (excluded.some(id => catSet.has(id))) return false
-      if (included.length > 0 && !included.every(id => catSet.has(id))) return false
+      // Included: OR logic (manga must belong to at least one included category)
+      if (included.length > 0 && !included.some(id => catSet.has(id))) return false
     }
   }
 

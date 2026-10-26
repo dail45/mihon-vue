@@ -197,7 +197,7 @@ export const router = createRouter({
     // Mihon `DeepLinkScreen`: the app bar title is `action_search_hint` = "Search…".
     { path: '/deeplink', component: () => import('@/features/settings/views/DeepLinkView.vue'), meta: { title: 'Search…', detail: true, ownToolbar: true } },
     // Mihon `OnboardingScreen`: the onboarding guide (MR.strings.pref_onboarding_guide).
-    { path: '/onboarding', component: () => import('@/features/onboarding/views/OnboardingView.vue'), meta: { title: 'Onboarding guide', detail: true, ownToolbar: true } },
+    { path: '/onboarding', component: () => import('@/features/onboarding/views/OnboardingView.vue'), meta: { title: 'Onboarding guide', detail: true, ownToolbar: true, layout: 'fullscreen' } },
     { path: '/:pathMatch(.*)*', component: () => import('@/features/settings/views/NotFoundView.vue'), meta: { title: 'Not found' } },
   ],
   scrollBehavior: () => ({ top: 0 }),

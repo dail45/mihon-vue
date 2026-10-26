@@ -14,10 +14,18 @@ const props = withDefaults(
     items: Md3TabItem<T>[]
     ariaLabel?: string
     scrollable?: boolean
+    flat?: boolean
+    transparent?: boolean
+    tabClass?: string
+    labelClass?: string
   }>(),
   {
     ariaLabel: 'Navigation tabs',
     scrollable: true,
+    flat: false,
+    transparent: false,
+    tabClass: '',
+    labelClass: '',
   },
 )
 
@@ -117,6 +125,8 @@ function onKeydown(event: KeyboardEvent) {
   }
 }
 
+let resizeObserver: ResizeObserver | null = null
+
 function onResize() {
   updateIndicator()
   scrollToSelectedTab(false)
@@ -129,20 +139,45 @@ watch(selectedIndex, async () => {
 })
 
 watch(() => props.items, async () => {
+  tabRefs.value = tabRefs.value.slice(0, props.items.length)
   await nextTick()
   updateIndicator()
   scrollToSelectedTab(false)
 }, { deep: true })
+
+watch(() => props.scrollable, async () => {
+  await nextTick()
+  updateIndicator()
+  scrollToSelectedTab(false)
+})
 
 onMounted(async () => {
   await nextTick()
   updateIndicator()
   scrollToSelectedTab(false)
   window.addEventListener('resize', onResize)
+  if (typeof ResizeObserver !== 'undefined' && listRef.value) {
+    resizeObserver = new ResizeObserver(() => {
+      updateIndicator()
+    })
+    resizeObserver.observe(listRef.value)
+  }
+  if (typeof document !== 'undefined' && 'fonts' in document) {
+    void document.fonts.ready.then(() => {
+      updateIndicator()
+    })
+  }
+  if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+    requestAnimationFrame(() => {
+      updateIndicator()
+    })
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
+  resizeObserver?.disconnect()
+  resizeObserver = null
 })
 </script>
 
@@ -150,7 +185,11 @@ onBeforeUnmount(() => {
   <div
     ref="listRef"
     class="md3-primary-tabs library-tabs"
-    :class="{ 'md3-primary-tabs--scrollable': scrollable }"
+    :class="{
+      'md3-primary-tabs--scrollable': scrollable,
+      'md3-primary-tabs--flat': flat,
+      'md3-primary-tabs--transparent': transparent,
+    }"
     role="tablist"
     :aria-label="ariaLabel"
     @keydown="onKeydown"
@@ -163,16 +202,23 @@ onBeforeUnmount(() => {
         type="button"
         role="tab"
         class="md3-primary-tab library-tab"
-        :class="{
-          'md3-primary-tab--selected': item.value === modelValue,
-          'library-tab-selected': item.value === modelValue,
-        }"
+        :class="[
+          {
+            'md3-primary-tab--selected': item.value === modelValue,
+            'library-tab-selected': item.value === modelValue,
+            'v-tab--selected': item.value === modelValue,
+          },
+          tabClass,
+        ]"
         :data-selected="item.value === modelValue"
         :aria-selected="item.value === modelValue"
         :tabindex="item.value === modelValue ? 0 : -1"
         @click="onTabClick($event, item, index)"
       >
-        <span class="md3-tab-label library-tab-label">
+        <span
+          class="md3-tab-label library-tab-label"
+          :class="labelClass"
+        >
           <span class="md3-tab-text library-tab-text">{{ item.label }}</span>
           <span
             v-if="item.badge !== undefined && item.badge !== null && item.badge !== '' && item.badge !== 0"
@@ -224,17 +270,6 @@ onBeforeUnmount(() => {
   min-width: 100%;
   height: 100%;
   align-items: stretch;
-}
-
-.md3-primary-tabs:not(.md3-primary-tabs--scrollable) .md3-primary-tabs-track,
-.library-tabs:not(.md3-primary-tabs--scrollable) .library-tabs-track {
-  width: 100%;
-}
-
-.md3-primary-tabs:not(.md3-primary-tabs--scrollable) .md3-primary-tab,
-.library-tabs:not(.md3-primary-tabs--scrollable) .library-tab {
-  flex: 1 1 0;
-  min-width: 0;
 }
 
 .md3-primary-tab,
@@ -315,6 +350,102 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Scrollable Mode: tabs expand to full label width, never truncate into ellipses */
+.md3-primary-tabs.md3-primary-tabs--scrollable,
+.library-tabs.md3-primary-tabs--scrollable {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.md3-primary-tabs--scrollable .md3-primary-tabs-track,
+.md3-primary-tabs--scrollable .library-tabs-track {
+  display: inline-flex;
+  width: max-content;
+  min-width: 100%;
+}
+
+.md3-primary-tabs--scrollable .md3-primary-tab,
+.md3-primary-tabs--scrollable .library-tab {
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  white-space: nowrap !important;
+  min-width: auto;
+  padding: 0 16px;
+}
+
+.md3-primary-tabs--scrollable .md3-tab-label,
+.md3-primary-tabs--scrollable .library-tab-label {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.md3-primary-tabs--scrollable .md3-tab-text,
+.md3-primary-tabs--scrollable .library-tab-text {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Non-scrollable Mode: compact / equal-width distribution, truncates with ellipsis if narrow */
+.md3-primary-tabs:not(.md3-primary-tabs--scrollable),
+.library-tabs:not(.md3-primary-tabs--scrollable) {
+  overflow-x: hidden;
+}
+
+.md3-primary-tabs:not(.md3-primary-tabs--scrollable) .md3-primary-tabs-track,
+.library-tabs:not(.md3-primary-tabs--scrollable) .library-tabs-track {
+  display: flex;
+  width: 100%;
+  min-width: 100%;
+}
+
+.md3-primary-tabs:not(.md3-primary-tabs--scrollable) .md3-primary-tab,
+.library-tabs:not(.md3-primary-tabs--scrollable) .library-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 16px;
+}
+
+.md3-primary-tabs:not(.md3-primary-tabs--scrollable) .md3-tab-label,
+.library-tabs:not(.md3-primary-tabs--scrollable) .library-tab-label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.md3-primary-tabs:not(.md3-primary-tabs--scrollable) .md3-tab-text,
+.library-tabs:not(.md3-primary-tabs--scrollable) .library-tab-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.md3-primary-tabs--flat,
+.library-tabs.md3-primary-tabs--flat {
+  border-bottom: 0 !important;
+}
+
+.md3-primary-tabs--transparent,
+.library-tabs.md3-primary-tabs--transparent {
+  background: transparent !important;
+}
+
+.settings-tab-label {
+  position: relative;
+}
+
+.v-tab--selected .settings-tab-label::after {
+  content: '';
+  position: absolute;
+  height: 3px;
+  width: calc(100% - 4px);
+  left: 2px;
+  bottom: 0;
+  background: transparent;
+  pointer-events: none;
 }
 
 .md3-primary-tab-indicator,

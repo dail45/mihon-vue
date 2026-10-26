@@ -24,7 +24,12 @@ export interface DownloadQueueManga {
   id: number
   title: string
   sourceId: string
-  sourceName: string
+  sourceName?: string
+  source?: {
+    id: string
+    name?: string
+    displayName?: string
+  }
 }
 
 export interface DownloadQueueEntry {
@@ -82,8 +87,10 @@ function toSections(queue: DownloadQueueEntry[]): DownloadQueueSection[] {
   const sections: DownloadQueueSection[] = []
   for (const entry of queue) {
     const id = entry.manga.sourceId || 'unknown'
+    const name = entry.manga.source?.displayName || entry.manga.source?.name || entry.manga.sourceName || id
+    if (!entry.manga.sourceName) entry.manga.sourceName = name
     let section = sections.find(s => s.id === id)
-    if (!section) { section = { id, name: entry.manga.sourceName || id, downloads: [] }; sections.push(section) }
+    if (!section) { section = { id, name, downloads: [] }; sections.push(section) }
     section.downloads.push(entry)
   }
   return sections

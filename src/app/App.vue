@@ -92,10 +92,9 @@ async function renewDownloadCache() {
 onMounted(() => { void renewDownloadCache() })
 
 /* ----------------------------------------------------------------- onboarding -- */
-const onboardingVisible = ref(!preferences.onboardingShown)
+const onboardingVisible = computed(() => !preferences.onboardingShown && route.path !== '/onboarding')
 function finishOnboarding() {
   preferences.setOnboardingShown()
-  onboardingVisible.value = false
   if (route.path === '/onboarding') {
     void router.replace('/library')
   }
@@ -127,7 +126,11 @@ const layoutComponent = computed(() => {
     <a class="skip-link" href="#main-content">Skip to content</a>
 
     <component :is="layoutComponent" :indexing="indexing">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <keep-alive include="LibraryView">
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
     </component>
 
     <!-- ShowOnboarding(): the onboarding flow is pushed over the home screen. -->
